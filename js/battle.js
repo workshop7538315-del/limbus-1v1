@@ -18,7 +18,7 @@ function drawCard(p) {
   player.hand.push(player.deck.pop());
 }
 
-function setupCharacter(p, core) {
+function setupCharacter(p, core, egoIds = {}) {
   const state = gameState[p];
   state.core = core;
   state.hp = core.hp; state.maxHp = core.hp;
@@ -27,6 +27,9 @@ function setupCharacter(p, core) {
   state.sanity = 0; state.minSanity = -45; state.maxSanity = 45;
   state.maxLight = core.maxLight; state.light = core.maxLight;
   state.egoResources = { wrath:0, lust:0, sloth:0, gluttony:0, gloom:0, pride:0, envy:0 };
+  state.equippedEgos = EGO_RISK_LEVELS.map(risk => egoIds[risk]).filter(Boolean).map(id => EGO_DATABASE.find(e => e.id === id)).filter(Boolean);
+  const initialZayin = state.equippedEgos.find(e => e.risk === 'ZAYIN');
+  state.sinRes = { ...(initialZayin?.sinRes || { wrath:1, lust:1, sloth:1, gluttony:1, gloom:1, pride:1, envy:1 }) };
   state.hand = []; state.discard = []; state.slots = []; state.statuses = {};
   state.bloodPactFirstPageAvailable = true; state.bloodPactFirstPageHitCount = 0;
   state.sinkingPactUses = 0; state.sinkingMarkedTargets = {};
@@ -46,8 +49,8 @@ function startBattle() {
 
   const p1CoreId = selectedP1CoreIds[Math.floor(Math.random() * selectedP1CoreIds.length)];
   const p2CoreId = selectedP2CoreIds[Math.floor(Math.random() * selectedP2CoreIds.length)];
-  setupCharacter('p1', CORE_PAGES.find(c => c.id === p1CoreId));
-  setupCharacter('p2', CORE_PAGES.find(c => c.id === p2CoreId));
+  setupCharacter('p1', CORE_PAGES.find(c => c.id === p1CoreId), selectedP1EgoIds);
+  setupCharacter('p2', CORE_PAGES.find(c => c.id === p2CoreId), selectedP2EgoIds);
 
   gameState.p1.deck = shuffle([...decks.p1.map(id => CARD_DATABASE.find(c => c.id === id)).filter(Boolean)]);
   gameState.p2.deck = shuffle([...decks.p2.map(id => CARD_DATABASE.find(c => c.id === id)).filter(Boolean)]);
@@ -104,18 +107,20 @@ function startNewRound() {
 
 function playCardToSlot(player, slot, card, targetSlot) {
   if (card?.isEgo) {
-    if (!canPayEgoResource(player, card.resourceCost)) {
-      log(`[E.G.O] ${playerLabel(player)}は罪悪資源不足で「${card.name}」を使用できません。`);
+    if (!gameState[player].equippedEgos?.some(e => e.id === card.egoId)) {
+      log(`[E.G.O] ${playerLabel(player)}の装備E.G.Oではありません。`);
       return false;
     }
-    if ((gameState[player].sanity || 0) < card.sanityCost) {
-      log(`[E.G.O] ${playerLabel(player)}は精神不足で「${card.name}」を使用できません。`);
+    if (!canPayEgoResource(player, card.resourceCost)) {
+      log(`[E.G.O] ${playerLabel(player)}は罪悪資源不足で「${card.name}」を使用できません。`);
       return false;
     }
     payEgoResource(player, card.resourceCost);
     changeSanity(player, -card.sanityCost, `E.G.O「${card.name}」`);
     addEgoResource(player, card.sin, 1);
-  } else {
+    gameState[player].sinRes = { ...(card.sinRes || gameState[player].sinRes) };
+    log(`[E.G.O] ${playerLabel(player)}の罪悪耐性が「${card.name}」に切り替わりました。`);
+  } else if (card?.skillType === 'attack' || card?.skillType === 'counter') {
     addEgoResource(player, card.sin, 1);
   }
   slot.card = card; slot.targetSlot = targetSlot || null;
@@ -444,7 +449,7 @@ function executeAttackDamage(attacker, skill, defender, amount, coinIndex, slot,
   // 一方、防御成功でダメージが0ならこの関数自体を通らないため、デバフは発生しない。
   // 特殊なダメージ補正で0ダメージの攻撃についても、明示的な攻撃コインとしてはOn Hitを発火させる。
   if (amount > 0) {
-    applyDamage(defender, skill.attackType, amount, attacker);
+    applyDamage(defender, skill.attackType, amount, attacker, { isEgo: !!skill.isEgo, sin: skill.sin });
     if (gameState[defender].hp < 0) gameState[defender].hp = 0;
   }
   if (amount > 0) triggerOnHit(attacker, skill, defender, coin, slot);
@@ -490,10 +495,11 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   if (feast?.count > 0 && feast.power > 0 && amount > 0) { amount += feast.power; log(`[血宴強化] ${playerLabel(attacker)}のダメージ +${feast.power}`); }
   const critical = tryBreathCritical(attacker, amount); amount = critical.amount;
   const resistance = p.core?.res?.[attackType] ?? 1.0;
+  const sinResistance = options.isEgo ? (p.sinRes?.[options.sin] ?? 1.0) : 1.0;
   const mult = p.isStaggered ? 2.0 : resistance;
-  const finalDmg = Math.floor(Math.max(0, amount) * mult * getProtectionMultiplier(target));
+  const finalDmg = Math.floor(Math.max(0, amount) * mult * sinResistance * getProtectionMultiplier(target));
   p.hp = Math.max(0, p.hp - finalDmg);
-  log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? '混乱中補正 ×2.0' : `耐性(${attackType}) ×${resistance}`}）`);
+  log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? '混乱中補正 ×2.0' : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(options.sin)}) ×${sinResistance}` : ''}）`);
   emitHook('onDamage', { target, diceType: attackType, amount: finalDmg, attacker });
   if (!p.isStaggered) {
     p.stagger = Math.max(0, p.stagger - finalDmg);
