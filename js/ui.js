@@ -116,11 +116,38 @@ function updatePlanningPrompt(){
   info.innerText=`${speedText}: 「${selectedHandCard.name}」→ ${slotLabel(selectedTargetSlot)} にマッチ。`;btn.innerText='この行動を確定';btn.disabled=false;
 }
 function selectTargetSlot(slot){ if(!isP1Planning()||!selectedHandCard||slot?.owner!=='p2')return; selectedTargetSlot=slot;updatePlanningPrompt();updateUI(); }
+function makeEgoCard(ego) { return { ...ego, isEgo: true, egoId: ego.id, tags: ['ego'] }; }
+function renderEgoCards(handDiv) {
+  EGO_DATABASE.forEach(ego => {
+    const card=makeEgoCard(ego);
+    const selected=selectedHandCard?.egoId===ego.id;
+    const canUse=canPayEgoResource('p1',ego.resourceCost) && gameState.p1.sanity >= ego.sanityCost;
+    const cardEl=document.createElement('div');
+    cardEl.className='card ego-card'+(selected?' selected':'')+(canUse?'':' unavailable');
+    const costs=Object.entries(ego.resourceCost).map(([sin,n])=>`${getSinLabel(sin)}×${n}`).join(' ');
+    cardEl.innerHTML=`<strong>E.G.O: ${ego.name}</strong><br><small>${ego.sinner} / ${ego.risk}</small><div class="skill-power-line">基礎${ego.basePower} / コイン+${ego.coinPower}</div><div class="card-effect">罪悪資源: ${costs}<br>精神-${ego.sanityCost}</div>`;
+    cardEl.onclick=()=>{
+      if(!canUse)return;
+      selectedHandCard=selected?null:card;
+      selectedTargetSlot=null;
+      if(selectedHandCard && gameState.p2.slots.length===1) selectedTargetSlot=gameState.p2.slots[0];
+      renderHand(); updatePlanningPrompt(); updateUI();
+    };
+    handDiv.appendChild(cardEl);
+  });
+}
+function renderEgoResourcePanel(player) {
+  const el=document.getElementById(`${player}-ego-resources`);
+  if(!el)return;
+  el.innerHTML=SIN_TYPES.map(sin=>`<span class="ego-resource sin-${sin}" title="${getSinLabel(sin)}">${getSinLabel(sin).slice(0,1)}<b>${gameState[player].egoResources?.[sin]||0}</b></span>`).join('');
+}
+
 function renderHand(){
   const handDiv=document.getElementById('p1-hand'); handDiv.innerHTML=''; const currentSlot=getCurrentPlanningSlot(); if(!currentSlot||currentSlot.owner!=='p1')return;
+  renderEgoCards(handDiv);
   gameState.p1.hand.forEach(card=>{ const cardEl=document.createElement('div'),selected=selectedHandCard===card; cardEl.className='card'+(selected?' selected':'');
     cardEl.innerHTML=`<strong>${card.name}</strong><br><small>コスト: ${card.cost} / ${getSinLabel(card.sin)} / 表率: ${getHeadsChance('p1')}%</small><div class="skill-power-line">${getSkillPowerText(card)}</div>${card.effect?`<div class="card-effect">${card.effect}</div>`:''}<hr>${skillDetailHtml(card)}`;
-    cardEl.onclick=()=>{ if(gameState.p1.light<card.cost)return alert('光が不足しています！'); selectedHandCard=selected?null:card; if(!selectedHandCard)selectedTargetSlot=null; else if(selectedHandCard.skillType==='counter')selectedTargetSlot=null; else if(gameState.p2.slots.length===1)selectedTargetSlot=gameState.p2.slots[0]; else if(selectedTargetSlot&&!gameState.p2.slots.includes(selectedTargetSlot))selectedTargetSlot=null; renderHand();updatePlanningPrompt();updateUI();}; handDiv.appendChild(cardEl); });
+    cardEl.onclick=()=>{ if(!card.isEgo && gameState.p1.light<card.cost)return alert('光が不足しています！'); selectedHandCard=selected?null:card; if(!selectedHandCard)selectedTargetSlot=null; else if(selectedHandCard.skillType==='counter')selectedTargetSlot=null; else if(gameState.p2.slots.length===1)selectedTargetSlot=gameState.p2.slots[0]; else if(selectedTargetSlot&&!gameState.p2.slots.includes(selectedTargetSlot))selectedTargetSlot=null; renderHand();updatePlanningPrompt();updateUI();}; handDiv.appendChild(cardEl); });
 }
 function renderStatusEffects(player){ const buff=document.getElementById(`${player}-buff-box`),debuff=document.getElementById(`${player}-debuff-box`); if(!buff||!debuff)return; buff.innerHTML='';debuff.innerHTML='';Object.values(gameState[player].statuses||{}).forEach(status=>{if(!status||status.count<=0)return;const box=status.category==='debuff'?debuff:buff,badge=document.createElement('span');badge.className=`status-badge ${status.category==='debuff'?'status-debuff':'status-buff'}`;badge.innerHTML=`${status.name} ${status.power}/${status.count}<span class="tooltip-text status-tooltip">${getStatusTooltip(status)}</span>`;box.appendChild(badge);});if(!buff.children.length)buff.innerHTML='<span class="status-empty">なし</span>';if(!debuff.children.length)debuff.innerHTML='<span class="status-empty">なし</span>'; }
 
@@ -129,7 +156,7 @@ function updateUI(){
     const s=gameState[p]; document.getElementById(`${p}-hp`).innerText=s.hp;document.getElementById(`${p}-maxhp`).innerText=s.maxHp;document.getElementById(`${p}-hp-bar`).style.width=`${s.maxHp?(s.hp/s.maxHp)*100:0}%`;
     document.getElementById(`${p}-sanity`).innerText=s.sanity;document.getElementById(`${p}-sanity-bar`).style.width=`${((s.sanity+45)/90)*100}%`;
     document.getElementById(`${p}-stagger`).innerText=s.stagger;document.getElementById(`${p}-maxstagger`).innerText=s.maxStagger;document.getElementById(`${p}-stagger-bar`).style.width=`${s.maxStagger?(s.stagger/s.maxStagger)*100:0}%`;
-    document.getElementById(`${p}-light`).innerText=s.light;document.getElementById(`${p}-maxlight`).innerText=s.maxLight;renderStatusEffects(p);
+    document.getElementById(`${p}-light`).innerText=s.light;document.getElementById(`${p}-maxlight`).innerText=s.maxLight;renderStatusEffects(p);renderEgoResourcePanel(p);
     document.getElementById(`${p}-box`).classList.toggle('staggered',s.isStaggered);
     const slotsDiv=document.getElementById(`${p}-speed-slots`); slotsDiv.innerHTML=`<div class="speed-range-label">速度範囲: ${s.core.speedMin}～${s.core.speedMax}</div>`;
     if(s.isStaggered){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot">混乱中 (行動不能)</div>';return;}
