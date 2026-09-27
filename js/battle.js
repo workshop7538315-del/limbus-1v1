@@ -336,8 +336,8 @@ async function resolveClash(slotA, slotB) {
 
   while (remA > 0 && remB > 0 && guard++ < 50) {
     clashCount++;
-    const rollA = rollSkillForClash(pA, skillA, remA);
-    const rollB = rollSkillForClash(pB, skillB, remB);
+    const rollA = rollSkillForClash(pA, skillA, remA, pB, skillB);
+    const rollB = rollSkillForClash(pB, skillB, remB, pA, skillA);
     rollA.coins.forEach(c => logCoinRoll(pA, skillA, c, '（マッチ判定）'));
     rollB.coins.forEach(c => logCoinRoll(pB, skillB, c, '（マッチ判定）'));
     log(`[マッチ] ${playerLabel(pA)}「${skillA.name}」 ${rollA.power} vs ${playerLabel(pB)}「${skillB.name}」 ${rollB.power}`);
