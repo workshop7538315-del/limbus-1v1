@@ -11,6 +11,84 @@ const STATUS_DEFINITIONS = {
   protection: { name: '保護', category: 'buff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0 }
 };
 
+const BASIC_STATUS_IDS = [
+  'attack_power_up','attack_power_down','defense_power_up','defense_power_down',
+  'clash_power_up','clash_power_down','power_up','power_down','base_power_up',
+  'offense_level_up','offense_level_down','defense_level_up','defense_level_down',
+  'plus_coin_boost','plus_coin_drop','minus_coin_boost','minus_coin_drop',
+  'multiply_coin_boost','multiply_coin_drop','damage_up','damage_down','fragile',
+  'hp_healing_boost','hp_healing_down',
+  'slash_damage_up','pierce_damage_up','blunt_damage_up',
+  'wrath_damage_up','lust_damage_up','sloth_damage_up','gluttony_damage_up','gloom_damage_up','pride_damage_up','envy_damage_up',
+  'slash_damage_down','pierce_damage_down','blunt_damage_down',
+  'wrath_damage_down','lust_damage_down','sloth_damage_down','gluttony_damage_down','gloom_damage_down','pride_damage_down','envy_damage_down',
+  'slash_power_up','pierce_power_up','blunt_power_up',
+  'wrath_power_up','lust_power_up','sloth_power_up','gluttony_power_up','gloom_power_up','pride_power_up','envy_power_up',
+  'slash_power_down','pierce_power_down','blunt_power_down',
+  'wrath_power_down','lust_power_down','sloth_power_down','gluttony_power_down','gloom_power_down','pride_power_down','envy_power_down',
+  'slash_fragility','pierce_fragility','blunt_fragility',
+  'wrath_fragility','lust_fragility','sloth_fragility','gluttony_fragility','gloom_fragility','pride_fragility','envy_fragility',
+  'slash_protection','pierce_protection','blunt_protection',
+  'wrath_protection','lust_protection','sloth_protection','gluttony_protection','gloom_protection','pride_protection','envy_protection',
+  'slash_resist_down','pierce_resist_down','blunt_resist_down',
+  'wrath_resist_down','lust_resist_down','sloth_resist_down','gluttony_resist_down','gloom_resist_down','pride_resist_down','envy_resist_down',
+  'paralyze','poise','charge'
+];
+
+const BASIC_STATUS_DEFS = {
+  attack_power_up:['攻撃威力増加','Attack Skill Final Power +X','buff'],
+  attack_power_down:['攻撃威力減少','Attack Skill Final Power -X','debuff'],
+  defense_power_up:['防御威力増加','Defense Skill Final Power +X','buff'],
+  defense_power_down:['防御威力減少','Defense Skill Final Power -X','debuff'],
+  clash_power_up:['マッチ威力増加','Clash Power +X','buff'],
+  clash_power_down:['マッチ威力減少','Clash Power -X','debuff'],
+  power_up:['威力増加','Skill Final Power +X','buff'],
+  power_down:['威力減少','Skill Final Power -X','debuff'],
+  base_power_up:['基礎威力増加','Skill Base Power +X','buff'],
+  offense_level_up:['攻撃レベル増加','Offense Level +X','buff'],
+  offense_level_down:['攻撃レベル減少','Offense Level -X','debuff'],
+  defense_level_up:['防御レベル増加','Defense Level +X','buff'],
+  defense_level_down:['防御レベル減少','Defense Level -X','debuff'],
+  plus_coin_boost:['プラスコイン強化','Plus Coin Power +X','buff'],
+  plus_coin_drop:['プラスコイン減少','Plus Coin Power -X','debuff'],
+  minus_coin_boost:['マイナスコイン強化','Minus Coin Power +X','buff'],
+  minus_coin_drop:['マイナスコイン減少','Minus Coin Power -X','debuff'],
+  multiply_coin_boost:['乗算コイン強化','Multiply Coin Power +X','buff'],
+  multiply_coin_drop:['乗算コイン減少','Multiply Coin Power -X','debuff'],
+  damage_up:['与ダメージ増加','Deal +10% damage per Stack','buff'],
+  damage_down:['与ダメージ減少','Deal -10% damage per Stack','debuff'],
+  fragile:['脆弱','Take +10% damage per Stack','debuff'],
+  hp_healing_boost:['HP回復量増加','Heal +10% per Stack','buff'],
+  hp_healing_down:['HP回復量減少','Heal -10% per Stack','debuff'],
+  paralyze:['麻痺','Fix X Coin(s) to 0','debuff'],
+  poise:['呼吸準備','Critical chance +5% per Potency for the next Count hits','buff'],
+  charge:['充電','Resource for Charge skills; lose 1 Count at turn end','buff']
+};
+Object.entries(BASIC_STATUS_DEFS).forEach(([id,[name,desc,category]])=>{
+  STATUS_DEFINITIONS[id]={ name, category, maxPower:99, maxCount:99, defaultPower:0, defaultCount:0, desc };
+});
+const DAMAGE_TYPES = ['slash','pierce','blunt'];
+const STATUS_SINS = ['wrath','lust','sloth','gluttony','gloom','pride','envy'];
+DAMAGE_TYPES.forEach(t=>{
+  STATUS_DEFINITIONS[`${t}_damage_up`] = {name:`${t}ダメージ増加`,category:'buff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Deal +(X*10)% damage with ${t} skills this turn`};
+  STATUS_DEFINITIONS[`${t}_damage_down`] = {name:`${t}ダメージ減少`,category:'debuff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Deal -(X*10)% damage with ${t} skills this turn`};
+  STATUS_DEFINITIONS[`${t}_power_up`] = {name:`${t}威力増加`,category:'buff',maxPower:99,maxCount:1,defaultPower:0,defaultCount:0,desc:`${t} Skill Final Power +X for this turn`};
+  STATUS_DEFINITIONS[`${t}_power_down`] = {name:`${t}威力減少`,category:'debuff',maxPower:99,maxCount:1,defaultPower:0,defaultCount:0,desc:`${t} Skill Final Power -X for this turn`};
+  STATUS_DEFINITIONS[`${t}_fragility`] = {name:`${t}脆弱`,category:'debuff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Take +(X*10)% damage from ${t} skills this turn`};
+  STATUS_DEFINITIONS[`${t}_protection`] = {name:`${t}保護`,category:'buff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Take -(X*10)% damage from ${t} skills this turn`};
+  STATUS_DEFINITIONS[`${t}_resist_down`] = {name:`${t}耐性減少`,category:'debuff',maxPower:20,maxCount:20,defaultPower:0,defaultCount:0,desc:`Increase ${t} Resistance by 0.1 per Count`};
+});
+STATUS_SINS.forEach(s=>{
+  const label = typeof SIN_LABELS!=='undefined' ? SIN_LABELS[s] : s;
+  STATUS_DEFINITIONS[`${s}_damage_up`] = {name:`${label}ダメージ増加`,category:'buff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Deal +(X*10)% damage with ${label} skills this turn`};
+  STATUS_DEFINITIONS[`${s}_damage_down`] = {name:`${label}ダメージ減少`,category:'debuff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Deal -(X*10)% damage with ${label} skills this turn`};
+  STATUS_DEFINITIONS[`${s}_power_up`] = {name:`${label}威力増加`,category:'buff',maxPower:99,maxCount:1,defaultPower:0,defaultCount:0,desc:`${label} Skill Final Power +X for this turn`};
+  STATUS_DEFINITIONS[`${s}_power_down`] = {name:`${label}威力減少`,category:'debuff',maxPower:99,maxCount:1,defaultPower:0,defaultCount:0,desc:`${label} Skill Final Power -X for this turn`};
+  STATUS_DEFINITIONS[`${s}_fragility`] = {name:`${label}脆弱`,category:'debuff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Take +(X*10)% damage from ${label} skills this turn`};
+  STATUS_DEFINITIONS[`${s}_protection`] = {name:`${label}保護`,category:'buff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Take -(X*10)% damage from ${label} skills this turn`};
+  STATUS_DEFINITIONS[`${s}_resist_down`] = {name:`${label}耐性減少`,category:'debuff',maxPower:20,maxCount:20,defaultPower:0,defaultCount:0,desc:`Increase ${label} Resistance by 0.1 per Count`};
+});
+
 function getStatus(player, statusId) {
   if (!gameState[player].statuses) gameState[player].statuses = {};
   return gameState[player].statuses[statusId] || null;
@@ -34,6 +112,7 @@ function normalizeStatus(statusId, status) {
     if (status.count > 0) status.power = Math.max(1, status.power);
     else status.power = 0;
   }
+  if (statusId === 'poise' && status.count <= 0) status.power = 0;
 }
 function changeStatusCount(player, statusId, delta) {
   const status = ensureStatus(player, statusId);
@@ -72,18 +151,85 @@ function payEgoResource(player, cost) {
   Object.entries(cost || {}).forEach(([sin,n]) => gameState[player].egoResources[sin] = Math.max(0,(gameState[player].egoResources[sin]||0)-n));
   return true;
 }
+function getActiveStatusPower(player, id) {
+  const s = getStatus(player, id);
+  return s?.count > 0 ? (s.power || 0) : 0;
+}
+function addCombatStatus(player, statusId, amount = 1, duration = 1) {
+  const s = ensureStatus(player, statusId);
+  if (!s) return null;
+  const def = STATUS_DEFINITIONS[statusId];
+  const beforePower=s.power||0, beforeCount=s.count||0;
+  s.power=clampStatusValue(beforePower+amount, def.maxPower);
+  s.count=Math.max(0, Math.min(def.maxCount, Math.max(beforeCount, duration)));
+  return {status:s,beforePower,beforeCount};
+}
+function getSkillFinalPowerModifier(player, skill) {
+  if (!skill) return 0;
+  let m = getActiveStatusPower(player,'power_up') - getActiveStatusPower(player,'power_down');
+  if (skill.skillType === 'attack' || skill.skillType === 'counter') m += getActiveStatusPower(player,'attack_power_up') - getActiveStatusPower(player,'attack_power_down');
+  if (skill.skillType === 'defense' || skill.skillType === 'evade') m += getActiveStatusPower(player,'defense_power_up') - getActiveStatusPower(player,'defense_power_down');
+  if (skill.attackType) {
+    m += getActiveStatusPower(player,skill.attackType+'_power_up') - getActiveStatusPower(player,skill.attackType+'_power_down');
+  }
+  if (skill.sin) m += getActiveStatusPower(player,skill.sin+'_power_up') - getActiveStatusPower(player,skill.sin+'_power_down');
+  return m;
+}
+function getSkillBasePowerBonus(player) {
+  return getActiveStatusPower(player,'base_power_up');
+}
+function getClashPowerModifier(player) {
+  return getActiveStatusPower(player,'clash_power_up') - getActiveStatusPower(player,'clash_power_down');
+}
+function getEffectiveCoinPower(player, skill, coinPower) {
+  let cp=coinPower||0;
+  const positive=cp>=0;
+  const id=positive ? 'plus_coin_boost' : 'minus_coin_boost';
+  const down=positive ? 'plus_coin_drop' : 'minus_coin_drop';
+  cp += getActiveStatusPower(player,id) - getActiveStatusPower(player,down);
+  return cp;
+}
+function getOffenseLevel(player, skill) {
+  const base=gameState[player]?.core?.offenseLevel || 0;
+  return base + (gameState[player]?.core?.offenseLevelBonus || 0) + getActiveStatusPower(player,'offense_level_up') - getActiveStatusPower(player,'offense_level_down');
+}
+function getDefenseLevel(player, skill) {
+  const base=gameState[player]?.core?.defenseLevel || 0;
+  return base + (gameState[player]?.core?.defenseLevelBonus || 0) + getActiveStatusPower(player,'defense_level_up') - getActiveStatusPower(player,'defense_level_down');
+}
+function getSkillCombatLevel(player, skill) {
+  return (skill?.skillType === 'defense' || skill?.skillType === 'evade') ? getDefenseLevel(player,skill) : getOffenseLevel(player,skill);
+}
+function getDamageOutputMultiplier(player, attackType, sin) {
+  let bonus = getActiveStatusPower(player,'damage_up') - getActiveStatusPower(player,'damage_down');
+  if (attackType) bonus += getActiveStatusPower(player,attackType+'_damage_up') - getActiveStatusPower(player,attackType+'_damage_down');
+  if (sin) bonus += getActiveStatusPower(player,sin+'_damage_up') - getActiveStatusPower(player,sin+'_damage_down');
+  return Math.max(0, 1 + 0.1 * bonus);
+}
+function getDamageTakenMultiplier(player, attackType, sin) {
+  let bonus = getActiveStatusPower(player,'fragile') - getActiveStatusPower(player,'protection');
+  if (attackType) {
+    bonus += getActiveStatusPower(player,attackType+'_fragility') - getActiveStatusPower(player,attackType+'_protection');
+  }
+  if (sin) {
+    bonus += getActiveStatusPower(player,sin+'_fragility') - getActiveStatusPower(player,sin+'_protection');
+  }
+  return Math.max(0, 1 + 0.1 * bonus);
+}
+function getResistanceWithDown(player, attackType, sin) {
+  const core=gameState[player]?.core;
+  const base=core?.res?.[attackType] ?? 1;
+  let add = attackType ? getActiveStatusPower(player,attackType+'_resist_down') : 0;
+  add += sin ? getActiveStatusPower(player,sin+'_resist_down') : 0;
+  return base + 0.1 * add;
+}
+
 function getSpeedStatusModifier(player) {
   const h=getStatus(player,'haste'), b=getStatus(player,'bind');
   return (h?.count>0 ? h.power : 0) - (b?.count>0 ? b.power : 0);
 }
-function getEffectiveSkillPowerModifier(player) {
-  const s=getStatus(player,'attack_power_down');
-  return s?.count>0 ? -(s.power || 0) : 0;
-}
-function getProtectionMultiplier(player) {
-  const s=getStatus(player,'protection');
-  return s?.count>0 ? Math.max(0,1-0.1*(s.power || 0)) : 1;
-}
+function getEffectiveSkillPowerModifier(player) { return getSkillFinalPowerModifier(player, { skillType:'attack' }); }
+function getProtectionMultiplier(player) { return getDamageTakenMultiplier(player); }
 function processStatusTurnEnd(player) {
   const statuses = gameState[player].statuses || {};
   Object.keys(statuses).forEach(statusId => {
@@ -95,6 +241,13 @@ function processStatusTurnEnd(player) {
       if (status.count <= 0) delete statuses[statusId];
       else log(`[状態減衰] ${playerLabel(player)}の「${status.name}」: 回数 ${status.count}`);
     } else if (['haste','bind','attack_power_down','protection'].includes(statusId) && status.count > 0) {
+      delete statuses[statusId];
+      log(`[状態減衰] ${playerLabel(player)}の「${status.name}」が終了`);
+    } else if (statusId === 'charge' && status.count > 0) {
+      status.count = Math.max(0, status.count - 1);
+      if (status.count <= 0) delete statuses[statusId];
+      else log(`[状態減衰] ${playerLabel(player)}の「${status.name}」: 回数 ${status.count}`);
+    } else if (BASIC_STATUS_IDS.includes(statusId) && statusId !== 'poise' && statusId !== 'charge' && status.count > 0) {
       delete statuses[statusId];
       log(`[状態減衰] ${playerLabel(player)}の「${status.name}」が終了`);
     } else if (statusId === 'blood_feast' && status.count > 0) {
