@@ -2,6 +2,9 @@
 
 let selectedP1CoreIds = [CORE_PAGES[0].id];
 let selectedP2CoreIds = [CORE_PAGES[1].id];
+const EGO_RISK_LEVELS = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'];
+const selectedP1EgoIds = { ZAYIN: null, TETH: null, HE: null, WAW: null, ALEPH: null };
+const selectedP2EgoIds = { ZAYIN: null, TETH: null, HE: null, WAW: null, ALEPH: null };
 const decks = { p1: [], p2: [] };
 let activeDeckEditor = 'p1';
 let currentFilter = 'all';
@@ -23,6 +26,8 @@ const gameState = {
     sanity: 0, minSanity: -45, maxSanity: 45,
     light: 3, maxLight: 3,
     egoResources: { wrath:0, lust:0, sloth:0, gluttony:0, gloom:0, pride:0, envy:0 },
+    equippedEgos: [],
+    sinRes: { wrath:1, lust:1, sloth:1, gluttony:1, gloom:1, pride:1, envy:1 },
     deck: [], hand: [], discard: [], slots: [], statuses: {},
     defenseStock: [], counterSkills: [],
     bloodPactFirstPageAvailable: true, bloodPactFirstPageHitCount: 0,
