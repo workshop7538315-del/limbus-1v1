@@ -17,7 +17,7 @@ const BASIC_STATUS_IDS = [
   'offense_level_up','offense_level_down','defense_level_up','defense_level_down',
   'plus_coin_boost','plus_coin_drop','minus_coin_boost','minus_coin_drop',
   'multiply_coin_boost','multiply_coin_drop','damage_up','damage_down','fragile',
-  'hp_healing_boost','hp_healing_down',
+  'hp_healing_boost','hp_healing_down','ego_resource_amp',
   'slash_damage_up','pierce_damage_up','blunt_damage_up',
   'wrath_damage_up','lust_damage_up','sloth_damage_up','gluttony_damage_up','gloom_damage_up','pride_damage_up','envy_damage_up',
   'slash_damage_down','pierce_damage_down','blunt_damage_down',
@@ -60,6 +60,7 @@ const BASIC_STATUS_DEFS = {
   fragile:['脆弱','Take +10% damage per Stack','debuff'],
   hp_healing_boost:['HP回復量増加','Heal +10% per Stack','buff'],
   hp_healing_down:['HP回復量減少','Heal -10% per Stack','debuff'],
+  ego_resource_amp:['E.G.O資源増幅','Gain additional E.G.O Resources when using skills','buff'],
   paralyze:['麻痺','Fix X Coin(s) to 0','debuff'],
   poise:['呼吸準備','Critical chance +5% per Potency for the next Count hits','buff'],
   charge:['充電','Resource for Charge skills; lose 1 Count at turn end','buff']
@@ -135,6 +136,13 @@ function expireStatusIfEmpty(player, statusId) {
   if (!status) return;
   normalizeStatus(statusId, status);
   if (status.count <= 0 && status.power <= 0) delete gameState[player].statuses[statusId];
+}
+function generateEgoResourceForSkill(player, skill, slot = null) {
+  if (!skill?.sin || skill?.isEgo || skill?.skillType === 'counter_clash') return;
+  if (slot && slot.egoResourceGenerated) return;
+  const amount = 1 + getActiveStatusPower(player,'ego_resource_amp');
+  addEgoResource(player, skill.sin, amount);
+  if (slot) slot.egoResourceGenerated = true;
 }
 function addEgoResource(player, sin, amount = 1) {
   const p = gameState[player];
