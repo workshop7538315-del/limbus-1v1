@@ -659,3 +659,26 @@
 }
 
 .ego-resource-title{margin-top:5px;font-size:10px;font-weight:bold}.ego-resource-panel{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px}.ego-resource{display:inline-flex;min-width:24px;height:20px;align-items:center;justify-content:center;border:1px solid #555;border-radius:3px;background:#171717;font-size:9px}.ego-resource b{margin-left:2px}.ego-card{border-color:#b8860b}.ego-card.unavailable{opacity:.45;cursor:not-allowed}
+
+/* LCB風E.G.O編成 */
+.ego-builder-section{margin:12px 0;padding:10px;background:#191919;border:1px solid #444;border-radius:6px}
+.ego-builder-section h3{margin:0 0 4px}
+.ego-loadout-panels{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ego-loadout-area{background:#222;border:1px solid #444;border-radius:5px;padding:7px}
+.ego-loadout-title{font-weight:bold;font-size:12px;margin-bottom:6px}
+.p1-ego-title{color:#e74c3c}.p2-ego-title{color:#3498db}
+.ego-loadout-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.ego-risk-slot{min-width:0;background:#151515;border:1px solid #555;border-radius:4px;padding:4px}
+.ego-risk-label{text-align:center;font-size:10px;font-weight:bold;color:#f1c40f;border-bottom:1px solid #444;padding-bottom:3px}
+.ego-risk-content{display:flex;flex-direction:column;gap:4px;padding-top:4px}
+.ego-none,.ego-empty{font-size:9px;color:#777;text-align:center;padding:5px 0}
+.ego-equipped-mark{font-size:9px;color:#8ee6a7;line-height:1.2}
+.ego-loadout-option{width:100%;border:1px solid #555;border-radius:3px;padding:5px;background:#333;color:#eee;text-align:left;cursor:pointer}
+.ego-loadout-option strong{display:block;font-size:9px;line-height:1.2}
+.ego-loadout-option small{display:block;font-size:8px;color:#ccc;line-height:1.25}
+.ego-loadout-option.selected{outline:2px solid #f1c40f;border-color:#f1c40f}
+.ego-loadout-option.sin-sloth{background:#665522}.ego-loadout-option.sin-pride{background:#49356d}
+.ego-card.sin-wrath{background:#5b1820}.ego-card.sin-lust{background:#e67e22}.ego-card.sin-sloth{background:#665522}
+.ego-card.sin-gluttony{background:#1c5c37}.ego-card.sin-gloom{background:#24506d}.ego-card.sin-pride{background:#49356d}.ego-card.sin-envy{background:#65336d}
+.sin-res-title{margin-top:4px;font-size:9px;color:#aaa;font-weight:bold}.sin-res-group{gap:2px}.sin-res-tag{font-size:8px;padding:1px 3px}
+@media(max-width:700px){.ego-loadout-panels{grid-template-columns:1fr}.ego-loadout-grid{grid-template-columns:repeat(5,minmax(54px,1fr));overflow-x:auto}.ego-risk-slot{min-width:54px}}
