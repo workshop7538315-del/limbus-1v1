@@ -26,6 +26,7 @@ function setupCharacter(p, core) {
   state.isStaggered = false; state.staggerSkipDone = false;
   state.sanity = 0; state.minSanity = -45; state.maxSanity = 45;
   state.maxLight = core.maxLight; state.light = core.maxLight;
+  state.egoResources = { wrath:0, lust:0, sloth:0, gluttony:0, gloom:0, pride:0, envy:0 };
   state.hand = []; state.discard = []; state.slots = []; state.statuses = {};
   state.bloodPactFirstPageAvailable = true; state.bloodPactFirstPageHitCount = 0;
   state.sinkingPactUses = 0; state.sinkingMarkedTargets = {};
@@ -85,7 +86,7 @@ function startNewRound() {
       for (let i = 0; i < player.core.speedDiceCount; i++) {
         player.slots.push({
           id: i, owner: p,
-          speed: Math.floor(Math.random() * (player.core.speedMax - player.core.speedMin + 1)) + player.core.speedMin,
+          speed: Math.max(1, Math.floor(Math.random() * (player.core.speedMax - player.core.speedMin + 1)) + player.core.speedMin + getSpeedStatusModifier(p)),
           card: null, targetSlot: null, resolved: false
         });
       }
@@ -102,13 +103,28 @@ function startNewRound() {
 }
 
 function playCardToSlot(player, slot, card, targetSlot) {
+  if (card?.isEgo) {
+    if (!canPayEgoResource(player, card.resourceCost)) {
+      log(`[E.G.O] ${playerLabel(player)}は罪悪資源不足で「${card.name}」を使用できません。`);
+      return false;
+    }
+    if ((gameState[player].sanity || 0) < card.sanityCost) {
+      log(`[E.G.O] ${playerLabel(player)}は精神不足で「${card.name}」を使用できません。`);
+      return false;
+    }
+    payEgoResource(player, card.resourceCost);
+    changeSanity(player, -card.sanityCost, `E.G.O「${card.name}」`);
+    addEgoResource(player, card.sin, 1);
+  } else {
+    addEgoResource(player, card.sin, 1);
+  }
   slot.card = card; slot.targetSlot = targetSlot || null;
   slot.bloodPactFirstPage = markFirstUsedPage(player, card);
   slot.sinkingThinkingFirstPage = markFirstSinkingThinkingPage(player);
   gameState[player].light -= card.cost;
   const hIdx = gameState[player].hand.indexOf(card);
   if (hIdx !== -1) gameState[player].hand.splice(hIdx, 1);
-  gameState[player].discard.push(card);
+  if (!card?.isEgo) gameState[player].discard.push(card);
   applyOnUseEffects(player, card);
   emitHook('onCardUse', { player, card, slot });
 }
