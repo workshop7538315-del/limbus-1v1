@@ -4,7 +4,11 @@ const STATUS_DEFINITIONS = {
   breath: { name: '呼吸', category: 'buff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0 },
   bleed: { name: '出血', category: 'debuff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0 },
   sinking: { name: '沈潜', category: 'debuff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0 },
-  blood_feast: { name: '血宴強化', category: 'buff', maxPower: 99, maxCount: 1, defaultPower: 5, defaultCount: 0 }
+  blood_feast: { name: '血宴強化', category: 'buff', maxPower: 99, maxCount: 1, defaultPower: 5, defaultCount: 0 },
+  haste: { name: '迅速', category: 'buff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0 },
+  bind: { name: '束縛', category: 'debuff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0 },
+  attack_power_down: { name: '攻撃威力減少', category: 'debuff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0 },
+  protection: { name: '保護', category: 'buff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0 }
 };
 
 function getStatus(player, statusId) {
@@ -53,6 +57,33 @@ function expireStatusIfEmpty(player, statusId) {
   normalizeStatus(statusId, status);
   if (status.count <= 0 && status.power <= 0) delete gameState[player].statuses[statusId];
 }
+function addEgoResource(player, sin, amount = 1) {
+  const p = gameState[player];
+  if (!p.egoResources || !SIN_TYPES.includes(sin)) return;
+  const before = p.egoResources[sin] || 0;
+  p.egoResources[sin] = Math.min(MAX_EGO_RESOURCE, before + amount);
+  log(`[罪悪資源] ${playerLabel(player)}の${getSinLabel(sin)} ${before}→${p.egoResources[sin]}`);
+}
+function canPayEgoResource(player, cost) {
+  return Object.entries(cost || {}).every(([sin,n]) => (gameState[player].egoResources?.[sin] || 0) >= n);
+}
+function payEgoResource(player, cost) {
+  if (!canPayEgoResource(player,cost)) return false;
+  Object.entries(cost || {}).forEach(([sin,n]) => gameState[player].egoResources[sin] = Math.max(0,(gameState[player].egoResources[sin]||0)-n));
+  return true;
+}
+function getSpeedStatusModifier(player) {
+  const h=getStatus(player,'haste'), b=getStatus(player,'bind');
+  return (h?.count>0 ? h.power : 0) - (b?.count>0 ? b.power : 0);
+}
+function getEffectiveSkillPowerModifier(player) {
+  const s=getStatus(player,'attack_power_down');
+  return s?.count>0 ? -(s.power || 0) : 0;
+}
+function getProtectionMultiplier(player) {
+  const s=getStatus(player,'protection');
+  return s?.count>0 ? Math.max(0,1-0.1*(s.power || 0)) : 1;
+}
 function processStatusTurnEnd(player) {
   const statuses = gameState[player].statuses || {};
   Object.keys(statuses).forEach(statusId => {
@@ -63,6 +94,9 @@ function processStatusTurnEnd(player) {
       normalizeStatus(statusId, status);
       if (status.count <= 0) delete statuses[statusId];
       else log(`[状態減衰] ${playerLabel(player)}の「${status.name}」: 回数 ${status.count}`);
+    } else if (['haste','bind','attack_power_down','protection'].includes(statusId) && status.count > 0) {
+      delete statuses[statusId];
+      log(`[状態減衰] ${playerLabel(player)}の「${status.name}」が終了`);
     } else if (statusId === 'blood_feast' && status.count > 0) {
       delete statuses[statusId];
       log(`[状態減衰] ${playerLabel(player)}の「${status.name}」が終了`);
@@ -249,6 +283,19 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
   if (effectSource?.draw) {
     for (let i = 0; i < effectSource.draw; i++) drawCard(player);
     log(`[的中] ${playerLabel(player)}の「${card.name}」: ${effectSource.draw}枚ドロー`);
+  }
+  if (effectSource?.special === 'ego_crows_eye') {
+    const enemy=resolvedTarget;
+    const ap=ensureStatus(enemy,'attack_power_down'); ap.power=Math.min(10,(ap.power||0)+2); ap.count=1;
+    const bd=ensureStatus(enemy,'bind'); bd.power=Math.min(10,(bd.power||0)+2); bd.count=1;
+    ['p1','p2'].forEach(a=>{const h=ensureStatus(a,'haste');h.power=Math.min(10,(h.power||0)+3);h.count=1;});
+  }
+  if (effectSource?.special === 'ego_chains_others') {
+    const eb=ensureStatus(resolvedTarget,'bind'); eb.power=Math.min(10,(eb.power||0)+5); eb.count=1;
+    const ab=ensureStatus(player,'bind'); ab.power=Math.min(10,(ab.power||0)+3); ab.count=1;
+    const ed=ensureStatus(resolvedTarget,'attack_power_down'); ed.power=Math.min(10,(ed.power||0)+4); ed.count=1;
+    const ad=ensureStatus(player,'attack_power_down'); ad.power=Math.min(10,(ad.power||0)+3); ad.count=1;
+    const pr=ensureStatus(player,'protection'); pr.power=Math.min(10,(pr.power||0)+2); pr.count=1;
   }
   if (effectSource?.special === 'blood_festival') {
     const bleed = getStatus(resolvedTarget, 'bleed');
