@@ -181,7 +181,22 @@ function renderHand(){
     cardEl.innerHTML=`<strong>${card.name}</strong><br><small>コスト: ${card.cost} / ${getSinLabel(card.sin)} / 表率: ${getHeadsChance('p1')}%</small><div class="skill-power-line">${getSkillPowerText(card)}</div>${card.effect?`<div class="card-effect">${card.effect}</div>`:''}<hr>${skillDetailHtml(card)}`;
     cardEl.onclick=()=>{ if(!card.isEgo && gameState.p1.light<card.cost)return alert('光が不足しています！'); selectedHandCard=selected?null:card; if(!selectedHandCard)selectedTargetSlot=null; else if(selectedHandCard.skillType==='counter')selectedTargetSlot=null; else if(gameState.p2.slots.length===1)selectedTargetSlot=gameState.p2.slots[0]; else if(selectedTargetSlot&&!gameState.p2.slots.includes(selectedTargetSlot))selectedTargetSlot=null; renderHand();updatePlanningPrompt();updateUI();}; handDiv.appendChild(cardEl); });
 }
-function renderStatusEffects(player){ const buff=document.getElementById(`${player}-buff-box`),debuff=document.getElementById(`${player}-debuff-box`); if(!buff||!debuff)return; buff.innerHTML='';debuff.innerHTML='';Object.values(gameState[player].statuses||{}).forEach(status=>{if(!status||status.count<=0)return;const box=status.category==='debuff'?debuff:buff,badge=document.createElement('span');badge.className=`status-badge ${status.category==='debuff'?'status-debuff':'status-buff'}`;badge.innerHTML=`${status.name} ${status.power}/${status.count}<span class="tooltip-text status-tooltip">${getStatusTooltip(status)}</span>`;box.appendChild(badge);});if(!buff.children.length)buff.innerHTML='<span class="status-empty">なし</span>';if(!debuff.children.length)debuff.innerHTML='<span class="status-empty">なし</span>'; }
+function renderStatusEffects(player){
+  const buff=document.getElementById(`${player}-buff-box`),debuff=document.getElementById(`${player}-debuff-box`);
+  if(!buff||!debuff)return;
+  buff.innerHTML='';debuff.innerHTML='';
+  Object.values(gameState[player].statuses||{}).forEach(status=>{
+    if(!status||status.count<=0)return;
+    const box=status.category==='debuff'?debuff:buff,def=STATUS_DEFINITIONS[status.id],value=def?.valueFromCount?status.count:(status.power||0);
+    const badge=document.createElement('span');
+    badge.className=`status-badge ${status.category==='debuff'?'status-debuff':'status-buff'}`;
+    const valueText=def?.valueFromCount?String(value):`${value}/${status.count}`;
+    badge.innerHTML=`${status.name} ${valueText}<span class="tooltip-text status-tooltip">${getStatusTooltip(status)}</span>`;
+    box.appendChild(badge);
+  });
+  if(!buff.children.length)buff.innerHTML='<span class="status-empty">なし</span>';
+  if(!debuff.children.length)debuff.innerHTML='<span class="status-empty">なし</span>';
+}
 
 function updateUI(){
   ['p1','p2'].forEach(p=>{
