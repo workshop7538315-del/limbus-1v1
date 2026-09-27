@@ -191,34 +191,48 @@ function getCoinPowerBonusReason(player, skill) {
 function flipCoin(player, skill, coinIndex, includeSkillBonus = true) {
   const chance = getHeadsChance(player);
   const heads = Math.random() * 100 < chance;
-  const positive = (skill.coinPower || 0) >= 0;
-  let power = skill.basePower || 0;
-  if (heads) power += skill.coinPower || 0;
+  const rawCoinPower = skill.coinPower || 0;
+  const effectiveCoinPower = getEffectiveCoinPower(player, skill, rawCoinPower);
+  const positive = rawCoinPower >= 0;
+  const paralyze = getStatus(player, 'paralyze');
+  const paralyzed = !!(paralyze?.count > 0);
+  let power = (skill.basePower || 0) + getSkillBasePowerBonus(player);
+  if (heads && !paralyzed) power += effectiveCoinPower;
+  if (paralyzed) {
+    power = 0;
+    paralyze.count = Math.max(0, paralyze.count - 1);
+    if (paralyze.count <= 0) delete gameState[player].statuses.paralyze;
+  }
   let bonus = 0;
   if (includeSkillBonus) {
     bonus = getCoinPowerBonus(player, skill);
     power += bonus;
   }
-  power += getEffectiveSkillPowerModifier(player);
-  // サンドバッグ: Base Power / Coin Power / 各種補正を含めて最終威力を常に0にする
+  power += getSkillFinalPowerModifier(player, skill);
   if (gameState[player].core?.powerAlwaysZero) {
     power = 0;
     bonus = 0;
   }
-  return { index: coinIndex, heads, side: heads ? '表' : '裏', chance, power, bonus, positive };
+  return { index: coinIndex, heads, side: heads ? '表' : '裏', chance, power, bonus, positive, paralyzed };
 }
 
-function rollSkillForClash(player, skill, remainingCoins) {
+function rollSkillForClash(player, skill, remainingCoins, opponentPlayer = null, opponentSkill = null) {
   const results = [];
-  const basePower = skill.basePower || 0;
+  const basePower = (skill.basePower || 0) + getSkillBasePowerBonus(player);
   let power = basePower;
+  const effectiveCoinPower = getEffectiveCoinPower(player, skill, skill.coinPower || 0);
   for (let i = 0; i < remainingCoins; i++) {
     const c = flipCoin(player, skill, i, false);
     results.push(c);
-    // Clash PowerはBase Powerを一度だけ加え、残存コインのHead分だけCoin Powerを加算する。
-    power += c.heads ? (skill.coinPower || 0) : 0;
+    if (c.heads && !c.paralyzed) power += effectiveCoinPower;
   }
   power += getCoinPowerBonus(player, skill);
+  power += getSkillFinalPowerModifier(player, skill);
+  power += getClashPowerModifier(player);
+  if (opponentPlayer && opponentSkill) {
+    const levelDiff = getSkillCombatLevel(player, skill) - getSkillCombatLevel(opponentPlayer, opponentSkill);
+    if (levelDiff > 0) power += Math.floor(levelDiff / 3);
+  }
   if (gameState[player].core?.powerAlwaysZero) power = 0;
   return { power, coins: results };
 }
@@ -409,8 +423,8 @@ async function resolveOneSided(slot) {
 
 function resolveDefenseAgainstAttack(attacker, attackSkill, defender, defense, index, attackerSlot = null) {
   const dSkill = defense.skill;
-  const clashAttack = rollSkillForClash(attacker, attackSkill, 1);
-  const clashDefense = rollSkillForClash(defender, dSkill, 1);
+  const clashAttack = rollSkillForClash(attacker, attackSkill, 1, defender, dSkill);
+  const clashDefense = rollSkillForClash(defender, dSkill, 1, attacker, attackSkill);
   const rA = clashAttack.power, rD = clashDefense.power;
   log(`[守備] ${playerLabel(defender)}「${dSkill.name}」 ${rD} vs ${playerLabel(attacker)}「${attackSkill.name}」 ${rA}`);
   if (rD >= rA) {
@@ -495,12 +509,15 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   const feast = attacker ? getStatus(attacker, 'blood_feast') : null;
   if (feast?.count > 0 && feast.power > 0 && amount > 0) { amount += feast.power; log(`[血宴強化] ${playerLabel(attacker)}のダメージ +${feast.power}`); }
   const critical = tryBreathCritical(attacker, amount); amount = critical.amount;
-  const resistance = p.core?.res?.[attackType] ?? 1.0;
-  const sinResistance = options.isEgo ? (p.sinRes?.[options.sin] ?? 1.0) : 1.0;
+  const sin = options.sin || null;
+  const resistance = getResistanceWithDown(target, attackType, sin);
+  const sinResistance = options.isEgo ? (p.sinRes?.[sin] ?? 1.0) : 1.0;
   const mult = p.isStaggered ? 2.0 : resistance;
-  const finalDmg = Math.floor(Math.max(0, amount) * mult * sinResistance * getProtectionMultiplier(target));
+  const outputMult = attacker ? getDamageOutputMultiplier(attacker, attackType, sin) : 1;
+  const takenMult = getDamageTakenMultiplier(target, attackType, sin);
+  const finalDmg = Math.floor(Math.max(0, amount) * mult * sinResistance * outputMult * takenMult);
   p.hp = Math.max(0, p.hp - finalDmg);
-  log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? '混乱中補正 ×2.0' : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(options.sin)}) ×${sinResistance}` : ''}）`);
+  log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? '混乱中補正 ×2.0' : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(sin)}) ×${sinResistance}` : ''} / 与ダメ×${outputMult.toFixed(2)} / 被ダメ×${takenMult.toFixed(2)}）`);
   emitHook('onDamage', { target, diceType: attackType, amount: finalDmg, attacker });
   if (!p.isStaggered) {
     p.stagger = Math.max(0, p.stagger - finalDmg);
