@@ -126,14 +126,11 @@ function playCardToSlot(player, slot, card, targetSlot) {
     }
     payEgoResource(player, card.resourceCost);
     changeSanity(player, -card.sanityCost, `E.G.O「${card.name}」`);
-    addEgoResource(player, card.sin, 1);
     gameState[player].usedEgosThisTurn.push(card.egoId);
     gameState[player].activeEgoPassives = [...new Set([...(gameState[player].activeEgoPassives || []), card.egoId])];
     gameState[player].sinRes = { ...(card.sinRes || gameState[player].sinRes) };
     updateResDisplay(player);
     log(`[E.G.O] ${playerLabel(player)}の罪悪耐性が「${card.name}」に切り替わりました。`);
-  } else if (card?.sin && card?.skillType !== 'counter_clash') {
-    addEgoResource(player, card.sin, 1);
   }
   slot.card = card; slot.targetSlot = targetSlot || null;
   slot.bloodPactFirstPage = markFirstUsedPage(player, card);
@@ -328,6 +325,8 @@ async function resolveClash(slotA, slotB) {
     return resolveLegacyClashableCounter(slotA, slotB);
   }
   logClashSummary(slotA, slotB);
+  generateEgoResourceForSkill(pA, skillA, slotA);
+  generateEgoResourceForSkill(pB, skillB, slotB);
   emitHook('onClashStart', { playerA: pA, playerB: pB, cardA: skillA, cardB: skillB });
   let remA = skillA.coinCount || 0, remB = skillB.coinCount || 0;
   let guard = 0;
@@ -384,6 +383,7 @@ async function resolveClash(slotA, slotB) {
 }
 
 async function executeWinningSkillCoins(attacker, skill, defender, coinCount, slot, fromClash = false) {
+  generateEgoResourceForSkill(attacker, skill, slot);
   if (skill.skillType === 'defense' || skill.skillType === 'evade') {
     if (fromClash) {
       if (skill.skillType === 'evade') {
@@ -416,6 +416,7 @@ async function resolveOneSided(slot) {
     stockUnusedDefenseCoins(slot, 0); return;
   }
   const attackCoinCount = slot.card.coinCount || 0;
+  generateEgoResourceForSkill(attacker, slot.card, slot);
   for (let i = 0; i < attackCoinCount; i++) {
     await animateOneSided({ attacker: playerLabel(attacker), defender: playerLabel(defender), left: animSideFromSkill(attacker, slot.card, '－', [], attackCoinCount-i), right: { player: defender, name: playerLabel(defender), skill: gameState[defender].slots?.find(s => s?.resolved === false)?.card || null, power:'－', modifier:'防御判定待ち', coins:[], remaining:0 } });
     const beforeHp = gameState[defender].hp;
@@ -434,6 +435,7 @@ async function resolveOneSided(slot) {
 
 function resolveDefenseAgainstAttack(attacker, attackSkill, defender, defense, index, attackerSlot = null) {
   const dSkill = defense.skill;
+  generateEgoResourceForSkill(defender, dSkill, defense.slot);
   const clashAttack = rollSkillForClash(attacker, attackSkill, 1, defender, dSkill);
   const clashDefense = rollSkillForClash(defender, dSkill, 1, attacker, attackSkill);
   const rA = clashAttack.power, rD = clashDefense.power;
@@ -553,6 +555,7 @@ function triggerNormalCounter(target, attacker, damage) {
   pending.used = true; pending.slot.counterUsed = true;
   if (pending.skill) {
     const skill = pending.skill;
+    generateEgoResourceForSkill(target, skill, pending.slot);
     log(`[反撃] ${playerLabel(target)}が「${skill.name}」の反撃！`);
     for (let i = 0; i < (skill.coinCount || 0); i++) {
       const coin = flipCoin(target, skill, i);
@@ -565,6 +568,7 @@ function triggerNormalCounter(target, attacker, damage) {
   }
   // 旧式の反撃ダイスは、マッチ可能反撃とは別に互換用として残す。
   if (pending.dice?.length) {
+    generateEgoResourceForSkill(target, pending.slot.card, pending.slot);
     log(`[反撃] ${playerLabel(target)}が反撃！`);
     pending.dice.forEach(dice => {
       const r = rollLegacyCounter(target, dice);
