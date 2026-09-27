@@ -28,6 +28,9 @@ function setupCharacter(p, core, egoIds = {}) {
   state.maxLight = core.maxLight; state.light = core.maxLight;
   state.egoResources = { wrath:0, lust:0, sloth:0, gluttony:0, gloom:0, pride:0, envy:0 };
   state.equippedEgos = EGO_RISK_LEVELS.map(risk => egoIds[risk]).filter(Boolean).map(id => EGO_DATABASE.find(e => e.id === id)).filter(Boolean);
+  state.usedEgosThisTurn = [];
+  state.pendingStatuses = {};
+  state.activeEgoPassives = [];
   const initialZayin = state.equippedEgos.find(e => e.risk === 'ZAYIN');
   state.sinRes = { ...(initialZayin?.sinRes || { wrath:1, lust:1, sloth:1, gluttony:1, gloom:1, pride:1, envy:1 }) };
   state.hand = []; state.discard = []; state.slots = []; state.statuses = {};
@@ -71,6 +74,8 @@ function startNewRound() {
     player.sinkingPactUses = 0;
     player.sinkingThinkingFirstPageAvailable = true;
     player.sinkingThinkingHitCount = 0;
+    player.usedEgosThisTurn = [];
+    applyPendingStatuses(p);
     if (player.isStaggered && player.staggerSkipDone) {
       player.isStaggered = false; player.staggerSkipDone = false; player.stagger = player.maxStagger;
       log(`[復帰] ${playerLabel(p)}が混乱状態から回復しました！`);
@@ -111,6 +116,10 @@ function playCardToSlot(player, slot, card, targetSlot) {
       log(`[E.G.O] ${playerLabel(player)}の装備E.G.Oではありません。`);
       return false;
     }
+    if (gameState[player].usedEgosThisTurn?.includes(card.egoId)) {
+      log(`[E.G.O] ${playerLabel(player)}はこの幕に「${card.name}」をすでに使用しています。`);
+      return false;
+    }
     if (!canPayEgoResource(player, card.resourceCost)) {
       log(`[E.G.O] ${playerLabel(player)}は罪悪資源不足で「${card.name}」を使用できません。`);
       return false;
@@ -118,10 +127,12 @@ function playCardToSlot(player, slot, card, targetSlot) {
     payEgoResource(player, card.resourceCost);
     changeSanity(player, -card.sanityCost, `E.G.O「${card.name}」`);
     addEgoResource(player, card.sin, 1);
+    gameState[player].usedEgosThisTurn.push(card.egoId);
+    gameState[player].activeEgoPassives = [...new Set([...(gameState[player].activeEgoPassives || []), card.egoId])];
     gameState[player].sinRes = { ...(card.sinRes || gameState[player].sinRes) };
     updateResDisplay(player);
     log(`[E.G.O] ${playerLabel(player)}の罪悪耐性が「${card.name}」に切り替わりました。`);
-  } else if (card?.skillType === 'attack' || card?.skillType === 'counter') {
+  } else if (card?.sin && card?.skillType !== 'counter_clash') {
     addEgoResource(player, card.sin, 1);
   }
   slot.card = card; slot.targetSlot = targetSlot || null;
