@@ -5,10 +5,10 @@ const STATUS_DEFINITIONS = {
   bleed: { name: '出血', category: 'debuff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0 },
   sinking: { name: '沈潜', category: 'debuff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0 },
   blood_feast: { name: '血宴強化', category: 'buff', maxPower: 99, maxCount: 1, defaultPower: 5, defaultCount: 0 },
-  haste: { name: '迅速', category: 'buff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0 },
-  bind: { name: '束縛', category: 'debuff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0 },
-  attack_power_down: { name: '攻撃威力減少', category: 'debuff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0 },
-  protection: { name: '保護', category: 'buff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0 }
+  haste: { name: '迅速', category: 'buff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0, desc: 'Speed +X for this turn' },
+  bind: { name: '束縛', category: 'debuff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0, desc: 'Speed -X for this turn' },
+  attack_power_down: { name: '攻撃威力減少', category: 'debuff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0, desc: 'Attack Skill Final Power -X for this turn' },
+  protection: { name: '保護', category: 'buff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0, desc: 'Take -(X*10)% damage this turn' }
 };
 
 const BASIC_STATUS_IDS = [
