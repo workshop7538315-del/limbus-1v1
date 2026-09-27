@@ -130,7 +130,13 @@ function renderBuilder(){
 
 function updateResDisplay(p){
   const core=gameState[p].core,isStag=gameState[p].isStaggered,getRes=v=>isStag?{text:'弱点(x2)',class:'res-20'}:getResText(v);
-  document.getElementById(`${p}-res-box`).innerHTML=`<span class="res-tag ${getRes(core.res.slash).class}">斬:${getRes(core.res.slash).text}</span><span class="res-tag ${getRes(core.res.pierce).class}">突:${getRes(core.res.pierce).text}</span><span class="res-tag ${getRes(core.res.blunt).class}">打:${getRes(core.res.blunt).text}</span>`;
+  const box=document.getElementById(`${p}-res-box`);
+  if(box) box.innerHTML=`<span class="res-tag ${getRes(core.res.slash).class}">斬:${getRes(core.res.slash).text}</span><span class="res-tag ${getRes(core.res.pierce).class}">突:${getRes(core.res.pierce).text}</span><span class="res-tag ${getRes(core.res.blunt).class}">打:${getRes(core.res.blunt).text}</span>`;
+  const sinBox=document.getElementById(`${p}-sin-res-box`);
+  if(sinBox) sinBox.innerHTML=SIN_TYPES.map(sin=>{
+    const v=gameState[p].sinRes?.[sin] ?? 1;
+    return `<span class="res-tag sin-res-tag sin-${sin}" title="${getSinLabel(sin)}: ×${v}">${getSinLabel(sin)}×${v}</span>`;
+  }).join('');
 }
 function updatePlanningPrompt(){
   const slot=getCurrentPlanningSlot(),info=document.getElementById('planning-info'),btn=document.getElementById('action-btn'); if(!slot||slot.owner!=='p1')return;
