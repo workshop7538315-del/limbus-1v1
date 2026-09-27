@@ -152,7 +152,7 @@ function confirmCurrentSlotAction() {
     if (selectedHandCard) {
       const p2HasDice = gameState.p2.slots.length > 0 && !gameState.p2.isStaggered;
       if (p2HasDice && !selectedTargetSlot) { alert('マッチ対象の速度ダイスをクリックしてください。'); return; }
-      playCardToSlot('p1', currentSlot, selectedHandCard, selectedTargetSlot);
+      if (playCardToSlot('p1', currentSlot, selectedHandCard, selectedTargetSlot) === false) return;
     }
     selectedHandCard = null; selectedTargetSlot = null;
     gameState.currentQueueIndex++; processNextPlanningStep();
@@ -193,6 +193,7 @@ function flipCoin(player, skill, coinIndex, includeSkillBonus = true) {
     bonus = getCoinPowerBonus(player, skill);
     power += bonus;
   }
+  power += getEffectiveSkillPowerModifier(player);
   // サンドバッグ: Base Power / Coin Power / 各種補正を含めて最終威力を常に0にする
   if (gameState[player].core?.powerAlwaysZero) {
     power = 0;
