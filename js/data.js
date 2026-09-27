@@ -200,7 +200,7 @@ const EGO_DATABASE = [
     sin: 'sloth', sinRes: { wrath:1, lust:1, sloth:0.75, gluttony:1, gloom:2, pride:1, envy:2 }, attackType: 'pierce', skillType: 'attack', cost: 0,
     basePower: 18, coinPower: 6, coinCount: 1, sanityCost: 10,
     resourceCost: { wrath: 1, sloth: 3 },
-    effect: 'E.G.O: 精神-10。的中時、相手に攻撃威力減少2、この幕の迅速3を全味方、次の幕の束縛2を相手に付与。',
+    effect: 'E.G.O: 精神-10。的中時、相手に攻撃威力減少2。次の幕、全味方に迅速3、相手に束縛2を付与。',
     coins: [{ onHit: { special: 'ego_crows_eye' } }]
   },
   {
