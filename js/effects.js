@@ -526,6 +526,8 @@ function getStatusTooltip(status) {
   if (status.id === 'bleed') return `攻撃コインを振るたび、威力分のダメージを受ける。発動時に回数-1。最大値: 威力99 / 回数99。`;
   if (status.id === 'sinking') return `沈潜X / 回数Y。攻撃を受けたとき精神をX減少し、回数を1減少。最大値: 威力99 / 回数99。`;
   if (status.id === 'blood_feast') return `この幕、ダメージ+${status.power}。幕終了時に解除。`;
+  const def = STATUS_DEFINITIONS[status.id];
+  if (def?.desc) return def.desc.replaceAll('X', String(status.power)).replaceAll('Y', String(status.count));
   return `${status.name}<br>威力: ${status.power}<br>回数: ${status.count}`;
 }
 
