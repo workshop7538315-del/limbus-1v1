@@ -27,14 +27,14 @@ function getResText(val) {
 const CORE_PAGES = [
   {
     id: 'core_1', name: '見習い司書のページ',
-    hp: 80, stagger: 40, maxLight: 4, speedDiceCount: 2, speedMin: 2, speedMax: 6,
+    level: 1, hp: 80, stagger: 40, maxLight: 4, speedDiceCount: 2, speedMin: 2, speedMax: 6,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.0 },
     passiveName: '二刀流 & 予備光線',
     passiveDesc: '速度ダイス数:2。光の最大値が1増加する(最大4)。'
   },
   {
     id: 'core_2', name: '裏路地の暗殺者のページ',
-    hp: 70, stagger: 35, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
+    level: 1, hp: 70, stagger: 35, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
     passiveName: '疾風 & 鋭い刃',
     passiveDesc: '速度ダイス数:2。全ての斬撃コインの威力+1。',
@@ -42,7 +42,7 @@ const CORE_PAGES = [
   },
   {
     id: 'core_3', name: '盾持ち兵士のページ',
-    hp: 100, stagger: 50, maxLight: 3, speedDiceCount: 1, speedMin: 1, speedMax: 3,
+    level: 1, hp: 100, stagger: 50, maxLight: 3, speedDiceCount: 1, speedMin: 1, speedMax: 3,
     res: { slash: 1.0, pierce: 0.5, blunt: 0.5 },
     passiveName: '重装 & 態勢再整頓',
     passiveDesc: '速度ダイス数:1。幕の開始時、混乱耐性を3回復する。',
@@ -55,7 +55,7 @@ const CORE_PAGES = [
   },
   {
     id: 'core_4', name: '黒雲会の組員のページ',
-    hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 2, speedMax: 6,
+    level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 2, speedMax: 6,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.5 },
     passiveName: '血の掟',
     passiveDesc: '自分がバトルページによって出血を付与するとき出血威力+1。幕の最初のページは的中時、最初の1回に出血回数2、以降は1。',
@@ -71,7 +71,7 @@ const CORE_PAGES = [
   },
   {
     id: 'core_5', name: 'サンドバッグ',
-    hp: 999, stagger: 999, maxLight: 3, speedDiceCount: 1, speedMin: 1, speedMax: 3,
+    level: 1, hp: 999, stagger: 999, maxLight: 3, speedDiceCount: 1, speedMin: 1, speedMax: 3,
     res: { slash: 0.0, pierce: 0.0, blunt: 0.0 },
     passiveName: 'サンドバッグ',
     passiveDesc: '自身のすべてのコインの威力が常に0になる。',
@@ -79,7 +79,7 @@ const CORE_PAGES = [
   },
   {
     id: 'core_6', name: '雨天事務所フィクサーのページ',
-    hp: 75, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
+    level: 1, hp: 75, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.5 },
     passiveName: '沈む思考',
     passiveDesc: 'その幕の最初のバトルページのみ、最初の的中時に沈潜回数2、2回目以降の的中時は1。',
