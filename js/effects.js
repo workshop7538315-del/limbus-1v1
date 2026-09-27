@@ -68,6 +68,28 @@ const BASIC_STATUS_DEFS = {
 Object.entries(BASIC_STATUS_DEFS).forEach(([id,[name,desc,category]])=>{
   STATUS_DEFINITIONS[id]={ name, category, maxPower:99, maxCount:99, defaultPower:0, defaultCount:0, desc };
 });
+const VALUE_FROM_COUNT_STATUS_IDS = new Set([
+  'haste','bind','attack_power_up','attack_power_down','defense_power_up','defense_power_down',
+  'clash_power_up','clash_power_down','power_up','power_down','base_power_up',
+  'offense_level_up','offense_level_down','defense_level_up','defense_level_down',
+  'plus_coin_boost','plus_coin_drop','minus_coin_boost','minus_coin_drop',
+  'multiply_coin_boost','multiply_coin_drop','damage_up','damage_down','fragile',
+  'hp_healing_boost','hp_healing_down','ego_resource_amp','protection',
+  'slash_damage_up','pierce_damage_up','blunt_damage_up','slash_damage_down','pierce_damage_down','blunt_damage_down',
+  'slash_power_up','pierce_power_up','blunt_power_up','slash_power_down','pierce_power_down','blunt_power_down',
+  'slash_fragility','pierce_fragility','blunt_fragility','slash_protection','pierce_protection','blunt_protection',
+  'slash_resist_down','pierce_resist_down','blunt_resist_down',
+  'wrath_damage_up','lust_damage_up','sloth_damage_up','gluttony_damage_up','gloom_damage_up','pride_damage_up','envy_damage_up',
+  'wrath_damage_down','lust_damage_down','sloth_damage_down','gluttony_damage_down','gloom_damage_down','pride_damage_down','envy_damage_down',
+  'wrath_power_up','lust_power_up','sloth_power_up','gluttony_power_up','gloom_power_up','pride_power_up','envy_power_up',
+  'wrath_power_down','lust_power_down','sloth_power_down','gluttony_power_down','gloom_power_down','pride_power_down','envy_power_down',
+  'wrath_fragility','lust_fragility','sloth_fragility','gluttony_fragility','gloom_fragility','pride_fragility','envy_fragility',
+  'wrath_protection','lust_protection','sloth_protection','gluttony_protection','gloom_protection','pride_protection','envy_protection',
+  'wrath_resist_down','lust_resist_down','sloth_resist_down','gluttony_resist_down','gloom_resist_down','pride_resist_down','envy_resist_down'
+]);
+VALUE_FROM_COUNT_STATUS_IDS.forEach(id => {
+  if (STATUS_DEFINITIONS[id]) STATUS_DEFINITIONS[id].valueFromCount = true;
+});
 const DAMAGE_TYPES = ['slash','pierce','blunt'];
 const STATUS_SINS = ['wrath','lust','sloth','gluttony','gloom','pride','envy'];
 DAMAGE_TYPES.forEach(t=>{
@@ -161,15 +183,20 @@ function payEgoResource(player, cost) {
 }
 function getActiveStatusPower(player, id) {
   const s = getStatus(player, id);
-  return s?.count > 0 ? (s.power || 0) : 0;
+  if (!s || s.count <= 0) return 0;
+  return STATUS_DEFINITIONS[id]?.valueFromCount ? (s.count || 0) : (s.power || 0);
 }
 function addCombatStatus(player, statusId, amount = 1, duration = 1) {
   const s = ensureStatus(player, statusId);
   if (!s) return null;
   const def = STATUS_DEFINITIONS[statusId];
   const beforePower=s.power||0, beforeCount=s.count||0;
-  s.power=clampStatusValue(beforePower+amount, def.maxPower);
-  s.count=Math.max(0, Math.min(def.maxCount, Math.max(beforeCount, duration)));
+  if (def.valueFromCount) {
+    s.count=clampStatusValue(beforeCount+amount, def.maxCount);
+  } else {
+    s.power=clampStatusValue(beforePower+amount, def.maxPower);
+    s.count=Math.max(0, Math.min(def.maxCount, Math.max(beforeCount, duration)));
+  }
   return {status:s,beforePower,beforeCount};
 }
 function getSkillFinalPowerModifier(player, skill) {
@@ -527,7 +554,10 @@ function getStatusTooltip(status) {
   if (status.id === 'sinking') return `沈潜X / 回数Y。攻撃を受けたとき精神をX減少し、回数を1減少。最大値: 威力99 / 回数99。`;
   if (status.id === 'blood_feast') return `この幕、ダメージ+${status.power}。幕終了時に解除。`;
   const def = STATUS_DEFINITIONS[status.id];
-  if (def?.desc) return def.desc.replaceAll('X', String(status.power)).replaceAll('Y', String(status.count));
+  if (def?.desc) {
+    const value = def.valueFromCount ? status.count : status.power;
+    return def.desc.replaceAll('X', String(value)).replaceAll('Y', String(status.count));
+  }
   return `${status.name}<br>威力: ${status.power}<br>回数: ${status.count}`;
 }
 
