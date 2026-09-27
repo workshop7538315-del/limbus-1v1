@@ -491,7 +491,7 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   const critical = tryBreathCritical(attacker, amount); amount = critical.amount;
   const resistance = p.core?.res?.[attackType] ?? 1.0;
   const mult = p.isStaggered ? 2.0 : resistance;
-  const finalDmg = Math.floor(Math.max(0, amount) * mult);
+  const finalDmg = Math.floor(Math.max(0, amount) * mult * getProtectionMultiplier(target));
   p.hp = Math.max(0, p.hp - finalDmg);
   log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? '混乱中補正 ×2.0' : `耐性(${attackType}) ×${resistance}`}）`);
   emitHook('onDamage', { target, diceType: attackType, amount: finalDmg, attacker });
