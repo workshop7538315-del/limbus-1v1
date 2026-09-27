@@ -477,7 +477,7 @@ function executeAttackDamage(attacker, skill, defender, amount, coinIndex, slot,
   // 一方、防御成功でダメージが0ならこの関数自体を通らないため、デバフは発生しない。
   // 特殊なダメージ補正で0ダメージの攻撃についても、明示的な攻撃コインとしてはOn Hitを発火させる。
   if (amount > 0) {
-    applyDamage(defender, skill.attackType, amount, attacker, { isEgo: !!skill.isEgo, sin: skill.sin });
+    applyDamage(defender, skill.attackType, amount, attacker, { isEgo: !!skill.isEgo, sin: skill.sin, skill });
     if (gameState[defender].hp < 0) gameState[defender].hp = 0;
   }
   if (amount > 0) triggerOnHit(attacker, skill, defender, coin, slot);
@@ -528,9 +528,13 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   const mult = p.isStaggered ? 2.0 : resistance;
   const outputMult = attacker ? getDamageOutputMultiplier(attacker, attackType, sin) : 1;
   const takenMult = getDamageTakenMultiplier(target, attackType, sin);
-  const finalDmg = Math.floor(Math.max(0, amount) * mult * sinResistance * outputMult * takenMult);
+  const offLevel = attacker ? Math.max(1, getOffenseLevel(attacker, options.skill)) : 1;
+  const defLevel = Math.max(1, getDefenseLevel(target, options.defenseSkill || null));
+  const levelDiff = offLevel - defLevel;
+  const levelMult = 1 + (levelDiff / (Math.abs(levelDiff) + 25));
+  const finalDmg = Math.floor(Math.max(0, amount) * mult * sinResistance * levelMult * outputMult * takenMult);
   p.hp = Math.max(0, p.hp - finalDmg);
-  log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? '混乱中補正 ×2.0' : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(sin)}) ×${sinResistance}` : ''} / 与ダメ×${outputMult.toFixed(2)} / 被ダメ×${takenMult.toFixed(2)}）`);
+  log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? '混乱中補正 ×2.0' : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(sin)}) ×${sinResistance}` : ''} / Lv差 ${levelDiff}→×${levelMult.toFixed(3)} / 与ダメ×${outputMult.toFixed(2)} / 被ダメ×${takenMult.toFixed(2)}）`);
   emitHook('onDamage', { target, diceType: attackType, amount: finalDmg, attacker });
   if (!p.isStaggered) {
     p.stagger = Math.max(0, p.stagger - finalDmg);
