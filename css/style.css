@@ -250,3 +250,410 @@
 .anim-status.buff { color:#8ee6a7; border-color:#39734b; background:#18301f; }
 .anim-status.debuff { color:#ff9a9a; border-color:#7d3d3d; background:#351919; }
 .anim-status-empty, .anim-effect-empty { color:#777; }
+
+
+/* =========================================================
+   スマホUI
+   viewport幅を自動検知してレイアウトを切り替える。
+   JavaScript側での端末判定は不要。スマホの縦横回転にも追従する。
+   ========================================================= */
+@media (max-width: 700px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    padding: 8px;
+    align-items: stretch;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  #game-container {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    padding: 10px;
+    border-width: 1px;
+    border-radius: 6px;
+  }
+
+  h2 {
+    font-size: 18px;
+    margin: 8px 0 12px;
+  }
+
+  h3 {
+    font-size: 14px;
+  }
+
+  /* タップ対象を指で押しやすくする */
+  button,
+  .filter-btn,
+  .deck-section-header,
+  .core-card-header,
+  .speed-slot,
+  .card,
+  .pool-title-area,
+  .add-btn,
+  .remove-btn {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  button {
+    min-height: 42px;
+  }
+
+  /* コア選択 */
+  .core-select-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .core-select-area {
+    padding: 8px;
+  }
+
+  .core-grid {
+    max-height: 180px;
+  }
+
+  .core-card-item {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  /* 絞り込み */
+  .filter-header {
+    min-height: 42px;
+    box-sizing: border-box;
+    align-items: center;
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  .filter-group {
+    gap: 6px;
+  }
+
+  .filter-btn {
+    min-height: 38px;
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+
+  /* デッキ構築 */
+  .deck-builder-grid {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pool-container,
+  .deck-container {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .card-pool {
+    height: 330px;
+    padding: 8px;
+  }
+
+  .deck-list {
+    height: 145px;
+    padding: 8px;
+  }
+
+  .pool-item-card {
+    padding: 8px;
+  }
+
+  .pool-item-header {
+    gap: 6px;
+  }
+
+  .pool-title-area {
+    min-height: 36px;
+  }
+
+  .add-btn-group {
+    flex-shrink: 0;
+  }
+
+  .add-btn {
+    min-width: 42px;
+    min-height: 36px;
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .deck-section-header {
+    min-height: 42px;
+    box-sizing: border-box;
+  }
+
+  .deck-section-title {
+    font-size: 12px;
+  }
+
+  .remove-btn {
+    min-height: 34px;
+    padding: 5px 10px;
+  }
+
+  .editor-hint {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  /* バトル画面 */
+  .status-panel {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .character {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .speed-dice-container {
+    gap: 6px;
+  }
+
+  .speed-slot {
+    min-height: 48px;
+    box-sizing: border-box;
+    padding: 8px 5px;
+    font-size: 11px;
+  }
+
+  .planning-bar {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  .target-hint {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  /* 手札は横スクロール。縦に全部並べるとスマホがカード墓場になる */
+  .cards-container {
+    gap: 7px;
+    min-height: 126px;
+    padding: 3px 2px 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .card {
+    width: 112px;
+    min-height: 112px;
+    box-sizing: border-box;
+    padding: 8px;
+    font-size: 11px;
+    scroll-snap-align: start;
+  }
+
+  .dice-tag {
+    font-size: 9px;
+    padding: 2px 3px;
+  }
+
+  #log {
+    height: 150px;
+    font-size: 10px;
+    padding: 6px;
+  }
+
+  .log-clash-sides {
+    grid-template-columns: minmax(0,1fr) 28px minmax(0,1fr);
+    gap: 4px;
+  }
+
+  .btn-group {
+    flex-direction: column-reverse;
+    gap: 7px;
+    margin-top: 8px;
+  }
+
+  button.main-action-btn,
+  .surrender-btn {
+    width: 100%;
+    max-width: none;
+    min-height: 48px;
+    font-size: 14px;
+  }
+
+  /* 勝敗画面 */
+  .result-title {
+    font-size: 38px;
+    margin-bottom: 14px;
+  }
+
+  .retry-btn {
+    width: min(90%, 260px);
+    min-height: 46px;
+  }
+
+  .result-log-wrap {
+    width: 94%;
+  }
+
+  /* マッチ演出 */
+  .battle-animation {
+    padding: 6px;
+    align-items: stretch;
+  }
+
+  .battle-animation-panel {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .battle-animation-top {
+    padding: 9px 10px;
+    flex-shrink: 0;
+  }
+
+  .battle-animation-arena {
+    grid-template-columns: minmax(0,1fr) 30px minmax(0,1fr);
+    min-height: 0;
+    flex: 1;
+    gap: 4px;
+    padding: 8px 5px;
+    overflow-y: auto;
+    align-items: start;
+  }
+
+  .anim-side {
+    min-height: 0;
+    padding: 8px 5px;
+  }
+
+  .anim-side-head {
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .anim-side-head img {
+    width: 24px;
+    height: 24px;
+  }
+
+  .anim-power {
+    font-size: 34px;
+    margin-top: 6px;
+  }
+
+  .anim-modifier {
+    font-size: 9px;
+    min-height: 18px;
+    margin: 3px 0 6px;
+  }
+
+  .anim-coins {
+    gap: 3px;
+    min-height: 32px;
+  }
+
+  .anim-coin {
+    width: 28px;
+    height: 28px;
+    border-width: 1px;
+    font-size: 10px;
+  }
+
+  .anim-effects,
+  .anim-statuses {
+    margin-top: 5px;
+    padding: 5px;
+  }
+
+  .anim-section-title,
+  .anim-effect-line,
+  .anim-effect-empty,
+  .anim-status-empty,
+  .anim-status {
+    font-size: 9px;
+  }
+
+  .anim-vs {
+    font-size: 14px;
+    padding-top: 45px;
+  }
+
+  .battle-animation-status {
+    min-height: 34px;
+    box-sizing: border-box;
+    padding: 7px 8px;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
+  .battle-animation-controls {
+    gap: 5px;
+    padding: 7px 5px;
+    flex-shrink: 0;
+  }
+
+  .battle-animation-controls button {
+    flex: 1 1 calc(50% - 5px);
+    min-height: 40px;
+    padding: 7px 5px;
+    font-size: 10px;
+  }
+
+  /* ツールチップはホバー前提なので、スマホでは画面外にはみ出さないよう抑制 */
+  .tooltip-target .tooltip-text,
+  .status-badge .tooltip-text,
+  .log-dice-tag > .tooltip-text,
+  .coin-chip small {
+    max-width: min(260px, 80vw);
+  }
+}
+
+/* 極端に狭い端末 */
+@media (max-width: 380px) {
+  body {
+    padding: 4px;
+  }
+
+  #game-container {
+    padding: 7px;
+  }
+
+  .filter-btn {
+    font-size: 11px;
+    padding: 6px 7px;
+  }
+
+  .card {
+    width: 105px;
+    min-height: 108px;
+  }
+
+  .battle-animation-arena {
+    grid-template-columns: minmax(0,1fr) 24px minmax(0,1fr);
+  }
+
+  .anim-power {
+    font-size: 29px;
+  }
+
+  .anim-coin {
+    width: 25px;
+    height: 25px;
+  }
+}
