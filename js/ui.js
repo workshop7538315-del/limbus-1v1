@@ -83,9 +83,35 @@ function skillDetailHtml(card){
   return `<div class="skill-line"><strong>${getSkillDisplayLabel(card)}</strong> <span class="sin-badge sin-${card.sin}">${getSinLabel(card.sin)}</span></div>${card.coinCount?`<div class="skill-power-line">${getSkillPowerText(card)}</div><div class="card-dice-list">${coins}</div>`:''}${legacy?`<div class="card-dice-list">${legacy}</div>`:''}${legacyCounter?`<div class="card-dice-list">${legacyCounter}</div>`:''}`;
 }
 
+function toggleEgoLoadout(player, egoId) {
+  const ego = EGO_DATABASE.find(e => e.id === egoId);
+  if (!ego) return;
+  const loadout = player === 'p1' ? selectedP1EgoIds : selectedP2EgoIds;
+  loadout[ego.risk] = loadout[ego.risk] === egoId ? null : egoId;
+  renderBuilder();
+}
+function renderEgoLoadout(player) {
+  const el = document.getElementById(`${player}-ego-loadout`);
+  if (!el) return;
+  const loadout = player === 'p1' ? selectedP1EgoIds : selectedP2EgoIds;
+  el.innerHTML = EGO_RISK_LEVELS.map(risk => {
+    const equippedId = loadout[risk];
+    const available = EGO_DATABASE.filter(e => e.risk === risk);
+    const equipped = equippedId ? EGO_DATABASE.find(e => e.id === equippedId) : null;
+    const options = available.length ? available.map(ego => {
+      const selected = ego.id === equippedId;
+      const res = Object.entries(ego.sinRes || {}).map(([sin,v]) => `${getSinLabel(sin)}×${v}`).join(' ');
+      const cost = Object.entries(ego.resourceCost || {}).map(([sin,n]) => `${getSinLabel(sin)}×${n}`).join(' ');
+      return `<button class="ego-loadout-option ${selected?'selected':''} sin-${ego.sin}" onclick="toggleEgoLoadout('${player}','${ego.id}')"><strong>${ego.name}</strong><small>${ego.sinner} / ${getSinLabel(ego.sin)}</small><small>資源: ${cost}</small><small>耐性: ${res}</small></button>`;
+    }).join('') : '<div class="ego-empty">未実装</div>';
+    return `<div class="ego-risk-slot"><div class="ego-risk-label">${risk}</div><div class="ego-risk-content">${equipped ? `<span class="ego-equipped-mark">装備: ${equipped.name}</span>` : '<span class="ego-none">未装備</span>'}${options}</div></div>`;
+  }).join('');
+}
 function renderBuilder(){
   renderCoreSelectionList('p1-core-page-list',selectedP1CoreIds,toggleP1Core,'p1');
   renderCoreSelectionList('p2-core-page-list',selectedP2CoreIds,toggleP2Core,'p2');
+  renderEgoLoadout('p1');
+  renderEgoLoadout('p2');
   const pool=document.getElementById('card-pool-list'); pool.innerHTML='';
   document.getElementById('editor-hint').innerText=`追加先: ${activeDeckEditor==='p1'?'P1':'P2'} デッキ（右側のデッキ見出しをクリックして切替）`;
   CARD_DATABASE.filter(c=>{
@@ -118,12 +144,12 @@ function updatePlanningPrompt(){
 function selectTargetSlot(slot){ if(!isP1Planning()||!selectedHandCard||slot?.owner!=='p2')return; selectedTargetSlot=slot;updatePlanningPrompt();updateUI(); }
 function makeEgoCard(ego) { return { ...ego, isEgo: true, egoId: ego.id, tags: ['ego'] }; }
 function renderEgoCards(handDiv) {
-  EGO_DATABASE.forEach(ego => {
+  gameState.p1.equippedEgos?.forEach(ego => {
     const card=makeEgoCard(ego);
     const selected=selectedHandCard?.egoId===ego.id;
-    const canUse=canPayEgoResource('p1',ego.resourceCost) && gameState.p1.sanity >= ego.sanityCost;
+    const canUse=canPayEgoResource('p1',ego.resourceCost);
     const cardEl=document.createElement('div');
-    cardEl.className='card ego-card'+(selected?' selected':'')+(canUse?'':' unavailable');
+    cardEl.className='card ego-card sin-${ego.sin}'+(selected?' selected':'')+(canUse?'':' unavailable');
     const costs=Object.entries(ego.resourceCost).map(([sin,n])=>`${getSinLabel(sin)}×${n}`).join(' ');
     cardEl.innerHTML=`<strong>E.G.O: ${ego.name}</strong><br><small>${ego.sinner} / ${ego.risk}</small><div class="skill-power-line">基礎${ego.basePower} / コイン+${ego.coinPower}</div><div class="card-effect">罪悪資源: ${costs}<br>精神-${ego.sanityCost}</div>`;
     cardEl.onclick=()=>{
