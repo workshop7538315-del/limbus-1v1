@@ -657,3 +657,5 @@
     height: 25px;
   }
 }
+
+.ego-resource-title{margin-top:5px;font-size:10px;font-weight:bold}.ego-resource-panel{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px}.ego-resource{display:inline-flex;min-width:24px;height:20px;align-items:center;justify-content:center;border:1px solid #555;border-radius:3px;background:#171717;font-size:9px}.ego-resource b{margin-left:2px}.ego-card{border-color:#b8860b}.ego-card.unavailable{opacity:.45;cursor:not-allowed}
