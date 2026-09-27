@@ -260,8 +260,7 @@ function getResistanceWithDown(player, attackType, sin) {
 }
 
 function getSpeedStatusModifier(player) {
-  const h=getStatus(player,'haste'), b=getStatus(player,'bind');
-  return (h?.count>0 ? h.power : 0) - (b?.count>0 ? b.power : 0);
+  return getActiveStatusPower(player,'haste') - getActiveStatusPower(player,'bind');
 }
 function getEffectiveSkillPowerModifier(player) { return getSkillFinalPowerModifier(player, { skillType:'attack' }); }
 function getProtectionMultiplier(player) { return getDamageTakenMultiplier(player); }
