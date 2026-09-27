@@ -230,6 +230,26 @@ function getSpeedStatusModifier(player) {
 }
 function getEffectiveSkillPowerModifier(player) { return getSkillFinalPowerModifier(player, { skillType:'attack' }); }
 function getProtectionMultiplier(player) { return getDamageTakenMultiplier(player); }
+function addStatusNextTurn(player, statusId, amount = 1, duration = 1) {
+  const p=gameState[player];
+  if (!p.pendingStatuses) p.pendingStatuses = {};
+  const existing=p.pendingStatuses[statusId] || { amount:0, duration:0 };
+  existing.amount = Math.min(99, existing.amount + amount);
+  existing.duration = Math.max(existing.duration, duration);
+  p.pendingStatuses[statusId] = existing;
+  return existing;
+}
+function applyPendingStatuses(player) {
+  const p=gameState[player];
+  const pending=p.pendingStatuses || {};
+  Object.entries(pending).forEach(([statusId, data])=>{
+    const applied=addCombatStatus(player,statusId,data.amount,data.duration);
+    if(applied){
+      log(`[次幕] ${playerLabel(player)}の「${applied.status.name}」 ${data.amount}を付与。`);
+    }
+  });
+  p.pendingStatuses = {};
+}
 function processStatusTurnEnd(player) {
   const statuses = gameState[player].statuses || {};
   Object.keys(statuses).forEach(statusId => {
@@ -439,16 +459,18 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
   }
   if (effectSource?.special === 'ego_crows_eye') {
     const enemy=resolvedTarget;
-    const ap=ensureStatus(enemy,'attack_power_down'); ap.power=Math.min(10,(ap.power||0)+2); ap.count=1;
-    const bd=ensureStatus(enemy,'bind'); bd.power=Math.min(10,(bd.power||0)+2); bd.count=1;
-    ['p1','p2'].forEach(a=>{const h=ensureStatus(a,'haste');h.power=Math.min(10,(h.power||0)+3);h.count=1;});
+    addCombatStatus(enemy,'attack_power_down',2,1);
+    addStatusNextTurn(enemy,'bind',2,1);
+    ['p1','p2'].forEach(a=>addStatusNextTurn(a,'haste',3,1));
+    log(`[E.G.O] Crow's Eye View: ${playerLabel(enemy)}へ攻撃威力減少2、この幕終了後に束縛2。次幕に味方全員迅速3。`);
   }
   if (effectSource?.special === 'ego_chains_others') {
-    const eb=ensureStatus(resolvedTarget,'bind'); eb.power=Math.min(10,(eb.power||0)+5); eb.count=1;
-    const ab=ensureStatus(player,'bind'); ab.power=Math.min(10,(ab.power||0)+3); ab.count=1;
-    const ed=ensureStatus(resolvedTarget,'attack_power_down'); ed.power=Math.min(10,(ed.power||0)+4); ed.count=1;
-    const ad=ensureStatus(player,'attack_power_down'); ad.power=Math.min(10,(ad.power||0)+3); ad.count=1;
-    const pr=ensureStatus(player,'protection'); pr.power=Math.min(10,(pr.power||0)+2); pr.count=1;
+    addStatusNextTurn(resolvedTarget,'bind',5,1);
+    addStatusNextTurn(resolvedTarget,'attack_power_down',4,1);
+    addStatusNextTurn(player,'bind',3,1);
+    addStatusNextTurn(player,'attack_power_down',3,1);
+    addStatusNextTurn(player,'protection',2,1);
+    log(`[E.G.O] Chains of Others: 次幕に相手へ束縛5・攻撃威力減少4、自分へ束縛3・攻撃威力減少3・保護2。`);
   }
   if (effectSource?.special === 'blood_festival') {
     const bleed = getStatus(resolvedTarget, 'bleed');
