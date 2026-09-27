@@ -119,6 +119,7 @@ function playCardToSlot(player, slot, card, targetSlot) {
     changeSanity(player, -card.sanityCost, `E.G.O「${card.name}」`);
     addEgoResource(player, card.sin, 1);
     gameState[player].sinRes = { ...(card.sinRes || gameState[player].sinRes) };
+    updateResDisplay(player);
     log(`[E.G.O] ${playerLabel(player)}の罪悪耐性が「${card.name}」に切り替わりました。`);
   } else if (card?.skillType === 'attack' || card?.skillType === 'counter') {
     addEgoResource(player, card.sin, 1);
