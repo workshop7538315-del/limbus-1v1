@@ -37,6 +37,15 @@
       </div>
     </div>
 
+    <div class="ego-builder-section">
+      <h3>E.G.O編成</h3>
+      <p class="editor-hint">LCB準拠: 各リスククラスにつき1つまで装備。ZAYIN E.G.Oが戦闘開始時の罪悪耐性を決定します。</p>
+      <div class="ego-loadout-panels">
+        <div class="ego-loadout-area"><div class="ego-loadout-title p1-ego-title">P1 E.G.O</div><div id="p1-ego-loadout" class="ego-loadout-grid"></div></div>
+        <div class="ego-loadout-area"><div class="ego-loadout-title p2-ego-title">P2 E.G.O</div><div id="p2-ego-loadout" class="ego-loadout-grid"></div></div>
+      </div>
+    </div>
+
     <!-- 絞り込みフィルター -->
     <div class="filter-header" onclick="toggleFilter()">
       <span>🔍 バトルページ絞り込み検索（クリックで開閉）</span>
@@ -110,7 +119,7 @@
         <div class="stagger-bar"><div class="stagger-fill" id="p1-stagger-bar"></div></div>
         <div style="margin-top:3px;">光: <span id="p1-light">3</span>/<span id="p1-maxlight">3</span></div><div class="ego-resource-title">罪悪資源</div><div id="p1-ego-resources" class="ego-resource-panel"></div>
         <div style="margin-top:4px;" id="p1-passive-box"></div>
-        <div style="margin-top:2px;" id="p1-res-box" class="res-group"></div>
+        <div style="margin-top:2px;" id="p1-res-box" class="res-group"></div><div class="sin-res-title">罪悪耐性</div><div id="p1-sin-res-box" class="res-group sin-res-group"></div>
         <div class="status-effects-panel">
           <div class="status-effects-title">バフ</div>
           <div id="p1-buff-box" class="status-effects-row"></div>
@@ -130,7 +139,7 @@
         <div class="stagger-bar"><div class="stagger-fill" id="p2-stagger-bar"></div></div>
         <div style="margin-top:3px;">光: <span id="p2-light">3</span>/<span id="p2-maxlight">3</span></div><div class="ego-resource-title">罪悪資源</div><div id="p2-ego-resources" class="ego-resource-panel"></div>
         <div style="margin-top:4px;" id="p2-passive-box"></div>
-        <div style="margin-top:2px;" id="p2-res-box" class="res-group"></div>
+        <div style="margin-top:2px;" id="p2-res-box" class="res-group"></div><div class="sin-res-title">罪悪耐性</div><div id="p2-sin-res-box" class="res-group sin-res-group"></div>
         <div class="status-effects-panel">
           <div class="status-effects-title">バフ</div>
           <div id="p2-buff-box" class="status-effects-row"></div>
