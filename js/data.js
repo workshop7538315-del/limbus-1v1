@@ -194,4 +194,23 @@ const CARD_DATABASE = [
   ])
 ];
 
+const EGO_DATABASE = [
+  {
+    id: 'ego_crows_eye_view', name: "Crow's Eye View", sinner: 'Yi Sang', risk: 'ZAYIN',
+    sin: 'sloth', attackType: 'pierce', skillType: 'attack', cost: 0,
+    basePower: 18, coinPower: 6, coinCount: 1, sanityCost: 10,
+    resourceCost: { wrath: 1, sloth: 3 },
+    effect: 'E.G.O: 精神-10。的中時、相手に攻撃威力減少2、この幕の迅速3を全味方、次の幕の束縛2を相手に付与。',
+    coins: [{ onHit: { special: 'ego_crows_eye' } }]
+  },
+  {
+    id: 'ego_chains_of_others', name: 'Chains of Others', sinner: 'Meursault', risk: 'ZAYIN',
+    sin: 'pride', attackType: 'blunt', skillType: 'attack', cost: 0,
+    basePower: 19, coinPower: 3, coinCount: 1, sanityCost: 10,
+    resourceCost: { sloth: 1, gloom: 1, envy: 2 },
+    effect: 'E.G.O: 精神-10。的中時、相手に次の幕の束縛5・攻撃威力減少4、自分に次の幕の束縛3・攻撃威力減少3・保護2。',
+    coins: [{ onHit: { special: 'ego_chains_others' } }]
+  }
+];
+
 function getSinLabel(sin) { return SIN_LABELS[sin] || sin || '未設定'; }
