@@ -153,11 +153,11 @@ function renderEgoCards(handDiv) {
   gameState.p1.equippedEgos?.forEach(ego => {
     const card=makeEgoCard(ego);
     const selected=selectedHandCard?.egoId===ego.id;
-    const canUse=canPayEgoResource('p1',ego.resourceCost);
+    const canUse=canPayEgoResource('p1',ego.resourceCost) && !gameState.p1.usedEgosThisTurn?.includes(ego.id);
     const cardEl=document.createElement('div');
     cardEl.className=`card ego-card sin-${ego.sin}`+(selected?' selected':'')+(canUse?'':' unavailable');
     const costs=Object.entries(ego.resourceCost).map(([sin,n])=>`${getSinLabel(sin)}×${n}`).join(' ');
-    cardEl.innerHTML=`<strong>E.G.O: ${ego.name}</strong><br><small>${ego.sinner} / ${ego.risk}</small><div class="skill-power-line">基礎${ego.basePower} / コイン+${ego.coinPower}</div><div class="card-effect">罪悪資源: ${costs}<br>精神-${ego.sanityCost}</div>`;
+    cardEl.innerHTML=`<strong>E.G.O: ${ego.name}</strong><br><small>${ego.sinner} / ${ego.risk}</small><div class="skill-power-line">基礎${ego.basePower} / コイン+${ego.coinPower}</div><div class="card-effect">罪悪資源: ${costs}<br>精神-${ego.sanityCost}${gameState.p1.usedEgosThisTurn?.includes(ego.id)?'<br>この幕は使用済み':''}</div>`;
     cardEl.onclick=()=>{
       if(!canUse)return;
       selectedHandCard=selected?null:card;
