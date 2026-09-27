@@ -14,6 +14,7 @@ const deckAccordionOpen = { p1: true, p2: true };
 
 const ATTACK_TYPES = ['slash', 'pierce', 'blunt'];
 const SIN_TYPES = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'];
+const MAX_EGO_RESOURCE = 10;
 const gameState = {
   p1: {
     core: null,
@@ -21,6 +22,7 @@ const gameState = {
     stagger: 0, maxStagger: 0, isStaggered: false, staggerSkipDone: false,
     sanity: 0, minSanity: -45, maxSanity: 45,
     light: 3, maxLight: 3,
+    egoResources: { wrath:0, lust:0, sloth:0, gluttony:0, gloom:0, pride:0, envy:0 },
     deck: [], hand: [], discard: [], slots: [], statuses: {},
     defenseStock: [], counterSkills: [],
     bloodPactFirstPageAvailable: true, bloodPactFirstPageHitCount: 0,
@@ -33,6 +35,7 @@ const gameState = {
     stagger: 0, maxStagger: 0, isStaggered: false, staggerSkipDone: false,
     sanity: 0, minSanity: -45, maxSanity: 45,
     light: 3, maxLight: 3,
+    egoResources: { wrath:0, lust:0, sloth:0, gluttony:0, gloom:0, pride:0, envy:0 },
     deck: [], hand: [], discard: [], slots: [], statuses: {},
     defenseStock: [], counterSkills: [],
     bloodPactFirstPageAvailable: true, bloodPactFirstPageHitCount: 0,
