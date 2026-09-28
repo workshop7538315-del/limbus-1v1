@@ -171,9 +171,9 @@ function logClashSummary(slotA,slotB){const logDiv=document.getElementById('log'
         ${ego.corrosion.effect || '侵蝕スキル'}
       </div>` : '';
     cardEl.innerHTML = `
-      <strong>E.G.O: ${ego.name}</strong>
+      <strong>E.G.O: ${ego.id === 'ego_crows_eye_view' ? '烏瞰図' : ego.id === 'ego_chains_of_others' ? '他人の鎖' : ego.name}</strong>
       <br><small>${ego.sinner} / ${ego.risk}</small>
-      <details class="ego-card-details">
+      <details class="ego-card-details" onclick="event.stopPropagation()">
         <summary>効果・威力を見る</summary>
         <div class="ego-detail-content">
           <div><b>威力:</b> ${power}　<b>${coinText}</b></div>
