@@ -22,7 +22,9 @@ function setupCharacter(p, core, egoIds = {}) {
   const state = gameState[p];
   state.core = core;
   state.hp = core.hp; state.maxHp = core.hp;
-  state.stagger = core.stagger; state.maxStagger = core.stagger;
+  const oldStaggerRatio = core.hp > 0 ? Math.min(1, (core.stagger ?? core.hp) / core.hp) : 0.5;
+  state.staggerThresholds = [Math.floor(core.hp * oldStaggerRatio)];
+  state.staggerLevel = 0; state.staggerThresholdBonus = 0;
   state.isStaggered = false; state.staggerSkipDone = false;
   state.sanity = 0; state.minSanity = -45; state.maxSanity = 45;
   state.maxLight = core.maxLight; state.light = core.maxLight;
@@ -77,7 +79,7 @@ function startNewRound() {
     player.usedEgosThisTurn = [];
     applyPendingStatuses(p);
     if (player.isStaggered && player.staggerSkipDone) {
-      player.isStaggered = false; player.staggerSkipDone = false; player.stagger = player.maxStagger;
+      player.isStaggered = false; player.staggerSkipDone = false;
       log(`[復帰] ${playerLabel(p)}が混乱状態から回復しました！`);
       updateResDisplay(p);
     } else if (player.isStaggered) {
@@ -525,7 +527,8 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   const sin = options.sin || null;
   const resistance = getResistanceWithDown(target, attackType, sin);
   const sinResistance = options.isEgo ? (p.sinRes?.[sin] ?? 1.0) : 1.0;
-  const mult = p.isStaggered ? 2.0 : resistance;
+  const staggerMultiplier = p.isStaggered ? (2 + Math.min(1, p.staggerLevel || 0) * 0.5) : resistance;
+  const mult = staggerMultiplier;
   const outputMult = attacker ? getDamageOutputMultiplier(attacker, attackType, sin) : 1;
   const takenMult = getDamageTakenMultiplier(target, attackType, sin);
   const offLevel = attacker ? Math.max(1, getOffenseLevel(attacker, options.skill)) : 1;
@@ -534,12 +537,10 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   const levelMult = 1 + (levelDiff / (Math.abs(levelDiff) + 25));
   const finalDmg = Math.floor(Math.max(0, amount) * mult * sinResistance * levelMult * outputMult * takenMult);
   p.hp = Math.max(0, p.hp - finalDmg);
-  log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? '混乱中補正 ×2.0' : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(sin)}) ×${sinResistance}` : ''} / Lv差 ${levelDiff}→×${levelMult.toFixed(3)} / 与ダメ×${outputMult.toFixed(2)} / 被ダメ×${takenMult.toFixed(2)}）`);
+  log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? `混乱中補正 ×${staggerMultiplier.toFixed(1)}` : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(sin)}) ×${sinResistance}` : ''} / Lv差 ${levelDiff}→×${levelMult.toFixed(3)} / 与ダメ×${outputMult.toFixed(2)} / 被ダメ×${takenMult.toFixed(2)}）`);
   emitHook('onDamage', { target, diceType: attackType, amount: finalDmg, attacker });
-  if (!p.isStaggered) {
-    p.stagger = Math.max(0, p.stagger - finalDmg);
-    if (p.stagger <= 0) { p.isStaggered = true; p.staggerSkipDone = false; log(`⚡⚡ [混乱] ${playerLabel(target)}が混乱状態になりました！ ⚡⚡`); updateResDisplay(target); }
-  }
+  if (!p.isStaggered && finalDmg > 0) checkStaggerThresholds(target);
+
   if (!options.suppressCounter && p.hp > 0 && !p.isStaggered && finalDmg > 0) triggerNormalCounter(target, attacker, finalDmg);
 }
 function tryBreathCritical(attacker, amount) {
@@ -582,14 +583,40 @@ function triggerNormalCounter(target, attacker, damage) {
     });
   }
 }
+function getStaggerThresholds(player) {
+  const p = gameState[player];
+  return (p.staggerThresholds || []).map(v => Math.max(0, v + (p.staggerThresholdBonus || 0)));
+}
+function getNextStaggerThreshold(player) {
+  const p = gameState[player];
+  const thresholds = getStaggerThresholds(player).filter(v => v > 0);
+  if (!thresholds.length) return null;
+  // Thresholds are HP values. The next untriggered threshold is the highest
+  // threshold still above the current HP.
+  return thresholds.find(v => p.hp <= v) ?? null;
+}
+function checkStaggerThresholds(target) {
+  const p = gameState[target];
+  if (p.isStaggered || p.hp <= 0) return;
+  const thresholds = getStaggerThresholds(target).filter(v => v > 0).sort((a,b) => b-a);
+  const crossed = thresholds.filter(v => p.hp <= v).length;
+  if (crossed <= (p.staggerLevel || 0)) return;
+  p.staggerLevel = Math.min(2, crossed - 1);
+  p.isStaggered = true;
+  p.staggerSkipDone = false;
+  log(`⚡⚡ [混乱] ${playerLabel(target)}が混乱状態になりました！ (混乱Lv${p.staggerLevel + 1}) ⚡⚡`);
+  updateResDisplay(target);
+}
 function applyStaggerOnly(target, amount) {
-  const p = gameState[target]; if (p.isStaggered) return;
-  p.stagger = Math.max(0, p.stagger - Math.floor(amount));
-  if (p.stagger <= 0) { p.isStaggered = true; p.staggerSkipDone = false; log(`⚡⚡ [混乱] ${playerLabel(target)}が混乱状態になりました！ ⚡⚡`); updateResDisplay(target); }
+  // Compatibility helper for old effects: in LCB, stagger damage is HP-threshold based.
+  const p = gameState[target];
+  if (p.isStaggered || p.hp <= 0) return;
+  p.hp = Math.max(0, p.hp - Math.max(0, Math.floor(amount)));
+  checkStaggerThresholds(target);
 }
 function recoverStagger(player, amount) {
-  const p = gameState[player];
-  if (!p.isStaggered) { p.stagger = Math.min(p.maxStagger, p.stagger + Math.max(0, amount)); log(`[回復] ${playerLabel(player)}の混乱耐性が${amount}回復`); }
+  // Kept as a compatibility shim. LCB does not have a separate stagger-resistance HP pool.
+  if (amount > 0) log(`[混乱閾値] ${playerLabel(player)}の閾値回復処理は無視しました（LCB方式）`);
 }
 function markFirstUsedPage(player) {
   if (gameState[player].core?.id !== 'core_4' || !gameState[player].bloodPactFirstPageAvailable) return false;
