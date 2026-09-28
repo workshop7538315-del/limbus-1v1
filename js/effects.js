@@ -543,6 +543,8 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
       log(`[的中] ${playerLabel(player)}の「${card.name}」: この幕のダメージ+5`);
     }
   }
+  if (effectSource?.special === 'tremor_burst') triggerTremorBurst(resolvedTarget, effectSource.multiplier || 1);
+  if (effectSource?.special === 'rupture_trigger') triggerRupture(resolvedTarget);
   if (effectSource?.special === 'abyss_draw_if_5') {
     const sinking = getStatus(resolvedTarget, 'sinking');
     if (sinking?.power >= 5) { for (let i = 0; i < 3; i++) drawCard(player); log(`[的中] ${playerLabel(player)}の「${card.name}」: 沈潜威力5以上のため3枚ドロー`); }
@@ -575,6 +577,8 @@ function getStatusTooltip(status) {
   if (!status) return '';
   if (status.id === 'breath') return `クリティカル確率: ${status.power}%<br>残り回数: ${status.count}<br>クリティカル時、ダメージ1.5倍。幕終了時またはクリティカル発動時に回数-1。最大値: 威力99 / 回数99。`;
   if (status.id === 'bleed') return `攻撃コインを振るたび、威力分のダメージを受ける。発動時に回数-1。最大値: 威力99 / 回数99。`;
+  if (status.id === 'tremor') return `振動${status.power} / Count${status.count}。振動爆発時、振動威力分だけ混乱閾値を上昇。幕終了時Count-1。`;
+  if (status.id === 'rupture') return `破裂${status.power} / Count${status.count}。攻撃を受けたとき固定ダメージ${status.power}を与え、Count-1。`;
   if (status.id === 'sinking') return `沈潜X / 回数Y。攻撃を受けたとき精神をX減少し、回数を1減少。最大値: 威力99 / 回数99。`;
   if (status.id === 'blood_feast') return `この幕、ダメージ+${status.power}。幕終了時に解除。`;
   const def = STATUS_DEFINITIONS[status.id];
