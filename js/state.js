@@ -31,7 +31,7 @@ const gameState = {
     equippedEgos: [],
     usedEgosThisTurn: [],
     pendingStatuses: {},
-    activeEgoPassives: [],
+    activeEgoPassives: [], pendingEgoPassives: [],
     sinRes: { wrath:1, lust:1, sloth:1, gluttony:1, gloom:1, pride:1, envy:1 },
     deck: [], hand: [], discard: [], slots: [], statuses: {},
     defenseStock: [], counterSkills: [],
