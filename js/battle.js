@@ -27,6 +27,8 @@ function setupCharacter(p, core, egoIds = {}) {
   state.triggeredStaggerThresholds = 0; state.staggerLevel = 0; state.staggerThresholdBonus = 0;
   state.isStaggered = false; state.staggerSkipDone = false;
   state.sanity = 0; state.minSanity = -45; state.maxSanity = 45;
+  state.shield = 0; state.cumulativeDamageTaken = 0; state.egoPassiveOffenseBonus = 0;
+  state.isCorroded = false; state.corrosionEgoId = null;
   state.maxLight = core.maxLight; state.light = core.maxLight;
   state.egoResources = { wrath:0, lust:0, sloth:0, gluttony:0, gloom:0, pride:0, envy:0 };
   state.equippedEgos = EGO_RISK_LEVELS.map(risk => egoIds[risk]).filter(Boolean).map(id => EGO_DATABASE.find(e => e.id === id)).filter(Boolean);
@@ -85,6 +87,7 @@ function startNewRound() {
     } else if (player.isStaggered) {
       player.staggerSkipDone = true; log(`[混乱] ${playerLabel(p)}はこの幕、行動不能です。`);
     }
+    processEgoTurnStart(p);
     if (player.core.onTurnStart) player.core.onTurnStart(p);
     emitHook('onTurnStart', { player: p });
   });
@@ -102,6 +105,8 @@ function startNewRound() {
       }
     }
   });
+  ['p1', 'p2'].forEach(p => applyEgoCorrosionAtTurnStart(p));
+
   ['p1', 'p2'].forEach(p => {
     gameState[p].slots.sort((a, b) => b.speed - a.speed || a.id - b.id);
     gameState[p].slots.forEach((slot, i) => slot.id = i);
@@ -110,6 +115,50 @@ function startNewRound() {
   gameState.currentQueueIndex = 0;
   updateUI();
   processNextPlanningStep();
+}
+
+function getCorrosionCard(ego) {
+  if (!ego?.corrosion) return null;
+  return {
+    ...ego,
+    isEgo: true,
+    isCorrosion: true,
+    egoId: ego.id,
+    basePower: ego.corrosion.basePower,
+    coinPower: ego.corrosion.coinPower,
+    coinCount: ego.corrosion.coinCount,
+    attackType: ego.corrosion.attackType,
+    skillType: ego.corrosion.skillType,
+    resourceCost: ego.corrosion.resourceCost || ego.resourceCost,
+    sanityCost: ego.corrosionSanityCost ?? ego.sanityCost,
+    coins: ego.corrosion.coins,
+    effect: ego.corrosion.effect || '',
+    indiscriminate: true
+  };
+}
+function applyEgoCorrosionAtTurnStart(player) {
+  const p = gameState[player];
+  if (p.sanity > -45) return;
+  const ego = p.equippedEgos?.find(e => e.corrosion);
+  if (!ego || !p.slots.length) return;
+  const card = getCorrosionCard(ego);
+  const ownSlots = p.slots.filter(s => !s.card);
+  if (!ownSlots.length) return;
+  const allTargets = [...gameState.p1.slots, ...gameState.p2.slots].filter(s => s && s.owner !== player && !gameState[s.owner].isStaggered);
+  const ownTargets = p.slots.filter(s => !s.card);
+  const pool = [...allTargets, ...ownTargets];
+  const target = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+  const slot = ownSlots[0];
+  slot.card = card;
+  slot.targetSlot = target;
+  slot.isForcedCorrosion = true;
+  p.isCorroded = true;
+  p.corrosionEgoId = ego.id;
+  p.usedEgosThisTurn.push(ego.id);
+  p.activeEgoPassives = [...new Set([...(p.activeEgoPassives || []), ego.egoPassiveId].filter(Boolean))];
+  p.sinRes = { ...(ego.sinRes || p.sinRes) };
+  log('[E.G.O侵蝕] '+playerLabel(player)+'が「'+ego.name+'」に侵蝕。制御不能でランダム対象を攻撃します。');
+  updateResDisplay(player);
 }
 
 function playCardToSlot(player, slot, card, targetSlot) {
@@ -283,6 +332,12 @@ async function executeFullTurn() {
   ['p1', 'p2'].forEach(p => {
     gameState[p].light = Math.min(gameState[p].maxLight, gameState[p].light + 1);
     processStatusTurnEnd(p); drawCard(p);
+    if (gameState[p].isCorroded) {
+      gameState[p].sanity = 0;
+      gameState[p].isCorroded = false;
+      gameState[p].corrosionEgoId = null;
+      log('[E.G.O侵蝕終了] '+playerLabel(p)+'の精神力が0に戻りました。');
+    }
   });
   ['p1', 'p2'].forEach(p => emitHook('onTurnEnd', { player: p }));
   updateUI();
