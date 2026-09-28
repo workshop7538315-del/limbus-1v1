@@ -73,6 +73,7 @@ function startNewRound() {
 
   ['p1', 'p2'].forEach(p => {
     const player = gameState[p];
+    player.shield = 0;
     player.bloodPactFirstPageAvailable = true;
     player.bloodPactFirstPageHitCount = 0;
     player.sinkingPactUses = 0;
@@ -178,7 +179,7 @@ function playCardToSlot(player, slot, card, targetSlot) {
     payEgoResource(player, card.resourceCost);
     changeSanity(player, -card.sanityCost, `E.G.O「${card.name}」`);
     gameState[player].usedEgosThisTurn.push(card.egoId);
-    gameState[player].activeEgoPassives = [...new Set([...(gameState[player].activeEgoPassives || []), card.egoId])];
+    gameState[player].activeEgoPassives = [...new Set([...(gameState[player].activeEgoPassives || []), card.egoId, card.egoPassiveId].filter(Boolean))];
     gameState[player].sinRes = { ...(card.sinRes || gameState[player].sinRes) };
     updateResDisplay(player);
     log(`[E.G.O] ${playerLabel(player)}の罪悪耐性が「${card.name}」に切り替わりました。`);
