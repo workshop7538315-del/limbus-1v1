@@ -682,3 +682,15 @@
 .ego-card.sin-gluttony{background:#1c5c37}.ego-card.sin-gloom{background:#24506d}.ego-card.sin-pride{background:#49356d}.ego-card.sin-envy{background:#65336d}
 .sin-res-title{margin-top:4px;font-size:9px;color:#aaa;font-weight:bold}.sin-res-group{gap:2px}.sin-res-tag{font-size:8px;padding:1px 3px}
 @media(max-width:700px){.ego-loadout-panels{grid-template-columns:1fr}.ego-loadout-grid{grid-template-columns:repeat(5,minmax(54px,1fr));overflow-x:auto}.ego-risk-slot{min-width:54px}}
+
+.status-guide-section{margin:10px 0;background:#171717;border:1px solid #444;border-radius:6px;overflow:hidden}
+.status-guide-section>details>summary{cursor:pointer;padding:9px 10px;font-weight:bold;font-size:12px;background:#222;color:#eee;list-style:none}
+.status-guide-section>details>summary::-webkit-details-marker{display:none}
+.status-guide-section>details>summary:before{content:'▶';display:inline-block;margin-right:6px;font-size:9px;transition:transform .15s}
+.status-guide-section>details[open]>summary:before{transform:rotate(90deg)}
+.status-guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:7px}
+.status-guide-grid details{background:#202020;border:1px solid #3b3b3b;border-radius:4px}
+.status-guide-grid summary{cursor:pointer;padding:7px;font-size:10px;font-weight:bold;color:#ddd}
+.status-guide-grid p{margin:0;padding:0 8px 8px;color:#bbb;font-size:9px;line-height:1.6}
+.status-guide-grid details[open] summary{border-bottom:1px solid #3b3b3b}
+@media(max-width:700px){.status-guide-grid{grid-template-columns:1fr}}
