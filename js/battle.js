@@ -305,6 +305,11 @@ function logCoinRoll(player, skill, coinResult, context = '') {
 }
 
 async function executeFullTurn() {
+  ['p1','p2'].forEach(p => {
+    const info = getResonanceInfo(p);
+    const active = info.active.length ? info.active.map(getSinLabel).join('・') : 'なし';
+    log('[共鳴検知] '+playerLabel(p)+' 共鳴数 '+Object.entries(info.counts).filter(([,n])=>n>0).map(([s,n])=>getSinLabel(s)+'='+n).join(' / ')+' / 発生: '+active);
+  });
   log('=== 幕の戦闘開始 ===');
   const allSlots = [...gameState.p1.slots, ...gameState.p2.slots];
   allSlots.forEach(s => { s.resolved = false; s.defenseStocked = false; s.counterUsed = false; s.counterRegistered = false; });
@@ -564,6 +569,7 @@ function resolveDefenseAgainstAttack(attacker, attackSkill, defender, defense, i
 
 function executeAttackCoin(attacker, skill, defender, coinIndex, slot, fromClash) {
   const coin = flipCoin(attacker, skill, coinIndex);
+  if (slot?._egoDamageMultiplier && coin.power > 0) coin.power = Math.floor(coin.power * slot._egoDamageMultiplier);
   triggerBleedOnAttackRoll(attacker);
   let power = coin.power;
   const source = coinIndex < (skill.coins?.length || 0) ? skill.coins[coinIndex] : {};
