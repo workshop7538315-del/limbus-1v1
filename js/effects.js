@@ -544,6 +544,7 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     }
   }
   if (effectSource?.special === 'tremor_burst') triggerTremorBurst(resolvedTarget, effectSource.multiplier || 1);
+  triggerRupture(resolvedTarget);
   if (effectSource?.special === 'rupture_trigger') triggerRupture(resolvedTarget);
   if (effectSource?.special === 'abyss_draw_if_5') {
     const sinking = getStatus(resolvedTarget, 'sinking');
