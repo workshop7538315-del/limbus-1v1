@@ -268,6 +268,7 @@ function flipCoin(player, skill, coinIndex, includeSkillBonus = true) {
     power += bonus;
   }
   power += getSkillFinalPowerModifier(player, skill);
+  if (skill?.isCorrosion && skill?.egoId === 'ego_don_scissors' && hasResonance(player, 'envy')) power += 1;
   if (gameState[player].core?.powerAlwaysZero) {
     power = 0;
     bonus = 0;
@@ -288,6 +289,7 @@ function rollSkillForClash(player, skill, remainingCoins, opponentPlayer = null,
   power += getCoinPowerBonus(player, skill);
   power += getSkillFinalPowerModifier(player, skill);
   power += getClashPowerModifier(player);
+  if (skill?.isCorrosion && skill?.egoId === 'ego_don_scissors' && hasResonance(player, 'envy')) power += 1;
   if (opponentPlayer && opponentSkill) {
     const levelDiff = getSkillCombatLevel(player, skill) - getSkillCombatLevel(opponentPlayer, opponentSkill);
     if (levelDiff > 0) power += Math.floor(levelDiff / 3);
@@ -635,10 +637,15 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   const levelDiff = offLevel - defLevel;
   const levelMult = 1 + (levelDiff / (Math.abs(levelDiff) + 25));
   const finalDmg = Math.floor(Math.max(0, amount) * mult * sinResistance * levelMult * outputMult * takenMult);
-  p.hp = Math.max(0, p.hp - finalDmg);
-  log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? `混乱中補正 ×${staggerMultiplier.toFixed(1)}` : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(sin)}) ×${sinResistance}` : ''} / Lv差 ${levelDiff}→×${levelMult.toFixed(3)} / 与ダメ×${outputMult.toFixed(2)} / 被ダメ×${takenMult.toFixed(2)}）`);
+  const shieldBefore = p.shield || 0;
+  const shieldDamage = Math.min(shieldBefore, finalDmg);
+  p.shield = Math.max(0, shieldBefore - shieldDamage);
+  const hpDamage = Math.max(0, finalDmg - shieldDamage);
+  p.hp = Math.max(0, p.hp - hpDamage);
+  if (finalDmg > 0 && attacker) p.cumulativeDamageTaken = (p.cumulativeDamageTaken || 0) + finalDmg;
+  log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? `混乱中補正 ×${staggerMultiplier.toFixed(1)}` : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(sin)}) ×${sinResistance}` : ''} / Lv差 ${levelDiff}→×${levelMult.toFixed(3)} / 与ダメ×${outputMult.toFixed(2)} / 被ダメ×${takenMult.toFixed(2)} / バリア吸収${shieldDamage}）`);
   emitHook('onDamage', { target, diceType: attackType, amount: finalDmg, attacker });
-  if (!p.isStaggered && finalDmg > 0) checkStaggerThresholds(target);
+  if (!p.isStaggered && hpDamage > 0) checkStaggerThresholds(target);
 
   if (!options.suppressCounter && p.hp > 0 && !p.isStaggered && finalDmg > 0) triggerNormalCounter(target, attacker, finalDmg);
 }
