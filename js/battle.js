@@ -440,7 +440,6 @@ async function executeDonScissorsUnbreakableLoss(player, skill, defender, slot) 
     const coin=flipCoin(player, skill, i);
     triggerBleedOnAttackRoll(player);
     let power=coin.power;
-    if (skill.isCorrosion && hasResonance(player,'envy')) power += 1;
     power = Math.floor(power * multiplier);
     executeAttackDamage(player, skill, defender, power, i, slot, coin, false);
     const damage=Math.max(0,beforeHp-gameState[defender].hp);
@@ -511,8 +510,8 @@ async function resolveClash(slotA, slotB) {
     applySkillClashWinEffects(pB, skillB, pA);
     await executeWinningSkillCoins(pB, skillB, pA, remB, slotB, true);
   }
-  if (remA <= 0 && skillA) { applyDonScissorsClashLose(pA, skillA); if (skillA.isUnbreakable || skillA.coins?.some(c => c?.unbreakable)) await executeDonScissorsUnbreakableLoss(pA, skillA, pB, slotA); }
-  if (remB <= 0 && skillB) { applyDonScissorsClashLose(pB, skillB); if (skillB.isUnbreakable || skillB.coins?.some(c => c?.unbreakable)) await executeDonScissorsUnbreakableLoss(pB, skillB, pA, slotB); }
+  if (remA <= 0 && skillA) { applyDonScissorsClashLose(pA, skillA); if (skillA.isCorrosion) slotA._donCorrosionLoss = true; if (skillA.isUnbreakable || skillA.coins?.some(c => c?.unbreakable)) await executeDonScissorsUnbreakableLoss(pA, skillA, pB, slotA); }
+  if (remB <= 0 && skillB) { applyDonScissorsClashLose(pB, skillB); if (skillB.isCorrosion) slotB._donCorrosionLoss = true; if (skillB.isUnbreakable || skillB.coins?.some(c => c?.unbreakable)) await executeDonScissorsUnbreakableLoss(pB, skillB, pA, slotB); }
   if (isDefenseSkill(skillA)) stockUnusedDefenseCoins(slotA, Math.max(0, remA));
   if (isDefenseSkill(skillB)) stockUnusedDefenseCoins(slotB, Math.max(0, remB));
 }
