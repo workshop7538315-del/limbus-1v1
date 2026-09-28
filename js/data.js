@@ -196,7 +196,7 @@ const CARD_DATABASE = [
 
 const EGO_DATABASE = [
   {
-    id: 'ego_crows_eye_view', name: "Crow's Eye View", sinner: 'Yi Sang', risk: 'ZAYIN',
+    id: 'ego_crows_eye_view', name: '烏瞰図', sinner: 'Yi Sang', risk: 'ZAYIN',
     sin: 'sloth', sinRes: { wrath:1, lust:1, sloth:0.75, gluttony:1, gloom:2, pride:1, envy:2 }, attackType: 'pierce', skillType: 'attack', cost: 0,
     basePower: 18, coinPower: 6, coinCount: 1, sanityCost: 10,
     resourceCost: { wrath: 1, sloth: 3 },
@@ -204,7 +204,7 @@ const EGO_DATABASE = [
     coins: [{ onHit: { special: 'ego_crows_eye' } }]
   },
   {
-    id: 'ego_chains_of_others', name: 'Chains of Others', sinner: 'Meursault', risk: 'ZAYIN',
+    id: 'ego_chains_of_others', name: '他人の鎖', sinner: 'Meursault', risk: 'ZAYIN',
     sin: 'pride', sinRes: { wrath:1, lust:2, sloth:1, gluttony:2, gloom:2, pride:0.75, envy:1 }, attackType: 'blunt', skillType: 'attack', cost: 0,
     basePower: 19, coinPower: 3, coinCount: 1, sanityCost: 10,
     resourceCost: { sloth: 1, gloom: 1, envy: 2 },
