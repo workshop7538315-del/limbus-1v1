@@ -249,7 +249,10 @@ function getSkillCombatLevel(player, skill) {
 }
 function getDamageOutputMultiplier(player, attackType, sin) {
   let bonus = getActiveStatusPower(player,'damage_up') - getActiveStatusPower(player,'damage_down');
-  if (sin === 'envy' && gameState[player]?.activeEgoPassives?.includes('ego_don_scissors_passive')) bonus += hasResonance(player, 'envy') ? 1.1 : 1.0;
+  if (sin === 'envy' && gameState[player]?.activeEgoPassives?.includes('ego_don_scissors_passive')) {
+    bonus += 1.10;
+    bonus += Math.min(0.07, getResonanceCount(player, 'envy') * 0.01);
+  }
   if (attackType) bonus += getActiveStatusPower(player,attackType+'_damage_up') - getActiveStatusPower(player,attackType+'_damage_down');
   if (sin) bonus += getActiveStatusPower(player,sin+'_damage_up') - getActiveStatusPower(player,sin+'_damage_down');
   return Math.max(0, 1 + 0.1 * bonus);
@@ -575,9 +578,14 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
 
 function processEgoTurnStart(player) {
   const p = gameState[player];
+  if (p.pendingEgoPassives?.length) {
+    p.activeEgoPassives = [...new Set([...(p.activeEgoPassives || []), ...p.pendingEgoPassives])];
+    p.pendingEgoPassives = [];
+    log('[E.G.Oパッシブ] '+playerLabel(player)+'のE.G.Oパッシブが発動。');
+  }
   if (p.activeEgoPassives?.includes('ego_don_scissors_passive')) {
     p.egoPassiveOffenseBonus = Math.min(3, Math.floor((p.cumulativeDamageTaken || 0) / 20));
-    if (p.egoPassiveOffenseBonus > 0) log('[E.G.Oパッシブ] '+playerLabel(player)+'の攻撃レベル+'+p.egoPassiveOffenseBonus+'（累積被ダメージ）');
+    if (p.egoPassiveOffenseBonus > 0) log('[E.G.Oパッシブ] '+playerLabel(player)+'の攻撃レベル+'+p.egoPassiveOffenseBonus+'（累積被ダメージ/20）');
   } else p.egoPassiveOffenseBonus = 0;
 }
 
