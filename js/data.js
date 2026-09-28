@@ -210,6 +210,26 @@ const EGO_DATABASE = [
     resourceCost: { sloth: 1, gloom: 1, envy: 2 },
     effect: 'E.G.O: 精神-10。的中時、相手に次の幕の束縛5・攻撃威力減少4、自分に次の幕の束縛3・攻撃威力減少3・保護2。',
     coins: [{ onHit: { special: 'ego_chains_others' } }]
+  },
+  {
+    id: 'ego_don_scissors', name: '私はチョキを出すね、そっちは？', sinner: 'Don Quixote', risk: 'ZAYIN',
+    sin: 'envy', sinRes: { wrath:1, lust:1, sloth:2, gluttony:1, gloom:2, pride:1, envy:0.75 },
+    attackType: 'slash', skillType: 'attack', cost: 0, basePower: 12, coinPower: 12, coinCount: 1, sanityCost: 20,
+    resourceCost: { envy: 5 },
+    effect: '嫉妬5。マッチ勝利後: 自分のHPを回復し、精神力5回復。マッチ敗北: バリアを得て、この攻撃のダメージを大幅強化。',
+    coins: [{ unbreakable: true, onHit: { status: { id: 'power_down', count: 1, target: 'opponent' }, special: 'ego_don_scissors_hit' } }],
+    egoPassiveId: 'ego_don_scissors_passive',
+    corrosionSanityCost: 20,
+    corrosion: {
+      basePower: 4, coinPower: 4, coinCount: 3, attackType: 'slash', skillType: 'attack', indiscriminate: true,
+      resourceCost: { envy: 5 },
+      effect: '侵蝕: 敵味方識別不可。ランダム対象。共鳴発生時に最終威力+1。マッチ勝利で与ダメージ+100%、敗北でバリア。',
+      coins: [
+        { unbreakable: true, onHit: { status: { id: 'power_down', count: 1, target: 'opponent' } } },
+        { unbreakable: true, onHit: { status: { id: 'power_down', count: 1, target: 'opponent' } } },
+        { unbreakable: true, onHit: { status: { id: 'power_down', count: 1, target: 'opponent' }, special: 'ego_don_scissors_corrosion_hit' } }
+      ]
+    }
   }
 ];
 
