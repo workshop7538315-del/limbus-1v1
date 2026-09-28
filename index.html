@@ -73,7 +73,23 @@
         <button class="filter-btn" onclick="setFilter('breath', event)">呼吸</button>
         <button class="filter-btn" onclick="setFilter('bleed', event)">出血</button>
         <button class="filter-btn" onclick="setFilter('sinking', event)">沈潜</button>
+        <button class="filter-btn" onclick="setFilter('tremor', event)">振動</button>
+        <button class="filter-btn" onclick="setFilter('rupture', event)">破裂</button>
       </div>
+    </div>
+
+    <div class="status-guide-section">
+      <details>
+        <summary>バフ・デバフ・状態異常の解説</summary>
+        <div class="status-guide-grid">
+          <details><summary>基本バフ</summary><p><b>迅速</b>：速度を増加。<b>攻撃威力増加</b>：攻撃スキルの最終威力を増加。<b>防御威力増加</b>：防御スキルの最終威力を増加。<b>マッチ威力増加</b>：マッチ時の威力を増加。<b>威力増加</b>：スキル最終威力を増加。<b>保護</b>：受けるダメージをCount×10%減少。</p></details>
+          <details><summary>基本デバフ</summary><p><b>束縛</b>：速度を減少。<b>攻撃威力減少</b>：攻撃スキルの最終威力を減少。<b>防御威力減少</b>：防御スキルの最終威力を減少。<b>マッチ威力減少</b>：マッチ時の威力を減少。<b>威力減少</b>：スキル最終威力を減少。<b>脆弱</b>：受けるダメージをCount×10%増加。</p></details>
+          <details><summary>コイン・レベル系</summary><p><b>プラスコイン強化/減少</b>：プラスコインのCoin Powerを増減。<b>マイナスコイン強化/減少</b>：マイナスコインのCoin Powerを増減。<b>攻撃/防御レベル増減</b>：攻撃・防御レベルとレベル差による補正に影響します。</p></details>
+          <details><summary>ダメージ系</summary><p><b>与ダメージ増加/減少</b>：与えるダメージを増減。<b>斬撃/貫通/打撃ダメージ増減</b>：該当攻撃タイプのみ。<b>罪悪属性ダメージ増減</b>：該当罪悪属性の攻撃のみ。<b>脆弱/保護の属性・攻撃タイプ版</b>も同様に該当する攻撃へ適用されます。</p></details>
+          <details><summary>出血・振動・破裂・沈潜</summary><p><b>出血</b>：攻撃コインを振るたびPotency分の固定ダメージを受け、Countが1減少。<br><b>振動</b>：振動爆発を受けるとPotency分だけ混乱閾値を上昇させる。幕終了時Count-1。<br><b>振動爆発</b>：対象の振動Potencyを基準に混乱閾値を上昇させ、振動Countを1消費。<br><b>破裂</b>：攻撃を受けるたびPotency分の固定ダメージを受け、Countが1減少。<br><b>沈潜</b>：攻撃を受けるとPotency分だけ精神を減少させ、Countが1減少。</p></details>
+          <details><summary>呼吸・充電・特殊</summary><p><b>呼吸</b>：クリティカル確率をPotency×5%として、Count回の攻撃まで保持。<b>充電</b>：特定スキルの追加効果に使うリソース。<b>麻痺</b>：指定されたコインを0威力として扱います。<b>E.G.O資源増幅</b>：スキル使用時に得るE.G.O資源を増加させます。</p></details>
+        </div>
+      </details>
     </div>
 
     <div class="deck-builder-grid">
