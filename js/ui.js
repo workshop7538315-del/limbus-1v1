@@ -202,7 +202,7 @@ function updateUI(){
   ['p1','p2'].forEach(p=>{
     const s=gameState[p]; document.getElementById(`${p}-hp`).innerText=s.hp;document.getElementById(`${p}-maxhp`).innerText=s.maxHp;document.getElementById(`${p}-hp-bar`).style.width=`${s.maxHp?(s.hp/s.maxHp)*100:0}%`;
     document.getElementById(`${p}-sanity`).innerText=s.sanity;document.getElementById(`${p}-sanity-bar`).style.width=`${((s.sanity+45)/90)*100}%`;
-    document.getElementById(`${p}-stagger`).innerText=s.stagger;document.getElementById(`${p}-maxstagger`).innerText=s.maxStagger;document.getElementById(`${p}-stagger-bar`).style.width=`${s.maxStagger?(s.stagger/s.maxStagger)*100:0}%`;
+    const nextThreshold=getNextStaggerThreshold(p); document.getElementById(`${p}-stagger`).innerText=nextThreshold===null?'なし':nextThreshold; document.getElementById(`${p}-maxstagger`).innerText=`Lv${(s.staggerLevel||0)+1}`; document.getElementById(`${p}-stagger-bar`).style.width=`${nextThreshold===null?0:Math.min(100,(nextThreshold/s.maxHp)*100)}%`;
     document.getElementById(`${p}-light`).innerText=s.light;document.getElementById(`${p}-maxlight`).innerText=s.maxLight;renderStatusEffects(p);renderEgoResourcePanel(p);
     document.getElementById(`${p}-box`).classList.toggle('staggered',s.isStaggered);
     const slotsDiv=document.getElementById(`${p}-speed-slots`); slotsDiv.innerHTML=`<div class="speed-range-label">速度範囲: ${s.core.speedMin}～${s.core.speedMax}</div>`;
