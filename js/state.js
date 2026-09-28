@@ -40,7 +40,7 @@ const gameState = {
   p2: {
     core: null,
     hp: 0, maxHp: 0,
-    staggerThresholds: [], staggerLevel: 0, isStaggered: false, staggerSkipDone: false, staggerThresholdBonus: 0,
+    staggerThresholds: [], triggeredStaggerThresholds: 0, staggerLevel: 0, isStaggered: false, staggerSkipDone: false, staggerThresholdBonus: 0,
     sanity: 0, minSanity: -45, maxSanity: 45,
     light: 3, maxLight: 3,
     egoResources: { wrath:0, lust:0, sloth:0, gluttony:0, gloom:0, pride:0, envy:0 },
