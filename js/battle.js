@@ -376,6 +376,46 @@ function getClashSanityGain(clashCount) {
   // Limbusの標準的な基礎値: 勝利 +10、1回目を超えるクラッシュ回数ごとに20%増加。
   return Math.floor(10 * (1 + 0.20 * Math.max(0, clashCount - 1)));
 }
+function isDonScissorsEgo(skill) { return skill?.egoId === 'ego_don_scissors'; }
+function getEgoResonanceActive(player, sin) { return hasResonance(player, sin); }
+function applyDonScissorsClashWin(player, skill) {
+  if (!isDonScissorsEgo(skill) || skill.isCorrosion) return;
+  const p = gameState[player];
+  const active = getEgoResonanceActive(player, 'envy');
+  const healPct = active ? 0.06 : 0.02;
+  const hpBefore = p.hp;
+  p.hp = Math.min(p.maxHp, p.hp + Math.max(1, Math.floor(p.maxHp * healPct)));
+  changeSanity(player, 5, 'ドンキE.G.O回復');
+  log('[E.G.O] '+playerLabel(player)+'がマッチ勝利。HP '+hpBefore+'→'+p.hp+'、精神力+5'+(active?'（嫉妬共鳴あり）':'')+'。');
+}
+function applyDonScissorsClashLose(player, skill) {
+  if (!isDonScissorsEgo(skill)) return;
+  const p = gameState[player];
+  const active = getEgoResonanceActive(player, 'envy');
+  if (active) {
+    p.shield = Math.min(30, (p.shield || 0) + 10);
+    log('[E.G.O] '+playerLabel(player)+'がマッチ敗北。バリア+10（嫉妬共鳴あり）。');
+  }
+}
+async function executeDonScissorsUnbreakableLoss(player, skill, defender, slot) {
+  const count = skill.coinCount || 0;
+  const multiplier = skill.isCorrosion ? 1 : 3;
+  log('[E.G.O] '+playerLabel(player)+'の「'+skill.name+'」は破壊不能コインでマッチ敗北後も攻撃。与ダメージ補正×'+multiplier+'。');
+  for (let i=0;i<count;i++) {
+    const beforeHp=gameState[defender].hp;
+    const coin=flipCoin(player, skill, i);
+    triggerBleedOnAttackRoll(player);
+    let power=coin.power;
+    if (skill.isCorrosion && hasResonance(player,'envy')) power += 1;
+    power = Math.floor(power * multiplier);
+    executeAttackDamage(player, skill, defender, power, i, slot, coin, false);
+    const damage=Math.max(0,beforeHp-gameState[defender].hp);
+    logCoinRoll(player, skill, {...coin,power}, '（侵蝕/マッチ敗北後）');
+    await animateHit({attacker:playerLabel(player),defender:playerLabel(defender),damage,effects:'破壊不能コイン / On Hit',left:{...animSideFromSkill(player,skill,damage,[],count-i-1),resultText:damage+'ダメージ'},right:{...animSideFromSkill(defender,skill,gameState[defender].hp,[],0),resultText:'残り'+gameState[defender].hp}});
+    if(gameState[defender].hp<=0) break;
+  }
+}
+
 async function resolveClash(slotA, slotB) {
   const pA = slotA.owner, pB = slotB.owner, skillA = slotA.card, skillB = slotB.card;
   if (hasClashableCounter(skillA) || hasClashableCounter(skillB)) {
@@ -428,13 +468,17 @@ async function resolveClash(slotA, slotB) {
 
   if (remA > 0) {
     log(`[マッチ決着] ${playerLabel(pA)}「${skillA.name}」の残存コイン${remA}枚で攻撃/効果を実行。`);
+    applyDonScissorsClashWin(pA, skillA);
     applySkillClashWinEffects(pA, skillA, pB);
     await executeWinningSkillCoins(pA, skillA, pB, remA, slotA, true);
   } else if (remB > 0) {
     log(`[マッチ決着] ${playerLabel(pB)}「${skillB.name}」の残存コイン${remB}枚で攻撃/効果を実行。`);
+    applyDonScissorsClashWin(pB, skillB);
     applySkillClashWinEffects(pB, skillB, pA);
     await executeWinningSkillCoins(pB, skillB, pA, remB, slotB, true);
   }
+  if (remA <= 0 && skillA) { applyDonScissorsClashLose(pA, skillA); if (skillA.isUnbreakable || skillA.coins?.some(c => c?.unbreakable)) await executeDonScissorsUnbreakableLoss(pA, skillA, pB, slotA); }
+  if (remB <= 0 && skillB) { applyDonScissorsClashLose(pB, skillB); if (skillB.isUnbreakable || skillB.coins?.some(c => c?.unbreakable)) await executeDonScissorsUnbreakableLoss(pB, skillB, pA, slotB); }
   if (isDefenseSkill(skillA)) stockUnusedDefenseCoins(slotA, Math.max(0, remA));
   if (isDefenseSkill(skillB)) stockUnusedDefenseCoins(slotB, Math.max(0, remB));
 }
