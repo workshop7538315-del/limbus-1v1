@@ -711,3 +711,7 @@
 .ego-detail-block{margin-top:4px;padding:4px;background:#222;border:1px solid #555;border-radius:3px}
 .ego-used-label{margin-top:4px;font-size:9px;color:#aaa}
 @media(max-width:700px){.ego-builder-section{padding:8px}.ego-builder-details > summary{font-size:13px;min-height:26px;display:flex;align-items:center}.ego-card-details summary{font-size:9px}.ego-detail-content{font-size:8px;line-height:1.5}}
+
+/* E.G.O詳細アコーディオン */
+.ego-card-details { display:block; position:relative; z-index:3; }
+.ego-card-details summary { display:block; min-height:18px; padding:3px 0; }
