@@ -226,6 +226,11 @@ function processNextPlanningStep() {
   }
   const currentSlot = getCurrentPlanningSlot();
   updateUI();
+  if (currentSlot.card) {
+    gameState.currentQueueIndex++;
+    processNextPlanningStep();
+    return;
+  }
   if (currentSlot.owner === 'p2') {
     chooseP2Action(currentSlot); gameState.currentQueueIndex++; processNextPlanningStep();
   } else {
