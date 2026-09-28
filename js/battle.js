@@ -24,7 +24,7 @@ function setupCharacter(p, core, egoIds = {}) {
   state.hp = core.hp; state.maxHp = core.hp;
   const oldStaggerRatio = core.hp > 0 ? Math.min(1, (core.stagger ?? core.hp) / core.hp) : 0.5;
   state.staggerThresholds = [Math.floor(core.hp * oldStaggerRatio)];
-  state.staggerLevel = 0; state.staggerThresholdBonus = 0;
+  state.triggeredStaggerThresholds = 0; state.staggerLevel = 0; state.staggerThresholdBonus = 0;
   state.isStaggered = false; state.staggerSkipDone = false;
   state.sanity = 0; state.minSanity = -45; state.maxSanity = 45;
   state.maxLight = core.maxLight; state.light = core.maxLight;
@@ -585,22 +585,25 @@ function triggerNormalCounter(target, attacker, damage) {
 }
 function getStaggerThresholds(player) {
   const p = gameState[player];
-  return (p.staggerThresholds || []).map(v => Math.max(0, v + (p.staggerThresholdBonus || 0)));
+  const thresholds = [...(p.staggerThresholds || [])];
+  const nextIndex = Math.max(0, p.triggeredStaggerThresholds || 0);
+  if (thresholds[nextIndex] !== undefined) thresholds[nextIndex] += (p.staggerThresholdBonus || 0);
+  return thresholds.map(v => Math.max(0, v));
 }
 function getNextStaggerThreshold(player) {
   const p = gameState[player];
   const thresholds = getStaggerThresholds(player).filter(v => v > 0);
-  if (!thresholds.length) return null;
-  // Thresholds are HP values. The next untriggered threshold is the highest
-  // threshold still above the current HP.
-  return thresholds.find(v => p.hp <= v) ?? null;
+  const index = p.triggeredStaggerThresholds || 0;
+  return thresholds[index] ?? null;
 }
 function checkStaggerThresholds(target) {
   const p = gameState[target];
   if (p.isStaggered || p.hp <= 0) return;
   const thresholds = getStaggerThresholds(target).filter(v => v > 0).sort((a,b) => b-a);
   const crossed = thresholds.filter(v => p.hp <= v).length;
-  if (crossed <= (p.staggerLevel || 0)) return;
+  const triggered = p.triggeredStaggerThresholds || 0;
+  if (crossed <= triggered) return;
+  p.triggeredStaggerThresholds = crossed;
   p.staggerLevel = Math.min(2, crossed - 1);
   p.isStaggered = true;
   p.staggerSkipDone = false;
