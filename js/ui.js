@@ -201,46 +201,77 @@ function updateUI(){
 function startRoundLogBlock(round){const logDiv=document.getElementById('log'),block=document.createElement('div');block.className='log-round';block.innerHTML=`<div class="log-round-title">第${round}幕</div><div class="log-round-body"></div>`;logDiv.appendChild(block);logDiv.scrollTop=logDiv.scrollHeight;}
 function log(msg){const logDiv=document.getElementById('log');let body=logDiv.querySelector('.log-round:last-child .log-round-body');if(!body){startRoundLogBlock(gameState.round||1);body=logDiv.querySelector('.log-round:last-child .log-round-body');}const entry=document.createElement('div');entry.className='log-entry';entry.innerHTML=msg;body.appendChild(entry);logDiv.scrollTop=logDiv.scrollHeight;}
 function formatSkillList(card){ if(!card)return ''; const coins=(card.coins||[]).map((c,i)=>{const effects=getSkillHitEffectTexts(card,c);return `<span class="log-dice-tag attack"><span class="coin-dot">${i+1}</span> ${card.coinPower>=0?`+${card.coinPower}`:card.coinPower}${effects.length?`<span class="tooltip-text log-dice-tooltip-text">${effects.join('<br>')}</span>`:''}</span>`;}).join(' '); return coins||((card.legacyDice||[]).map(d=>`<span class="log-dice-tag counter_clash">${d.min}～${d.max}</span>`).join(' ')); }
-function logClashSummary(slotA,slotB){const logDiv=document.getElementById('log');let body=logDiv.querySelector('.log-round:last-child .log-round-body');if(!body){startRoundLogBlock(gameState.round||1);body=logDiv.querySelector('.log-round:last-child .log-round-body');}const entry=document.createElement('div');entry.className='log-entry log-clash-entry';entry.innerHTML=`<div class="log-clash-title">[マッチ]</div><div class="log-clash-sides"><div><strong>${playerLabel(slotA.owner)}</strong> 速度${slotA.speed}「${formatCardNameWithTooltip(slotA.card)}」<div class="log-clash-dice">${formatSkillList(slotA.card)}</div></div><div class="log-clash-vs">VS</div><div><strong>${playerLabel(slotB.owner)}</strong> 速度${slotB.speed}「${formatCardNameWithTooltip(slotB.card)}」<div class="log-clash-dice">${formatSkillList(slotB.card)}</div></div></div>`;body.appendChild(entry);logDiv.scrollTop=logDiv.scrollHeight;}function renderEgoCards(handDiv) {
+function logClashSummary(slotA,slotB){const logDiv=document.getElementById('log');let body=logDiv.querySelector('.log-round:last-child .log-round-body');if(!body){startRoundLogBlock(gameState.round||1);body=logDiv.querySelector('.log-round:last-child .log-round-body');}const entry=document.createElement('div');entry.className='log-entry log-clash-entry';entry.innerHTML=`<div class="log-clash-title">[マッチ]</div><div class="log-clash-sides"><div><strong>${playerLabel(slotA.owner)}</strong> 速度${slotA.speed}「${formatCardNameWithTooltip(slotA.card)}」<div class="log-clash-dice">${formatSkillList(slotA.card)}</div></div><div class="log-clash-vs">VS</div><div><strong>${playerLabel(slotB.owner)}</strong> 速度${slotB.speed}「${formatCardNameWithTooltip(slotB.card)}」<div class="log-clash-dice">${formatSkillList(slotB.card)}</div></div></div>`;body.appendChild(entry);logDiv.scrollTop=logDiv.scrollHeight;}function getEgoDisplayName(ego) {
+  if (ego?.id === 'ego_crows_eye_view') return '烏瞰図';
+  if (ego?.id === 'ego_chains_of_others') return '他人の鎖';
+  return ego?.name || '名称未設定E.G.O';
+}
+
+function getAttackTypeLabel(attackType) {
+  return { slash: '斬撃', pierce: '貫通', blunt: '打撃' }[attackType] || attackType || '未設定';
+}
+
+function renderEgoCards(handDiv) {
   gameState.p1.equippedEgos?.forEach(ego => {
     const card = makeEgoCard(ego);
     const selected = selectedHandCard?.egoId === ego.id;
     const canUse = canPayEgoResource('p1', ego.resourceCost) && !gameState.p1.usedEgosThisTurn?.includes(ego.id);
     const cardEl = document.createElement('div');
     cardEl.className = `card ego-card sin-${ego.sin}${selected?' selected':''}${canUse?'':' unavailable'}`;
-    const costs = Object.entries(ego.resourceCost || {}).map(([sin,n]) => `${getSinLabel(sin)}×${n}`).join(' ');
+
+    const costs = Object.entries(ego.resourceCost || {})
+      .map(([sin,n]) => `${getSinLabel(sin)}×${n}`).join(' ') || 'なし';
+
     const power = `${ego.basePower}～${ego.basePower + ego.coinPower}`;
-    const coinText = `${ego.coinCount}コイン / コイン威力+${ego.coinPower}`;
+    const coinText = `${ego.coinCount || 0}コイン / コイン威力${ego.coinPower >= 0 ? '+' : ''}${ego.coinPower ?? 0}`;
+
+    const awakeningDetail = `
+      <div class="ego-detail-block">
+        <b>覚醒スキル</b><br>
+        威力: ${power} / ${coinText}<br>
+        攻撃: ${getAttackTypeLabel(ego.attackType)}<br>
+        罪悪属性: ${getSinLabel(ego.sin)}<br>
+        罪悪資源: ${costs}<br>
+        精神消費: -${ego.sanityCost ?? 0}
+      </div>
+      <div class="ego-detail-block">
+        <b>効果</b><br>
+        ${ego.effect || '追加効果なし'}
+      </div>`;
+
     const corrosion = ego.corrosion ? `
       <div class="ego-detail-block">
-        <b>侵蝕</b><br>
+        <b>侵蝕スキル</b><br>
         威力: ${ego.corrosion.basePower}～${ego.corrosion.basePower + ego.corrosion.coinPower}
-        / ${ego.corrosion.coinCount}コイン / コイン威力+${ego.corrosion.coinPower}<br>
-        ${ego.corrosion.effect || '侵蝕スキル'}
+        / ${ego.corrosion.coinCount}コイン
+        / コイン威力${ego.corrosion.coinPower >= 0 ? '+' : ''}${ego.corrosion.coinPower}<br>
+        攻撃: ${getAttackTypeLabel(ego.corrosion.attackType)}<br>
+        ${ego.corrosion.effect || '侵蝕時の追加効果なし'}
       </div>` : '';
+
     cardEl.innerHTML = `
-      <strong>E.G.O: ${ego.id === 'ego_crows_eye_view' ? '烏瞰図' : ego.id === 'ego_chains_of_others' ? '他人の鎖' : ego.name}</strong>
-      <br><small>${ego.sinner} / ${ego.risk}</small>
+      <strong>E.G.O: ${getEgoDisplayName(ego)}</strong>
       <details class="ego-card-details" onclick="event.stopPropagation()">
-        <summary>効果・威力を見る</summary>
+        <summary>詳細を見る</summary>
         <div class="ego-detail-content">
-          <div><b>威力:</b> ${power}　<b>${coinText}</b></div>
-          <div><b>攻撃:</b> ${ego.attackType === 'slash' ? '斬撃' : ego.attackType === 'pierce' ? '貫通' : ego.attackType === 'blunt' ? '打撃' : ego.attackType}</div>
-          <div><b>罪悪資源:</b> ${costs}</div>
-          <div><b>精神:</b> -${ego.sanityCost}</div>
-          <div class="ego-detail-block"><b>効果</b><br>${ego.effect || '追加効果なし'}</div>
+          <div><b>使用者:</b> ${ego.sinner}　<b>リスク:</b> ${ego.risk}</div>
+          ${awakeningDetail}
           ${corrosion}
         </div>
       </details>
-      ${gameState.p1.usedEgosThisTurn?.includes(ego.id)?'<div class="ego-used-label">この幕は使用済み</div>':''}`;
+      ${gameState.p1.usedEgosThisTurn?.includes(ego.id) ? '<div class="ego-used-label">この幕は使用済み</div>' : ''}`;
+
     cardEl.onclick = (event) => {
       if (event.target.closest('details')) return;
       if (!canUse) return;
       selectedHandCard = selected ? null : card;
       selectedTargetSlot = null;
       if (selectedHandCard && gameState.p2.slots.length === 1) selectedTargetSlot = gameState.p2.slots[0];
-      renderHand(); updatePlanningPrompt(); updateUI();
+      renderHand();
+      updatePlanningPrompt();
+      updateUI();
     };
+
     handDiv.appendChild(cardEl);
   });
 }
