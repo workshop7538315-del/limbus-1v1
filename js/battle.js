@@ -162,6 +162,22 @@ function applyEgoCorrosionAtTurnStart(player) {
   updateResDisplay(player);
 }
 
+function getRandomCorrosionChance(sanity) {
+  if (sanity <= -45) return 1;
+  if (sanity <= -35) return 0.75;
+  if (sanity <= -25) return 0.25;
+  return 0;
+}
+function shouldRandomCorrode(player, ego) {
+  if (!ego?.corrosion) return false;
+  const chance = getRandomCorrosionChance(gameState[player].sanity);
+  return chance > 0 && Math.random() < chance;
+}
+function getRandomCorrosionTarget(player) {
+  const candidates = [...gameState.p1.slots, ...gameState.p2.slots].filter(s => s && !gameState[s.owner].isStaggered);
+  return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
+}
+
 function playCardToSlot(player, slot, card, targetSlot) {
   if (card?.isEgo) {
     if (!gameState[player].equippedEgos?.some(e => e.id === card.egoId)) {
@@ -179,6 +195,11 @@ function playCardToSlot(player, slot, card, targetSlot) {
     payEgoResource(player, card.resourceCost);
     changeSanity(player, -card.sanityCost, `E.G.O「${card.name}」`);
     gameState[player].usedEgosThisTurn.push(card.egoId);
+    if (!card.isCorrosion && shouldRandomCorrode(player, card)) {
+      card = getCorrosionCard(card);
+      targetSlot = getRandomCorrosionTarget(player);
+      log(`[E.G.O侵蝕] ${playerLabel(player)}の「${card.name}」が精神力低下により侵蝕スキル化。対象をランダム再抽選。`);
+    }
     gameState[player].activeEgoPassives = [...new Set([...(gameState[player].activeEgoPassives || []), card.egoId, card.egoPassiveId].filter(Boolean))];
     gameState[player].sinRes = { ...(card.sinRes || gameState[player].sinRes) };
     updateResDisplay(player);
