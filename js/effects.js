@@ -201,6 +201,16 @@ function addCombatStatus(player, statusId, amount = 1, duration = 1) {
   }
   return {status:s,beforePower,beforeCount};
 }
+function getResonanceCounts(player) {
+  const counts = Object.fromEntries(SIN_TYPES.map(s => [s, 0]));
+  const slots = gameState[player]?.slots || [];
+  slots.forEach(slot => { const sin = slot?.card?.sin; if (sin && SIN_TYPES.includes(sin)) counts[sin]++; });
+  return counts;
+}
+function getResonanceCount(player, sin) { return getResonanceCounts(player)[sin] || 0; }
+function hasResonance(player, sin) { return getResonanceCount(player, sin) >= 2; }
+function getResonanceInfo(player) { const counts = getResonanceCounts(player); return { counts, active: SIN_TYPES.filter(s => counts[s] >= 2) }; }
+
 function getSkillFinalPowerModifier(player, skill) {
   if (!skill) return 0;
   let m = getActiveStatusPower(player,'power_up') - getActiveStatusPower(player,'power_down');
@@ -228,7 +238,7 @@ function getEffectiveCoinPower(player, skill, coinPower) {
 }
 function getOffenseLevel(player, skill) {
   const base=gameState[player]?.core?.offenseLevel || 0;
-  return base + (gameState[player]?.core?.offenseLevelBonus || 0) + getActiveStatusPower(player,'offense_level_up') - getActiveStatusPower(player,'offense_level_down');
+  return base + (gameState[player]?.core?.offenseLevelBonus || 0) + (gameState[player]?.egoPassiveOffenseBonus || 0) + getActiveStatusPower(player,'offense_level_up') - getActiveStatusPower(player,'offense_level_down');
 }
 function getDefenseLevel(player, skill) {
   const base=gameState[player]?.core?.defenseLevel || 0;
@@ -239,6 +249,7 @@ function getSkillCombatLevel(player, skill) {
 }
 function getDamageOutputMultiplier(player, attackType, sin) {
   let bonus = getActiveStatusPower(player,'damage_up') - getActiveStatusPower(player,'damage_down');
+  if (sin === 'envy' && gameState[player]?.activeEgoPassives?.includes('ego_don_scissors_passive')) bonus += hasResonance(player, 'envy') ? 1.1 : 1.0;
   if (attackType) bonus += getActiveStatusPower(player,attackType+'_damage_up') - getActiveStatusPower(player,attackType+'_damage_down');
   if (sin) bonus += getActiveStatusPower(player,sin+'_damage_up') - getActiveStatusPower(player,sin+'_damage_down');
   return Math.max(0, 1 + 0.1 * bonus);
@@ -523,6 +534,15 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     ['p1','p2'].forEach(a=>addStatusNextTurn(a,'haste',3,1));
     log(`[E.G.O] Crow's Eye View: ${playerLabel(enemy)}へ攻撃威力減少2、この幕終了後に束縛2。次幕に味方全員迅速3。`);
   }
+  if (effectSource?.special === 'ego_don_scissors_hit') {
+    addStatusNextTurn(resolvedTarget, 'power_down', 1, 1);
+    log('[E.G.O] 私はチョキを出すね、そっちは？: 次幕に威力減少1。');
+  }
+  if (effectSource?.special === 'ego_don_scissors_corrosion_hit') {
+    addStatusNextTurn(resolvedTarget, 'power_down', 1, 1);
+    addCombatStatus(resolvedTarget, 'bleed', 6, 1);
+    log('[E.G.O侵蝕] 私はチョキを出すね、そっちは？: 次幕に威力減少1、出血6。');
+  }
   if (effectSource?.special === 'ego_chains_others') {
     addStatusNextTurn(resolvedTarget,'bind',5,1);
     addStatusNextTurn(resolvedTarget,'attack_power_down',4,1);
@@ -550,6 +570,14 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     const sinking = getStatus(resolvedTarget, 'sinking');
     if (sinking?.power >= 5) { for (let i = 0; i < 3; i++) drawCard(player); log(`[的中] ${playerLabel(player)}の「${card.name}」: 沈潜威力5以上のため3枚ドロー`); }
   }
+}
+
+function processEgoTurnStart(player) {
+  const p = gameState[player];
+  if (p.activeEgoPassives?.includes('ego_don_scissors_passive')) {
+    p.egoPassiveOffenseBonus = Math.min(3, Math.floor((p.cumulativeDamageTaken || 0) / 20));
+    if (p.egoPassiveOffenseBonus > 0) log('[E.G.Oパッシブ] '+playerLabel(player)+'の攻撃レベル+'+p.egoPassiveOffenseBonus+'（累積被ダメージ）');
+  } else p.egoPassiveOffenseBonus = 0;
 }
 
 function applySkillClashWinEffects(player, card, target) {
