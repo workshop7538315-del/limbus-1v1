@@ -540,7 +540,7 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     log('[E.G.O] 私はチョキを出すね、そっちは？: 次幕に威力減少1、出血4。');
   }
   if (effectSource?.special === 'ego_don_scissors_corrosion_hit') {
-    addStatusNextTurn(resolvedTarget, 'power_down', 1, 1);
+    addStatusNextTurn(resolvedTarget, 'power_down', slot?._donCorrosionLoss ? 2 : 1, 1);
     addCombatStatus(resolvedTarget, 'bleed', 6, 1);
     log('[E.G.O侵蝕] 私はチョキを出すね、そっちは？: 次幕に威力減少1、出血6。');
   }
