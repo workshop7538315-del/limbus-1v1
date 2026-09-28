@@ -249,7 +249,7 @@ function getSkillCombatLevel(player, skill) {
 }
 function getDamageOutputMultiplier(player, attackType, sin) {
   let bonus = getActiveStatusPower(player,'damage_up') - getActiveStatusPower(player,'damage_down');
-  if (sin === 'envy' && !skill?.isEgo && gameState[player]?.activeEgoPassives?.includes('ego_don_scissors_passive')) bonus += hasResonance(player, 'envy') ? 1.1 : 1.0;
+  if (sin === 'envy' && gameState[player]?.activeEgoPassives?.includes('ego_don_scissors_passive')) bonus += hasResonance(player, 'envy') ? 1.1 : 1.0;
   if (attackType) bonus += getActiveStatusPower(player,attackType+'_damage_up') - getActiveStatusPower(player,attackType+'_damage_down');
   if (sin) bonus += getActiveStatusPower(player,sin+'_damage_up') - getActiveStatusPower(player,sin+'_damage_down');
   return Math.max(0, 1 + 0.1 * bonus);
