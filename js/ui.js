@@ -107,62 +107,90 @@ function renderEgoLoadout(player) {
     return `<div class="ego-risk-slot"><div class="ego-risk-label">${risk}</div><div class="ego-risk-content">${equipped ? `<span class="ego-equipped-mark">装備: ${equipped.name}</span>` : '<span class="ego-none">未装備</span>'}${options}</div></div>`;
   }).join('');
 }
-function renderBuilder(){
-  renderCoreSelectionList('p1-core-page-list',selectedP1CoreIds,toggleP1Core,'p1');
-  renderCoreSelectionList('p2-core-page-list',selectedP2CoreIds,toggleP2Core,'p2');
-  renderEgoLoadout('p1');
-  renderEgoLoadout('p2');
-  const pool=document.getElementById('card-pool-list'); pool.innerHTML='';
-  document.getElementById('editor-hint').innerText=`追加先: ${activeDeckEditor==='p1'?'P1':'P2'} デッキ（右側のデッキ見出しをクリックして切替）`;
-  CARD_DATABASE.filter(c=>{
-    if(currentFilter==='all') return true;
-    if(currentFilter.startsWith('sin:')) return c.sin===currentFilter.slice(4);
-    return c.tags?.includes(currentFilter);
-  }).slice().sort(compareCardsByCostThenName).forEach(card=>{
-    const countP1=decks.p1.filter(id=>id===card.id).length,countP2=decks.p2.filter(id=>id===card.id).length,isOpen=!!poolAccordionOpen[card.id];
-    const div=document.createElement('div'); div.className='pool-item-card';
-    div.innerHTML=`<div class="pool-item-header"><div class="pool-title-area" onclick="togglePoolAccordion('${card.id}',event)"><span class="accordion-icon">${isOpen?'▼':'▶'}</span><span class="card-name-text">${card.name}</span><span class="card-cost-text">(コスト:${card.cost})</span><span class="card-count-badge">[P1:${countP1}/3 P2:${countP2}/3]</span></div><div class="add-btn-group"><button class="add-btn" onclick="addBatchCards('${card.id}',1,event)">+1枚</button><button class="add-btn" onclick="addBatchCards('${card.id}',2,event)">+2枚</button><button class="add-btn" onclick="addBatchCards('${card.id}',3,event)">+3枚</button></div></div><div class="pool-item-body ${isOpen?'open':''}">${card.effect?`<div class="card-effect">${card.effect}</div>`:''}${skillDetailHtml(card)}</div>`;
-    pool.appendChild(div);
-  });
-  renderDeckList('p1'); renderDeckList('p2');
-  const ready=decks.p1.length===9&&decks.p2.length===9,start=document.getElementById('start-btn'); start.disabled=!ready; start.innerText=ready?'この編成で戦闘開始':`この編成で戦闘開始 (P1 ${decks.p1.length}/9・P2 ${decks.p2.length}/9)`;
+function renderEgoResourcePanel(player) {
+  const el=document.getElementById(`${player}-ego-resources`);
+  if(!el)return;
+  el.innerHTML=SIN_TYPES.map(sin=>`<span class="ego-resource sin-${sin}" title="${getSinLabel(sin)}">${getSinLabel(sin).slice(0,1)}<b>${gameState[player].egoResources?.[sin]||0}</b></span>`).join('');
 }
 
-function updateResDisplay(p){
-  const core=gameState[p].core,isStag=gameState[p].isStaggered,getRes=v=>isStag?{text:'弱点(x2)',class:'res-20'}:getResText(v);
-  const box=document.getElementById(`${p}-res-box`);
-  if(box) box.innerHTML=`<span class="res-tag ${getRes(core.res.slash).class}">斬:${getRes(core.res.slash).text}</span><span class="res-tag ${getRes(core.res.pierce).class}">突:${getRes(core.res.pierce).text}</span><span class="res-tag ${getRes(core.res.blunt).class}">打:${getRes(core.res.blunt).text}</span>`;
-  const sinBox=document.getElementById(`${p}-sin-res-box`);
-  if(sinBox) sinBox.innerHTML=SIN_TYPES.map(sin=>{
-    const v=gameState[p].sinRes?.[sin] ?? 1;
-    return `<span class="res-tag sin-res-tag sin-${sin}" title="${getSinLabel(sin)}: ×${v}">${getSinLabel(sin)}×${v}</span>`;
-  }).join('');
+function renderHand(){
+  const handDiv=document.getElementById('p1-hand'); handDiv.innerHTML=''; const currentSlot=getCurrentPlanningSlot(); if(!currentSlot||currentSlot.owner!=='p1')return;
+  renderEgoCards(handDiv);
+  gameState.p1.hand.forEach(card=>{ const cardEl=document.createElement('div'),selected=selectedHandCard===card; cardEl.className='card'+(selected?' selected':'');
+    cardEl.innerHTML=`<strong>${card.name}</strong><br><small>コスト: ${card.cost} / ${getSinLabel(card.sin)} / 表率: ${getHeadsChance('p1')}%</small><div class="skill-power-line">${getSkillPowerText(card)}</div>${card.effect?`<div class="card-effect">${card.effect}</div>`:''}<hr>${skillDetailHtml(card)}`;
+    cardEl.onclick=()=>{ if(!card.isEgo && gameState.p1.light<card.cost)return alert('光が不足しています！'); selectedHandCard=selected?null:card; if(!selectedHandCard)selectedTargetSlot=null; else if(selectedHandCard.skillType==='counter')selectedTargetSlot=null; else if(gameState.p2.slots.length===1)selectedTargetSlot=gameState.p2.slots[0]; else if(selectedTargetSlot&&!gameState.p2.slots.includes(selectedTargetSlot))selectedTargetSlot=null; renderHand();updatePlanningPrompt();updateUI();}; handDiv.appendChild(cardEl); });
 }
-function updatePlanningPrompt(){
-  const slot=getCurrentPlanningSlot(),info=document.getElementById('planning-info'),btn=document.getElementById('action-btn'); if(!slot||slot.owner!=='p1')return;
-  const speedText=`P1速度ダイス${slot.id+1} [速度:${slot.speed}]`, hasP2=gameState.p2.slots.length>0&&!gameState.p2.isStaggered;
-  if(!selectedHandCard){info.innerText=`${speedText} のバトルページを選択してください。手札のページをクリックするか、パスできます。`;btn.innerText='この速度ダイスをパス (ページ指定なし)';btn.disabled=false;return;}
-  if(selectedHandCard.skillType==='counter'){info.innerText=`${speedText}: 「${selectedHandCard.name}」→ 反撃待機。確定してください。`;btn.innerText='この反撃を確定';btn.disabled=false;return;}
-  if(!hasP2){info.innerText=`${speedText}: 「${selectedHandCard.name}」→ 一方攻撃。確定してください。`;btn.innerText='この行動を確定 (一方攻撃)';btn.disabled=false;return;}
-  if(!selectedTargetSlot){info.innerText=`${speedText}: 「${selectedHandCard.name}」を選択中。P2の速度ダイスをクリックしてください。`;btn.innerText='マッチ対象未選択';btn.disabled=true;return;}
-  info.innerText=`${speedText}: 「${selectedHandCard.name}」→ ${slotLabel(selectedTargetSlot)} にマッチ。`;btn.innerText='この行動を確定';btn.disabled=false;
+function renderStatusEffects(player){
+  const buff=document.getElementById(`${player}-buff-box`),debuff=document.getElementById(`${player}-debuff-box`);
+  if(!buff||!debuff)return;
+  buff.innerHTML='';debuff.innerHTML='';
+  Object.values(gameState[player].statuses||{}).forEach(status=>{
+    if(!status||status.count<=0)return;
+    const box=status.category==='debuff'?debuff:buff,def=STATUS_DEFINITIONS[status.id],value=def?.valueFromCount?status.count:(status.power||0);
+    const badge=document.createElement('span');
+    badge.className=`status-badge ${status.category==='debuff'?'status-debuff':'status-buff'}`;
+    const valueText=def?.valueFromCount?String(value):`${value}/${status.count}`;
+    badge.innerHTML=`${status.name} ${valueText}<span class="tooltip-text status-tooltip">${getStatusTooltip(status)}</span>`;
+    box.appendChild(badge);
+  });
+  if(!buff.children.length)buff.innerHTML='<span class="status-empty">なし</span>';
+  if(!debuff.children.length)debuff.innerHTML='<span class="status-empty">なし</span>';
 }
-function selectTargetSlot(slot){ if(!isP1Planning()||!selectedHandCard||slot?.owner!=='p2')return; selectedTargetSlot=slot;updatePlanningPrompt();updateUI(); }
-function makeEgoCard(ego) { return { ...ego, isEgo: true, egoId: ego.id, tags: ['ego'] }; }
-function renderEgoCards(handDiv) {
+
+function updateUI(){
+  ['p1','p2'].forEach(p=>{
+    const s=gameState[p]; document.getElementById(`${p}-hp`).innerText=s.hp;document.getElementById(`${p}-maxhp`).innerText=s.maxHp;document.getElementById(`${p}-hp-bar`).style.width=`${s.maxHp?(s.hp/s.maxHp)*100:0}%`;
+    document.getElementById(`${p}-sanity`).innerText=s.sanity;document.getElementById(`${p}-sanity-bar`).style.width=`${((s.sanity+45)/90)*100}%`;
+    const nextThreshold=getNextStaggerThreshold(p); document.getElementById(`${p}-stagger`).innerText=nextThreshold===null?'なし':nextThreshold; document.getElementById(`${p}-maxstagger`).innerText=`Lv${(s.staggerLevel||0)+1}`; document.getElementById(`${p}-stagger-bar`).style.width=`${nextThreshold===null?0:Math.min(100,(nextThreshold/s.maxHp)*100)}%`;
+    document.getElementById(`${p}-light`).innerText=s.light;document.getElementById(`${p}-maxlight`).innerText=s.maxLight;renderStatusEffects(p);renderEgoResourcePanel(p);
+    document.getElementById(`${p}-box`).classList.toggle('staggered',s.isStaggered);
+    const slotsDiv=document.getElementById(`${p}-speed-slots`); slotsDiv.innerHTML=`<div class="speed-range-label">速度範囲: ${s.core.speedMin}～${s.core.speedMax}</div>`;
+    if(s.isStaggered){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot">混乱中 (行動不能)</div>';return;}
+    const cur=getCurrentPlanningSlot(),targeting=isP1Planning()&&selectedHandCard&&p==='p2';
+    s.slots.forEach((slot,idx)=>{ const active=cur&&cur.owner===p&&cur.id===slot.id,target=selectedTargetSlot===slot; const targetDesc=slot.targetSlot?`<br><small>→ ${slotLabel(slot.targetSlot)}</small>`:(slot.card?'<br><small>→ 一方攻撃</small>':''); const cardDesc=slot.card?`<br><small style="color:#2ecc71" class="tooltip-target">${slot.card.name}<span class="tooltip-text"><div class="card-effect">${slot.card.effect||''}</div>${skillDetailHtml(slot.card)}</span></small>`:''; const el=document.createElement('div');el.className='speed-slot';if(active)el.classList.add('active-slot');if(targeting)el.classList.add('targetable');if(target)el.classList.add('targeting');el.innerHTML=`速度ダイス${idx+1}<br><strong>速度: ${slot.speed}</strong>${cardDesc}${targetDesc}`;if(targeting)el.onclick=()=>selectTargetSlot(slot);slotsDiv.appendChild(el);});
+  });
+}
+function startRoundLogBlock(round){const logDiv=document.getElementById('log'),block=document.createElement('div');block.className='log-round';block.innerHTML=`<div class="log-round-title">第${round}幕</div><div class="log-round-body"></div>`;logDiv.appendChild(block);logDiv.scrollTop=logDiv.scrollHeight;}
+function log(msg){const logDiv=document.getElementById('log');let body=logDiv.querySelector('.log-round:last-child .log-round-body');if(!body){startRoundLogBlock(gameState.round||1);body=logDiv.querySelector('.log-round:last-child .log-round-body');}const entry=document.createElement('div');entry.className='log-entry';entry.innerHTML=msg;body.appendChild(entry);logDiv.scrollTop=logDiv.scrollHeight;}
+function formatSkillList(card){ if(!card)return ''; const coins=(card.coins||[]).map((c,i)=>{const effects=getSkillHitEffectTexts(card,c);return `<span class="log-dice-tag attack"><span class="coin-dot">${i+1}</span> ${card.coinPower>=0?`+${card.coinPower}`:card.coinPower}${effects.length?`<span class="tooltip-text log-dice-tooltip-text">${effects.join('<br>')}</span>`:''}</span>`;}).join(' '); return coins||((card.legacyDice||[]).map(d=>`<span class="log-dice-tag counter_clash">${d.min}～${d.max}</span>`).join(' ')); }
+function logClashSummary(slotA,slotB){const logDiv=document.getElementById('log');let body=logDiv.querySelector('.log-round:last-child .log-round-body');if(!body){startRoundLogBlock(gameState.round||1);body=logDiv.querySelector('.log-round:last-child .log-round-body');}const entry=document.createElement('div');entry.className='log-entry log-clash-entry';entry.innerHTML=`<div class="log-clash-title">[マッチ]</div><div class="log-clash-sides"><div><strong>${playerLabel(slotA.owner)}</strong> 速度${slotA.speed}「${formatCardNameWithTooltip(slotA.card)}」<div class="log-clash-dice">${formatSkillList(slotA.card)}</div></div><div class="log-clash-vs">VS</div><div><strong>${playerLabel(slotB.owner)}</strong> 速度${slotB.speed}「${formatCardNameWithTooltip(slotB.card)}」<div class="log-clash-dice">${formatSkillList(slotB.card)}</div></div></div>`;body.appendChild(entry);logDiv.scrollTop=logDiv.scrollHeight;}function renderEgoCards(handDiv) {
   gameState.p1.equippedEgos?.forEach(ego => {
-    const card=makeEgoCard(ego);
-    const selected=selectedHandCard?.egoId===ego.id;
-    const canUse=canPayEgoResource('p1',ego.resourceCost) && !gameState.p1.usedEgosThisTurn?.includes(ego.id);
-    const cardEl=document.createElement('div');
-    cardEl.className=`card ego-card sin-${ego.sin}`+(selected?' selected':'')+(canUse?'':' unavailable');
-    const costs=Object.entries(ego.resourceCost).map(([sin,n])=>`${getSinLabel(sin)}×${n}`).join(' ');
-    cardEl.innerHTML=`<strong>E.G.O: ${ego.name}</strong><br><small>${ego.sinner} / ${ego.risk}</small><div class="skill-power-line">基礎${ego.basePower} / コイン+${ego.coinPower}</div><div class="card-effect">罪悪資源: ${costs}<br>精神-${ego.sanityCost}${ego.corrosion?`<br>侵蝕: 基礎${ego.corrosion.basePower} / コイン+${ego.corrosion.coinPower} ×${ego.corrosion.coinCount}`:''}${gameState.p1.usedEgosThisTurn?.includes(ego.id)?'<br>この幕は使用済み':''}</div>`;
-    cardEl.onclick=()=>{
-      if(!canUse)return;
-      selectedHandCard=selected?null:card;
-      selectedTargetSlot=null;
-      if(selectedHandCard && gameState.p2.slots.length===1) selectedTargetSlot=gameState.p2.slots[0];
+    const card = makeEgoCard(ego);
+    const selected = selectedHandCard?.egoId === ego.id;
+    const canUse = canPayEgoResource('p1', ego.resourceCost) && !gameState.p1.usedEgosThisTurn?.includes(ego.id);
+    const cardEl = document.createElement('div');
+    cardEl.className = `card ego-card sin-${ego.sin}${selected?' selected':''}${canUse?'':' unavailable'}`;
+    const costs = Object.entries(ego.resourceCost || {}).map(([sin,n]) => `${getSinLabel(sin)}×${n}`).join(' ');
+    const power = `${ego.basePower}～${ego.basePower + ego.coinPower}`;
+    const coinText = `${ego.coinCount}コイン / コイン威力+${ego.coinPower}`;
+    const corrosion = ego.corrosion ? `
+      <div class="ego-detail-block">
+        <b>侵蝕</b><br>
+        威力: ${ego.corrosion.basePower}～${ego.corrosion.basePower + ego.corrosion.coinPower}
+        / ${ego.corrosion.coinCount}コイン / コイン威力+${ego.corrosion.coinPower}<br>
+        ${ego.corrosion.effect || '侵蝕スキル'}
+      </div>` : '';
+    cardEl.innerHTML = `
+      <strong>E.G.O: ${ego.name}</strong>
+      <br><small>${ego.sinner} / ${ego.risk}</small>
+      <details class="ego-card-details">
+        <summary>効果・威力を見る</summary>
+        <div class="ego-detail-content">
+          <div><b>威力:</b> ${power}　<b>${coinText}</b></div>
+          <div><b>攻撃:</b> ${ego.attackType === 'slash' ? '斬撃' : ego.attackType === 'pierce' ? '貫通' : ego.attackType === 'blunt' ? '打撃' : ego.attackType}</div>
+          <div><b>罪悪資源:</b> ${costs}</div>
+          <div><b>精神:</b> -${ego.sanityCost}</div>
+          <div class="ego-detail-block"><b>効果</b><br>${ego.effect || '追加効果なし'}</div>
+          ${corrosion}
+        </div>
+      </details>
+      ${gameState.p1.usedEgosThisTurn?.includes(ego.id)?'<div class="ego-used-label">この幕は使用済み</div>':''}`;
+    cardEl.onclick = (event) => {
+      if (event.target.closest('details')) return;
+      if (!canUse) return;
+      selectedHandCard = selected ? null : card;
+      selectedTargetSlot = null;
+      if (selectedHandCard && gameState.p2.slots.length === 1) selectedTargetSlot = gameState.p2.slots[0];
       renderHand(); updatePlanningPrompt(); updateUI();
     };
     handDiv.appendChild(cardEl);
