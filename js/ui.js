@@ -107,6 +107,54 @@ function renderEgoLoadout(player) {
     return `<div class="ego-risk-slot"><div class="ego-risk-label">${risk}</div><div class="ego-risk-content">${equipped ? `<span class="ego-equipped-mark">装備: ${equipped.name}</span>` : '<span class="ego-none">未装備</span>'}${options}</div></div>`;
   }).join('');
 }
+function renderBuilder(){
+  renderCoreSelectionList('p1-core-page-list',selectedP1CoreIds,toggleP1Core,'p1');
+  renderCoreSelectionList('p2-core-page-list',selectedP2CoreIds,toggleP2Core,'p2');
+  renderEgoLoadout('p1');
+  renderEgoLoadout('p2');
+
+  const pool=document.getElementById('card-pool-list');
+  pool.innerHTML='';
+  document.getElementById('editor-hint').innerText=`追加先: ${activeDeckEditor==='p1'?'P1':'P2'} デッキ（右側のデッキ見出しをクリックして切替）`;
+
+  CARD_DATABASE.filter(c=>{
+    if(currentFilter==='all') return true;
+    if(currentFilter.startsWith('sin:')) return c.sin===currentFilter.slice(4);
+    return c.tags?.includes(currentFilter);
+  }).slice().sort(compareCardsByCostThenName).forEach(card=>{
+    const countP1=decks.p1.filter(id=>id===card.id).length;
+    const countP2=decks.p2.filter(id=>id===card.id).length;
+    const isOpen=!!poolAccordionOpen[card.id];
+    const div=document.createElement('div');
+    div.className='pool-item-card';
+    div.innerHTML=`<div class="pool-item-header">
+      <div class="pool-title-area" onclick="togglePoolAccordion('${card.id}',event)">
+        <span class="accordion-icon">${isOpen?'▼':'▶'}</span>
+        <span class="card-name-text">${card.name}</span>
+        <span class="card-cost-text">(コスト:${card.cost})</span>
+        <span class="card-count-badge">[P1:${countP1}/3 P2:${countP2}/3]</span>
+      </div>
+      <div class="add-btn-group">
+        <button class="add-btn" onclick="addBatchCards('${card.id}',1,event)">+1枚</button>
+        <button class="add-btn" onclick="addBatchCards('${card.id}',2,event)">+2枚</button>
+        <button class="add-btn" onclick="addBatchCards('${card.id}',3,event)">+3枚</button>
+      </div>
+    </div>
+    <div class="pool-item-body ${isOpen?'open':''}">
+      ${card.effect?`<div class="card-effect">${card.effect}</div>`:''}
+      ${skillDetailHtml(card)}
+    </div>`;
+    pool.appendChild(div);
+  });
+
+  renderDeckList('p1');
+  renderDeckList('p2');
+  const ready=decks.p1.length===9&&decks.p2.length===9;
+  const start=document.getElementById('start-btn');
+  start.disabled=!ready;
+  start.innerText=ready?'この編成で戦闘開始':`この編成で戦闘開始 (P1 ${decks.p1.length}/9・P2 ${decks.p2.length}/9)`;
+}
+
 function renderEgoResourcePanel(player) {
   const el=document.getElementById(`${player}-ego-resources`);
   if(!el)return;
