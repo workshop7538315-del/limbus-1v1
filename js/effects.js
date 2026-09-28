@@ -3,6 +3,8 @@
 const STATUS_DEFINITIONS = {
   breath: { name: '呼吸', category: 'buff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0 },
   bleed: { name: '出血', category: 'debuff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0 },
+  tremor: { name: '振動', category: 'debuff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0, desc: '振動爆発を受けたとき、振動威力分だけ混乱閾値を上昇。幕終了時Count-1' },
+  rupture: { name: '破裂', category: 'debuff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0, desc: '攻撃を受けたとき威力分の固定ダメージ。発動ごとにCount-1' },
   sinking: { name: '沈潜', category: 'debuff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0 },
   blood_feast: { name: '血宴強化', category: 'buff', maxPower: 99, maxCount: 1, defaultPower: 5, defaultCount: 0 },
   haste: { name: '迅速', category: 'buff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0, desc: 'Speed +X for this turn' },
@@ -427,6 +429,29 @@ function applyOnUseEffects(player, card) {
       log(`[使用時] ${playerLabel(player)}の「${card.name}」: ${playerLabel(target)}の出血威力が3以上のため光 ${before}→${p.light}`);
     }
   }
+}
+
+function addTremor(player, potency = 1, count = 1) { return addCombatStatus(player, 'tremor', potency, count); }
+function addRupture(player, potency = 1, count = 1) { return addCombatStatus(player, 'rupture', potency, count); }
+function triggerTremorBurst(player, multiplier = 1) {
+  const p = gameState[player], s = getStatus(player, 'tremor');
+  if (!s || s.count <= 0 || s.power <= 0) return 0;
+  const stagger = Math.floor(s.power * multiplier);
+  p.stagger = Math.min(p.maxStagger ?? Infinity, (p.stagger ?? 0) + stagger);
+  s.count = Math.max(0, s.count - 1);
+  if (s.count <= 0) delete p.statuses.tremor;
+  log(`[振動爆発] ${playerLabel(player)} 混乱閾値+${stagger}`);
+  return stagger;
+}
+function triggerRupture(player) {
+  const s = getStatus(player, 'rupture');
+  if (!s || s.count <= 0 || s.power <= 0) return 0;
+  const dmg = s.power;
+  s.count = Math.max(0, s.count - 1);
+  if (s.count <= 0) delete gameState[player].statuses.rupture;
+  gameState[player].hp = Math.max(0, gameState[player].hp - dmg);
+  log(`[破裂] ${playerLabel(player)} 固定ダメージ ${dmg}`);
+  return dmg;
 }
 
 function triggerOnHit(player, card, target = null, coin = null, slot = null, extra = {}) {
