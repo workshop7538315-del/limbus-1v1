@@ -694,3 +694,20 @@
 .status-guide-grid p{margin:0;padding:0 8px 8px;color:#bbb;font-size:9px;line-height:1.6}
 .status-guide-grid details[open] summary{border-bottom:1px solid #3b3b3b}
 @media(max-width:700px){.status-guide-grid{grid-template-columns:1fr}}
+
+/* E.G.O表示整理 */
+.ego-builder-details > summary{cursor:pointer;padding:2px 0;font-size:14px;font-weight:bold;list-style:none}
+.ego-builder-details > summary::-webkit-details-marker{display:none}
+.ego-builder-details > summary:before{content:'▶';display:inline-block;margin-right:6px;font-size:9px;transition:transform .15s}
+.ego-builder-details[open] > summary:before{transform:rotate(90deg)}
+.ego-builder-summary-hint{font-size:9px;color:#888;font-weight:normal;margin-left:6px}
+.ego-builder-content{margin-top:7px}
+.ego-card-details{margin-top:5px;border-top:1px solid #666;padding-top:3px}
+.ego-card-details summary{cursor:pointer;color:#f1c40f;font-size:9px;font-weight:bold;list-style:none}
+.ego-card-details summary::-webkit-details-marker{display:none}
+.ego-card-details summary:before{content:'▶';display:inline-block;margin-right:4px;font-size:8px}
+.ego-card-details[open] summary:before{transform:rotate(90deg)}
+.ego-detail-content{margin-top:4px;font-size:9px;line-height:1.45;color:#ddd}
+.ego-detail-block{margin-top:4px;padding:4px;background:#222;border:1px solid #555;border-radius:3px}
+.ego-used-label{margin-top:4px;font-size:9px;color:#aaa}
+@media(max-width:700px){.ego-builder-section{padding:8px}.ego-builder-details > summary{font-size:13px;min-height:26px;display:flex;align-items:center}.ego-card-details summary{font-size:9px}.ego-detail-content{font-size:8px;line-height:1.5}}
