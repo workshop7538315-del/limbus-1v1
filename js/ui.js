@@ -35,8 +35,9 @@ function renderCoreSelectionList(elementId, selectedArray, toggleSelectFunc, own
       <div class="core-card-detail ${isOpen?'open':''}">
         <div>HP: ${core.hp} / 混乱耐性: ${core.stagger} / 最大光: ${core.maxLight} / 速度: ${core.speedMin}～${core.speedMax}</div>
         <div style="margin-top:2px;">パニックタイプ: <strong>${core.panicType || 'パニック'}</strong></div>
+        <div style="margin-top:2px;">パニック効果: ${getPanicTypeEffect(core.panicType || 'パニック')}</div>
         <div style="margin-top:2px;">パッシブ: <strong>${core.passiveName}</strong> - ${core.passiveDesc}</div>
-        <div class="res-group"><span class="res-tag ${getResText(core.res.slash).class}">斬:${getResText(core.res.slash).text}</span><span class="res-tag ${getResText(core.res.pierce).class}">突:${getResText(core.res.pierce).text}</span><span class="res-tag ${getResText(core.res.blunt).class}">打:${getResText(core.res.blunt).text}</span></div>
+        <div class="res-group"><span class="res-tag ${getResText(core.res.slash).class}">斬:${getResText(core.res.slash).text} ×${core.res.slash}</span><span class="res-tag ${getResText(core.res.pierce).class}">突:${getResText(core.res.pierce).text} ×${core.res.pierce}</span><span class="res-tag ${getResText(core.res.blunt).class}">打:${getResText(core.res.blunt).text} ×${core.res.blunt}</span></div>
       </div>`;
     div.onclick = () => toggleSelectFunc(core.id); container.appendChild(div);
   });
@@ -103,7 +104,9 @@ function renderEgoLoadout(player) {
       const selected = ego.id === equippedId;
       const res = Object.entries(ego.sinRes || {}).map(([sin,v]) => `${getSinLabel(sin)}×${v}`).join(' ');
       const cost = Object.entries(ego.resourceCost || {}).map(([sin,n]) => `${getSinLabel(sin)}×${n}`).join(' ');
-      return `<button class="ego-loadout-option ${selected?'selected':''} sin-${ego.sin}" onclick="toggleEgoLoadout('${player}','${ego.id}')"><strong>${ego.name}</strong><small>${ego.sinner} / ${getSinLabel(ego.sin)}</small><small>資源: ${cost}</small><small>耐性: ${res}</small></button>`;
+      const power = ego.coinPower >= 0 ? `${ego.basePower}～${ego.basePower + ego.coinPower}` : `${ego.basePower + ego.coinPower}～${ego.basePower}`;
+      const corrosionPower = ego.corrosion ? (ego.corrosion.coinPower >= 0 ? `${ego.corrosion.basePower}～${ego.corrosion.basePower + ego.corrosion.coinPower}` : `${ego.corrosion.basePower + ego.corrosion.coinPower}～${ego.corrosion.basePower}`) : '';
+      return `<button class="ego-loadout-option ${selected?'selected':''} sin-${ego.sin}" onclick="toggleEgoLoadout('${player}','${ego.id}')"><strong>${getEgoDisplayName(ego)}</strong><small>${ego.sinner} / ${getSinLabel(ego.sin)}</small><small>資源: ${cost}</small><details class="ego-loadout-details" onclick="event.stopPropagation()"><summary>詳細を見る</summary><div class="ego-loadout-detail-content"><div><b>リスク:</b> ${ego.risk}</div><div><b>覚醒:</b> 威力 ${power} / ${ego.coinCount||0}コイン / ${getAttackTypeLabel(ego.attackType)} / 精神-${ego.sanityCost??0}</div><div><b>資源:</b> ${cost}</div><div><b>罪悪耐性:</b> ${res||'未設定'}</div><div><b>効果:</b> ${ego.effect||'追加効果なし'}</div>${ego.corrosion ? `<div><b>侵蝕:</b> 威力 ${corrosionPower} / ${ego.corrosion.coinCount||0}コイン<br>${ego.corrosion.effect||'追加効果なし'}</div>` : ''}</div></details></button>`;
     }).join('') : '<div class="ego-empty">未実装</div>';
     return `<div class="ego-risk-slot"><div class="ego-risk-label">${risk}</div><div class="ego-risk-content">${equipped ? `<span class="ego-equipped-mark">装備: ${equipped.name}</span>` : '<span class="ego-none">未装備</span>'}${options}</div></div>`;
   }).join('');
@@ -223,7 +226,7 @@ function renderEgoCards(handDiv) {
     const costs = Object.entries(ego.resourceCost || {})
       .map(([sin,n]) => `${getSinLabel(sin)}×${n}`).join(' ') || 'なし';
 
-    const power = `${ego.basePower}～${ego.basePower + ego.coinPower}`;
+    const power = ego.coinPower >= 0 ? `${ego.basePower}～${ego.basePower + ego.coinPower}` : `${ego.basePower + ego.coinPower}～${ego.basePower}`;
     const coinText = `${ego.coinCount || 0}コイン / コイン威力${ego.coinPower >= 0 ? '+' : ''}${ego.coinPower ?? 0}`;
 
     const awakeningDetail = `
@@ -243,7 +246,7 @@ function renderEgoCards(handDiv) {
     const corrosion = ego.corrosion ? `
       <div class="ego-detail-block">
         <b>侵蝕スキル</b><br>
-        威力: ${ego.corrosion.basePower}～${ego.corrosion.basePower + ego.corrosion.coinPower}
+        威力: ${ego.corrosion.coinPower >= 0 ? `${ego.corrosion.basePower}～${ego.corrosion.basePower + ego.corrosion.coinPower}` : `${ego.corrosion.basePower + ego.corrosion.coinPower}～${ego.corrosion.basePower}`}
         / ${ego.corrosion.coinCount}コイン
         / コイン威力${ego.corrosion.coinPower >= 0 ? '+' : ''}${ego.corrosion.coinPower}<br>
         攻撃: ${getAttackTypeLabel(ego.corrosion.attackType)}<br>
