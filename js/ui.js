@@ -34,6 +34,7 @@ function renderCoreSelectionList(elementId, selectedArray, toggleSelectFunc, own
       <span onclick="toggleCoreAccordion('${owner}','${core.id}',event)" style="color:#2980b9;font-weight:bold;padding:2px 6px;">${isOpen?'▲ 詳細閉じる':'▼ 詳細開く'}</span></div>
       <div class="core-card-detail ${isOpen?'open':''}">
         <div>HP: ${core.hp} / 混乱耐性: ${core.stagger} / 最大光: ${core.maxLight} / 速度: ${core.speedMin}～${core.speedMax}</div>
+        <div style="margin-top:2px;">パニックタイプ: <strong>${core.panicType || 'パニック'}</strong></div>
         <div style="margin-top:2px;">パッシブ: <strong>${core.passiveName}</strong> - ${core.passiveDesc}</div>
         <div class="res-group"><span class="res-tag ${getResText(core.res.slash).class}">斬:${getResText(core.res.slash).text}</span><span class="res-tag ${getResText(core.res.pierce).class}">突:${getResText(core.res.pierce).text}</span><span class="res-tag ${getResText(core.res.blunt).class}">打:${getResText(core.res.blunt).text}</span></div>
       </div>`;
