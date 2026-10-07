@@ -18,6 +18,16 @@ const SIN_LABELS = {
   envy: '嫉妬'
 };
 
+const PANIC_TYPE_DEFS = {
+  'パニック': '1ターンの間、行動しない。',
+  '萎縮': '幕開始時、攻撃威力減少4を得る。',
+  '憤怒': '幕開始時、ダメージ量増加5・脆弱5を得る。',
+  '徘徊': '3ターンの間、幕終了時に味方へ精神力5ダメージ。3ターン終了時に逃走。',
+  '自殺': '3ターンの間、行動不能。幕開始時に死亡し、全味方の精神力を-10する。',
+  '狂人': '敵味方識別不可。マッチ威力+1、ダメージ量増加2を得る。'
+};
+function getPanicTypeEffect(type) { return PANIC_TYPE_DEFS[type] || '効果未設定'; }
+
 function getResText(val) {
   if (val <= 0.5) return { text: '耐性', class: 'res-05' };
   if (val <= 1.0) return { text: '普通', class: 'res-10' };
@@ -87,7 +97,7 @@ const CORE_PAGES = [
     level: 1, hp: 75, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.5 },
     passiveName: '沈む思考',
-    panicType: '邸宅の木霊',
+    panicType: '徘徊',
     passiveDesc: 'その幕の最初のバトルページのみ、最初の的中時に沈潜回数2、2回目以降の的中時は1。',
     passives: [
       {
