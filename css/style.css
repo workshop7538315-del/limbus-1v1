@@ -677,9 +677,9 @@
 .ego-loadout-option strong{display:block;font-size:9px;line-height:1.2}
 .ego-loadout-option small{display:block;font-size:8px;color:#ccc;line-height:1.25}
 .ego-loadout-option.selected{outline:2px solid #f1c40f;border-color:#f1c40f}
-.ego-loadout-option.sin-sloth{background:#665522}.ego-loadout-option.sin-pride{background:#49356d}
+.ego-loadout-option.sin-sloth{background:#665522}.ego-loadout-option.sin-pride{background:#315f8f}.ego-loadout-option.sin-envy{background:#65336d}
 .ego-card.sin-wrath{background:#5b1820}.ego-card.sin-lust{background:#e67e22}.ego-card.sin-sloth{background:#665522}
-.ego-card.sin-gluttony{background:#1c5c37}.ego-card.sin-gloom{background:#24506d}.ego-card.sin-pride{background:#315f8f}.ego-card.sin-envy{background:#65336d}
+.ego-card.sin-gluttony{background:#1c5c37}.ego-card.sin-gloom{background:#24506d}.ego-card.sin-pride{background:#315f8f !important}.ego-card.sin-envy{background:#65336d !important}
 .sin-res-title{margin-top:4px;font-size:9px;color:#aaa;font-weight:bold}.sin-res-group{gap:2px}.sin-res-tag{font-size:8px;padding:1px 3px}
 @media(max-width:700px){.ego-loadout-panels{grid-template-columns:1fr}.ego-loadout-grid{grid-template-columns:repeat(5,minmax(54px,1fr));overflow-x:auto}.ego-risk-slot{min-width:54px}}
 
@@ -715,3 +715,12 @@
 /* E.G.O詳細アコーディオン */
 .ego-card-details { display:block; position:relative; z-index:3; }
 .ego-card-details summary { display:block; min-height:18px; padding:3px 0; }
+
+/* E.G.O編成詳細アコーディオン */
+.ego-loadout-option{position:relative}
+.ego-loadout-details{margin-top:4px;border-top:1px solid rgba(255,255,255,.2);padding-top:3px}
+.ego-loadout-details summary{cursor:pointer;color:#f1c40f;font-size:8px;font-weight:bold;list-style:none}
+.ego-loadout-details summary::-webkit-details-marker{display:none}
+.ego-loadout-details summary:before{content:'▶';display:inline-block;margin-right:4px;font-size:7px}
+.ego-loadout-details[open] summary:before{transform:rotate(90deg)}
+.ego-loadout-detail-content{font-size:8px;line-height:1.45;margin-top:3px;color:#eee}
