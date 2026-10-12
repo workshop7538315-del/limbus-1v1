@@ -594,6 +594,7 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     log(`[的中] ${playerLabel(player)}の「${card.name}」: ${playerLabel(resolvedTarget)}に沈潜回数${ctx.sinkingCountBonus}（沈む思考） ${r.before}→${r.after}`);
   }
 
+  if (effectSource?.light) restoreLight(player, effectSource.light, `「${card.name}」的中`);
   if (effectSource?.draw) {
     for (let i = 0; i < effectSource.draw; i++) drawCard(player);
     log(`[的中] ${playerLabel(player)}の「${card.name}」: ${effectSource.draw}枚ドロー`);
@@ -764,9 +765,16 @@ function processEgoTurnStart(player) {
   } else p.egoPassiveOffenseBonus = 0;
 }
 
+function restoreLight(player, amount, reason) {
+  const p = gameState[player];
+  const before = p.light;
+  p.light = Math.min(p.maxLight, p.light + amount);
+  log(`[光] ${playerLabel(player)}の光 ${before}→${p.light}（${reason}）`);
+}
 function applySkillClashWinEffects(player, card, target) {
   const source = card?.onClashWin;
   if (!source) return;
+  if (source.light) restoreLight(player, source.light, `「${card.name}」マッチ勝利`);
   if (source.status) {
     const effect = source.status;
     const targetPlayer = getHitStatusTarget(player, effect);
@@ -816,6 +824,7 @@ function getSkillHitEffectTexts(card, coin) {
   if (!source) return [];
   const texts = [];
   [source.status, ...(source.statuses || [])].filter(Boolean).forEach(st => { const t = formatStatusEffectText(st); if (t) texts.push(`${st.requireHeads ? '【表で的中】' : '【的中】'}${t}`); });
+  if (source.light) texts.push(`【的中】光を${source.light}回復`);
   if (source.finalCoinBonusOnHeads) texts.push(`【表で的中】最後のコインの与ダメージ+${Math.round(source.finalCoinBonusOnHeads * 100)}%`);
   if (source.critDamageBonus) texts.push(`【クリティカル】ダメージ+${Math.round(source.critDamageBonus * 100)}%`);
   if (source.special === 'claim_bones_last') texts.push('【的中】出血3・次の幕に麻痺5を与える');

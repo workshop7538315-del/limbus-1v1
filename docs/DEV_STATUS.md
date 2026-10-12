@@ -22,7 +22,7 @@
 | パニックタイプ変更 | panic.js `setPanicTypeOverride` | 邸宅の木霊で使用 |
 | E.G.O「過ぎし日」 | data.js `ego_bygone_days`、effects.js `applyBygoneDaysHit` ほか | 招聘されざる者・呪い・邸宅の木霊・パッシブ含む |
 | 呼吸（=LCBのPoise） | battle.js `tryBreathCritical` / `getCritDamageBonus`、effects.js `getBreathCoinPowerBonus` | クリティカル率 威力×5%、1.2倍＋スキルの追加倍率。回数0で消える |
-| 剣契（コアページ core_7/core_8、card_27〜36） | data.js | 肉を断ち→骨を断つの追撃（`onClashLoseFollowUp`）、混乱無効（`noStaggerDuringSkill`）、致死耐え（`lethalGuardOnce`） |
+| 剣契（コアページ core_7/core_8、card_27〜37） | data.js（LCB人格スキル＋LoRの剣契ページ・キーページ） | 肉を断ち→骨を断つの追撃（`onClashLoseFollowUp`）、混乱無効（`noStaggerDuringSkill`）、致死耐え（`lethalGuardOnce`） |
 | デッキ非表示のページ | `hidden: true` | 骨を断つ（追撃専用） |
 | マッチ可能反撃の待機 | battle.js `executeFullTurn` | 待機中のスロットを攻撃で指定するとマッチ |
 

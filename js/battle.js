@@ -329,6 +329,8 @@ function rollSkillForClash(player, skill, remainingCoins, opponentPlayer = null,
   power += getCoinPowerBonus(player, skill);
   power += getSkillFinalPowerModifier(player, skill);
   power += getClashPowerModifier(player);
+  // LoR 笠のキム「一点突破（Singular Strike）」: コイン1枚の（反撃以外の）スキルはマッチ威力+2
+  if (gameState[player].core?.singularStrike && (skill.coinCount || 0) === 1 && !['counter', 'counter_clash'].includes(skill.skillType)) power += 2;
   if (skill?.isCorrosion && skill?.egoId === 'ego_don_scissors' && hasResonance(player, 'envy')) power += 1;
   if (opponentPlayer && opponentSkill) {
     const levelDiff = getSkillCombatLevel(player, skill) - getSkillCombatLevel(opponentPlayer, opponentSkill);

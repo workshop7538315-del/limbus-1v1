@@ -170,10 +170,16 @@ const CORE_PAGES = [
     id: 'core_7', name: '剣契の殺手のページ',
     level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 0.5, pierce: 1.5, blunt: 1.0 },
-    passiveName: '呼吸を整える',
+    passiveName: '呼吸を整える & 鋭い一撃',
     panicType: 'パニック',
     // LCB 剣契殺手イサン「Poised」: マッチ勝利時に呼吸1、呼吸5ごとにコイン威力+1（最大+3）
-    passiveDesc: 'マッチ勝利時、呼吸威力1を得る。自分の呼吸威力5ごとに、全スキルのコイン威力+1（最大+3）。',
+    // LoR「剣契の殺手」キーページ（HP77・貫通弱点）の「鋭い一撃」
+    passiveDesc: 'マッチ勝利時、呼吸威力1を得る。自分の呼吸威力5ごとに、全スキルのコイン威力+1（最大+3）。斬撃の攻撃が的中するたび、次の幕に相手へ出血1。',
+    // LoR「鋭い一撃（Razor Strike）」: 斬撃の攻撃が的中すると、次の幕に相手へ出血1
+    passives: [{ trigger: 'onHit', effect: (p, ctx) => {
+      if (ctx?.card?.attackType !== 'slash' || !ctx.target || ctx.target === p) return;
+      addStatusNextTurn(ctx.target, 'bleed', 1, 1);
+    } }],
     clashWinBreath: 1,
     breathCoinPowerPer5: 3
   },
@@ -181,11 +187,18 @@ const CORE_PAGES = [
     id: 'core_8', name: '剣契の師範のページ',
     level: 1, hp: 90, stagger: 45, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
-    passiveName: '故郷の剣術',
+    passiveName: '故郷の剣術 & 一点突破 & 鋭い一撃',
     panicType: 'パニック',
+    // LoR「笠のキム」キーページ（Bamboo-hatted Kim）: 不屈（致死時ダメージ軽減）・一点突破・鋭い一撃を取り入れた
+    // LoR「鋭い一撃（Razor Strike）」: 斬撃の攻撃が的中すると、次の幕に相手へ出血1
+    passives: [{ trigger: 'onHit', effect: (p, ctx) => {
+      if (ctx?.card?.attackType !== 'slash' || !ctx.target || ctx.target === p) return;
+      addStatusNextTurn(ctx.target, 'bleed', 1, 1);
+    } }],
+    singularStrike: true,
     // LCB 剣契師範ムルソー「Swordplay of the Homeland」: 1遭遇に1回、致死ダメージを無効化しその幕はHP1未満にならない。
     // 呼吸5以上でのコイン威力・クリティカル強化は「呼吸威力5以上で攻撃スキルのコイン威力+1」に簡略化。
-    passiveDesc: '1試合に1回、致死ダメージを受けてもHP1で耐え、その幕はHPが1未満にならない。自分の呼吸威力が5以上のとき、攻撃スキルのコイン威力+1。',
+    passiveDesc: '1試合に1回、致死ダメージを受けてもHP1で耐え、その幕はHPが1未満にならない。自分の呼吸威力が5以上のとき、攻撃スキルのコイン威力+1。コイン1枚のスキル（反撃以外）はマッチ威力+2。斬撃の攻撃が的中するたび、次の幕に相手へ出血1。',
     lethalGuardOnce: true,
     breathCoinThreshold: { min: 5, bonus: 1 }
   }
@@ -289,10 +302,11 @@ const CARD_DATABASE = [
   // ===== 剣契（Blade Lineage）=====
   // 元スキル（LCB）を [ ] に記載。呼吸は自分に付与（target 省略 = 自分）。
   // [Draw of the Sword] 剣契殺手ドンキホーテ/師範ムルソー S1
-  skill('card_27', '抜刀', 1, 'attack', 'pierce', 'pride', 3, 2, 2, '使用時: 呼吸威力2・呼吸回数1を得る。各コイン的中時: 呼吸威力1を得る。自分の呼吸威力5以上でコイン威力+1。', [
+  // LoR版: コスト0・使用時光1回復・斬撃3～6
+  skill('card_27', '抜刀', 1, 'attack', 'pierce', 'pride', 3, 2, 2, '使用時: 光1回復。呼吸威力2・呼吸回数1を得る。各コイン的中時: 呼吸威力1を得る。自分の呼吸威力5以上でコイン威力+1。', [
     { onHit: { status: { id: 'breath', power: 1 } } },
     { onHit: { status: { id: 'breath', power: 1 } } }
-  ], { onUse: { statuses: [{ id: 'breath', power: 2, count: 1 }] }, breathCoinBonus: { min: 5, bonus: 1 } }),
+  ], { onUse: { light: 1, statuses: [{ id: 'breath', power: 2, count: 1 }] }, breathCoinBonus: { min: 5, bonus: 1 } }),
   // [Striker's Stance] 剣契殺手イサン S1
   skill('card_28', '構え', 1, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力2を得る。各コイン的中時: 呼吸威力1を得る。', [
     { onHit: { status: { id: 'breath', power: 1 } } },
@@ -308,11 +322,11 @@ const CARD_DATABASE = [
     { onHit: { status: { id: 'breath', power: 2, requireHeads: true }, critDamageBonus: 0.7 } }
   ]),
   // [Acupuncture] 剣契師範ムルソー S2
-  skill('card_31', '鍼', 2, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力3を得る。マッチ勝利時: 斬撃威力増加1（この幕と次の幕）。1枚目的中時: 呼吸威力3を得る。3枚目: クリティカル時ダメージ+60%。自分の呼吸威力7以上でコイン威力+1。', [
+  skill('card_31', '鍼', 2, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力3を得る。マッチ勝利時: 斬撃威力増加1（この幕と次の幕）・光1回復。1枚目的中時: 呼吸威力3を得る。3枚目: クリティカル時ダメージ+60%。自分の呼吸威力7以上でコイン威力+1。', [
     { onHit: { status: { id: 'breath', power: 3 } } },
     {},
     { onHit: { critDamageBonus: 0.6 } }
-  ], { onUse: { statuses: [{ id: 'breath', power: 3 }] }, onClashWin: { special: 'slash_power_up_2turns' }, breathCoinBonus: { min: 7, bonus: 1 } }),
+  ], { onUse: { statuses: [{ id: 'breath', power: 3 }] }, onClashWin: { special: 'slash_power_up_2turns', light: 1 }, breathCoinBonus: { min: 7, bonus: 1 } }), // 光回復はLoR版のマッチ勝利効果
   // [Blade Arc] 剣契殺手ドンキホーテ S2
   skill('card_32', '剣弧', 1, 'attack', 'slash', 'envy', 4, 2, 2, '使用時: 呼吸威力2を得る。1枚目的中時: 呼吸威力2を得る。2枚目的中時: 呼吸回数2を得る。自分の呼吸威力7以上でコイン威力+1。', [
     { onHit: { status: { id: 'breath', power: 2 } } },
@@ -338,7 +352,12 @@ const CARD_DATABASE = [
   // 原作の「単一対象なら与ダメージ+100%」は1対1では常に発動し強すぎるため省略。
   skill('card_36', '骨を断つ', 0, 'attack', 'slash', 'pride', 4, 2, 4, '「肉を断ち」のマッチ敗北時にのみ使用。このスキルが終わるまで混乱しない。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+2%（最大50%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。4枚目的中時: 出血3・次の幕に麻痺5を与える。', [
     {}, {}, {}, { onHit: { special: 'claim_bones_last' } }
-  ], { hidden: true, noStaggerDuringSkill: true, critDamageBonus: 0.3, critPerBreath: { per: 0.02, max: 0.5 }, missingHpDamage: true })
+  ], { hidden: true, noStaggerDuringSkill: true, critDamageBonus: 0.3, critPerBreath: { per: 0.02, max: 0.5 }, missingHpDamage: true }),
+  // [LoR: Slay] 斬撃3～8（マッチ勝利で力1）・斬撃3～6（的中で光1回復）。力（攻撃威力+）は攻撃威力増加1（この幕）に置き換え。
+  skill('card_37', '斬り捨て', 2, 'attack', 'slash', 'wrath', 4, 2, 2, 'マッチ勝利時: 攻撃威力増加1を得る（この幕）。2枚目的中時: 光1回復。', [
+    {},
+    { onHit: { light: 1 } }
+  ], { onClashWin: { status: { id: 'attack_power_up', count: 1 } } }),
 ];
 
 const EGO_DATABASE = [
