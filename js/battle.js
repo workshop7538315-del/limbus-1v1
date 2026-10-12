@@ -523,7 +523,7 @@ async function resolveClashInner(slotA, slotB) {
     return resolveLegacyClashableCounter(slotA, slotB);
   }
   logClashSummary(slotA, slotB);
-  prepareSkillExecution(pA, skillA); prepareSkillExecution(pB, skillB); // 実行時（On Use）: 充電の獲得・消費など
+  prepareSkillExecution(pA, skillA, slotA, slotB); prepareSkillExecution(pB, skillB, slotB, slotA); // 実行時（On Use）: 充電の獲得・消費など
   generateEgoResourceForSkill(pA, skillA, slotA);
   generateEgoResourceForSkill(pB, skillB, slotB);
   emitHook('onClashStart', { playerA: pA, playerB: pB, cardA: skillA, cardB: skillB });
@@ -638,7 +638,7 @@ async function resolveOneSidedInner(slot) {
     stockUnusedDefenseCoins(slot, 0); return;
   }
   const attackCoinCount = slot.card.coinCount || 0;
-  prepareSkillExecution(attacker, slot.card); // 実行時（On Use）: 充電の獲得・消費など
+  prepareSkillExecution(attacker, slot.card, slot, slot.targetSlot, true); // 実行時（On Use）: 充電の獲得・消費など
   generateEgoResourceForSkill(attacker, slot.card, slot);
   applyEgoBeforeAttack(attacker, slot.card);
   for (let i = 0; i < attackCoinCount; i++) {
@@ -709,6 +709,16 @@ function executeAttackDamage(attacker, skill, defender, amount, coinIndex, slot,
     if (gameState[defender].hp < 0) gameState[defender].hp = 0;
   }
   if (amount > 0) triggerOnHit(attacker, skill, defender, coin, slot);
+  // コイン再使用（速度条件。黒獣-卯の瞬歩・刻呪殺剣）。スキルにつき各コイン1回まで
+  const reuseDef = Number.isInteger(coinIndex) ? skill.coins?.[coinIndex]?.onHit : null;
+  if (amount > 0 && reuseDef?.reuseAtSpeed && slot && (slot.speed || 0) >= reuseDef.reuseAtSpeed && gameState[defender].hp > 0) {
+    slot._reusedCoins = slot._reusedCoins || {};
+    if (!slot._reusedCoins[coinIndex]) {
+      slot._reusedCoins[coinIndex] = true;
+      log(`[再使用] ${playerLabel(attacker)}の「${skill.name}」${coinIndex + 1}枚目を再使用（速度${slot.speed}）`);
+      executeAttackCoin(attacker, skill, defender, coinIndex, slot, false);
+    }
+  }
   const source = coin?.index != null ? (skill.coins?.[coin.index]?.onHit || skill.onHit) : null;
   if (source?.special === 'sunken_memory_reuse') {
     const sinking = getStatus(defender, 'sinking');
@@ -731,7 +741,13 @@ function resolveLegacyClashableCounter(slotA, slotB) {
   const attackSkill = attackSlot.card;
   const attackCoin = flipCoin(attacker, attackSkill, 0);
   const rAttack = attackCoin.power;
-  const rCounter = rollLegacyCounter(counterOwner, counter);
+  let rCounter = rollLegacyCounter(counterOwner, counter);
+  // 部分黒獣化: 対象より速ければ速度差2ごとに威力+1（最大 speedBonusPer2Max）
+  if (counter.speedBonusPer2Max) {
+    const diff = (counterSlot.speed || 0) - (attackSlot.speed || 0);
+    const b = diff > 0 ? Math.min(counter.speedBonusPer2Max, Math.floor(diff / 2)) : 0;
+    if (b > 0) { rCounter += b; log(`[速度] 「${counterSlot.card.name}」: 速度差${diff}で威力+${b}`); }
+  }
   log(`[マッチ可能反撃] ${playerLabel(counterOwner)}(${rCounter}) vs ${playerLabel(attacker)}(${rAttack})`);
   if (rCounter > rAttack) {
     applyDamage(attacker, counter.attackType, rCounter, counterOwner, { suppressCounter: true });
@@ -764,7 +780,9 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
     skillDamageMult += Math.min(0.25, ((a.maxHp - a.hp) / a.maxHp) * 100 * 0.005);
   }
   if (options.finalCoinBonus) skillDamageMult += options.finalCoinBonus;
-  if (attacker) skillDamageMult += getChargeDamageBonus(attacker, options.skill);
+  if (attacker) skillDamageMult += getChargeDamageBonus(attacker, options.skill) + getStriderDamageBonus(attacker) + getSpeedRuptureDamageBonus(attacker, target, options.skill);
+  const spd = Number.isInteger(options.coinIndex) ? options.skill?.coins?.[options.coinIndex]?.onHit?.speedDamageBonus : null;
+  if (attacker && spd && getExecSpeed(attacker) >= spd.speed) skillDamageMult += spd.bonus;
   const lowHp = Number.isInteger(options.coinIndex) ? options.skill?.coins?.[options.coinIndex]?.onHit?.lowHpDamageBonus : null;
   if (lowHp && p.maxHp > 0 && p.hp / p.maxHp < lowHp.below) skillDamageMult += lowHp.bonus;
   const outputMult = attacker ? getDamageOutputMultiplier(attacker, attackType, sin) * (1 + 0.1 * headsBonus) * getEgoPassiveDamageMultiplier(attacker, target, attackType, sin) * skillDamageMult : 1;

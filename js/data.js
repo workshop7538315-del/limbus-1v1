@@ -228,6 +228,19 @@ const CORE_PAGES = [
     passiveDesc: 'W社のスーツ: 充電の上限が20になる（通常10）。急速充電: 戦闘開始時、充電+1（憂鬱共鳴が発生していれば+2）。',
     chargeCap: 20,
     combatStartCharge: { base: 1, gloomResonance: 2 }
+  },
+  // ===== 黒獣-卯（破裂）=====
+  // 参考: LCB「黒獣-卯 ウーティス」（Heishou Pack - Mao Branch Outis、limbuscompany.wiki.gg）。
+  // 速度差と破裂で火力を伸ばす人格。既存のコアページより一段強い想定（HP・速度・数値を高めに設定）。
+  // サポートパッシブは採用しない。処理: js/rupture.js
+  {
+    id: 'core_11', name: '黒獣-卯のページ',
+    level: 1, hp: 80, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 4, speedMax: 7,
+    res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
+    passiveName: '黒獣化[卯]',
+    panicType: 'パニック',
+    passiveDesc: '黒獣化[卯]: 疾走【卯】1につき与ダメージ+5%（最大15%）。疾走【卯】は幕終了時に次の幕の迅速5を得て1減少する。',
+    striderDamagePer: 0.05, striderDamageMax: 0.15
   }
 ];
 
@@ -263,6 +276,7 @@ function skill(id, name, cost, type, attackType, sin, basePower, coinPower, coin
   if (extra?.legacyDice?.some(d => d.type === 'counter_clash')) tags.add('counter_clash');
 
   if ([...tags].some(t => t.endsWith('_fragility'))) tags.add('fragile');
+  if (extra?.onHit?.status?.id) tags.add(extra.onHit.status.id);
   return {
     id, name, cost, skillType: type, attackType, sin,
     basePower, coinPower, coinCount,
@@ -437,7 +451,31 @@ const CARD_DATABASE = [
   // [LoR: 波動(3)] 強めのページ。充電を3消費し威力3増加
   skill('card_48', '波動', 3, 'attack', 'blunt', 'gloom', 5, 2, 2, '攻撃開始時: 充電3を消費し、このページの最終威力+3。', [{}, {}], { chargeConsume: { amount: 3, finalPower: 3 } }),
   // [LoR: 遡行(1)] 充電を4回復
-  skill('card_49', '遡行', 1, 'evade', null, 'sloth', 4, 2, 1, '使用時: 充電+4。', [{}], { onUse: { statuses: [{ id: 'charge', count: 4 }] } })
+  skill('card_49', '遡行', 1, 'evade', null, 'sloth', 4, 2, 1, '使用時: 充電+4。', [{}], { onUse: { statuses: [{ id: 'charge', count: 4 }] } }),
+  // ===== 黒獣-卯（破裂）: LCB 黒獣-卯 ウーティスのスキル =====
+  // [S1: 瞬歩（Blinkstep）] ＋ リソース回復（光）
+  skill('card_50', '瞬歩', 1, 'attack', 'slash', 'gluttony', 3, 2, 3, '使用時: 光1回復。対象より速度が3以上速ければコイン威力+1。攻撃開始時、対象の破裂威力が4以上ならコイン威力+1。1枚目的中時: 破裂1を与える。2枚目的中時: 破裂1を与え、自分の速度が10以上ならこのコインを1回再使用。', [
+    { onHit: { status: { id: 'rupture', power: 1, target: 'opponent' } } },
+    { onHit: { status: { id: 'rupture', power: 1, target: 'opponent' }, reuseAtSpeed: 10 } },
+    {}
+  ], { onUse: { light: 1 }, speedFasterCoinPower: { diff: 3, bonus: 1 }, targetRuptureCoinPower: [{ min: 4, bonus: 1 }] }),
+  // [S2: 刺殺（Perforating Kill）] ＋ リソース回復（光・ドロー）
+  skill('card_51', '刺殺', 2, 'attack', 'pierce', 'gluttony', 5, 2, 2, '対象より速度が3以上速ければコイン威力+1。攻撃開始時、対象の破裂威力が4以上ならコイン威力+1。一方攻撃なら対象に破裂回数+1。1枚目的中時: 破裂回数+1を与え、次の幕に迅速1を得る（1幕2回まで）、光1回復。2枚目的中時: 破裂回数+1を与え、1枚引く。自分の速度が10以上なら2枚目の与ダメージ+30%。', [
+    { onHit: { status: { id: 'rupture', count: 1, target: 'opponent' }, selfHasteNext: 1, light: 1 } },
+    { onHit: { status: { id: 'rupture', count: 1, target: 'opponent' }, speedDamageBonus: { speed: 10, bonus: 0.3 }, draw: 1 } }
+  ], { speedFasterCoinPower: { diff: 3, bonus: 1 }, targetRuptureCoinPower: [{ min: 4, bonus: 1 }], unopposedRuptureCount: 1 }),
+  // [S3: 刻呪殺剣（Cursewrit Butcherblade）]
+  skill('card_52', '刻呪殺剣', 3, 'attack', 'slash', 'gluttony', 5, 2, 3, '攻撃開始時: 疾走【卯】3を得る。対象より速ければ速度差2ごとにコイン威力+1（最大+2）、与ダメージ+(速度差×対象の破裂威力)%（最大50%）。対象の破裂威力が15以上ならコイン威力+1。一方攻撃なら対象に破裂回数+2。1枚目的中時: 破裂1・死儀【迅速】を与える。2枚目的中時: 破裂1を与える。3枚目的中時: 破裂1を与え、自分の速度が10以上ならこのコインを1回再使用（再使用時は死儀【迅速】も与える）。', [
+    { onHit: { status: { id: 'rupture', power: 1, target: 'opponent' }, special: 'deathrite' } },
+    { onHit: { status: { id: 'rupture', power: 1, target: 'opponent' } } },
+    { onHit: { status: { id: 'rupture', power: 1, target: 'opponent' }, reuseAtSpeed: 10, special: 'deathrite_on_reuse' } }
+  ], { onExecute: { strider: 3 }, speedDiffCoinPowerPer2: 2, speedRuptureDamage: { max: 0.5 }, targetRuptureCoinPower: [{ min: 15, bonus: 1 }], unopposedRuptureCount: 2 }),
+  // [防御: 部分黒獣化（Partial Heishou Mutation）] マッチ可能反撃
+  skill('card_53', '部分黒獣化', 2, 'counter_clash', 'slash', 'gluttony', 0, 0, 0, '使用時: 疾走【卯】3を得る。マッチ可能反撃として待機し、攻撃してきた相手とマッチする（斬撃7～13）。対象より速ければ速度差2ごとに威力+1（最大+2）。的中時: 破裂回数+1を与える。', [], {
+    legacyDice: [{ type: 'counter_clash', attackType: 'slash', min: 7, max: 13, speedBonusPer2Max: 2 }],
+    onUse: { statuses: [{ id: 'strider_mao', count: 3 }] },
+    onHit: { status: { id: 'rupture', count: 1, target: 'opponent' } }
+  })
 ];
 
 const EGO_DATABASE = [

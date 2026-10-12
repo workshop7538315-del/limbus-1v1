@@ -67,11 +67,12 @@ function loseHpFromSkill(player, ratio, reason) {
 
 // ===== スキル実行時のボーナス =====
 // 実行中のスキルにだけ効くコイン威力・最終威力の補正を gameState[p].execBonus に置く。
-function prepareSkillExecution(player, skill) {
+function prepareSkillExecution(player, skill, slot = null, targetSlot = null, unopposed = false) {
   const p = gameState[player];
-  const bonus = { skill, coinPower: 0, finalPower: 0 };
+  const bonus = { skill, coinPower: 0, finalPower: 0, slot };
   p.execBonus = bonus;
   if (!skill) return;
+  prepareSpeedRuptureExecution(player, skill, bonus, slot, targetSlot, unopposed); // rupture.js
   if (skill.onExecute?.charge) gainCharge(player, skill.onExecute.charge, `「${skill.name}」`);
   const cc = skill.chargeConsume;
   if (cc) {
