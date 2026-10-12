@@ -348,15 +348,22 @@ async function executeFullTurn() {
     if (gameState[slot.owner].isStaggered) { slot.resolved = true; if (slot.card) log(`[キャンセル] ${playerLabel(slot.owner)}は混乱のため「${slot.card.name}」を実行できません。`); continue; }
     if (!slot.card) { slot.resolved = true; continue; }
     const target = slot.targetSlot;
-    // 攻撃同士は相互指定でマッチ。防御/回避は自分から相手の行動を
-    // 指定していれば、その相手がこちらを指定し返していなくてもマッチする。
-    // 以前は全スキルを「相互指定必須」にしていたため、昏がり等が
-    // 一方的に防御待機へ回り、マッチ演出まで到達しないケースがあった。
-    const canClash = target && target.card && !target.resolved && !gameState[target.owner].isStaggered &&
-      (target.targetSlot === slot || isDefenseSkill(slot.card) || isDefenseSkill(target.card));
+    // マッチ成立条件:
+    //  - 攻撃同士: 相互に指定している場合のみ。
+    //  - 防御/回避: 防御/回避側が相手の行動を指定していれば、相手が指定し返していなくても成立。
+    //    （攻撃側が防御スロットを指定しただけでは成立しない。資料 4.3 の仕様）
+    //  - マッチ可能反撃: 待機中のマッチ可能反撃を攻撃スキルで指定した場合に成立。
+    const targetAvailable = target && target.card && !target.resolved && !gameState[target.owner].isStaggered;
+    const hitsWaitingCounter = targetAvailable && hasClashableCounter(target.card) && slot.card.skillType === 'attack';
+    const canClash = targetAvailable &&
+      (target.targetSlot === slot || isDefenseSkill(slot.card) || hitsWaitingCounter);
     if (canClash) {
       await resolveClash(slot, target);
       slot.resolved = true; target.resolved = true;
+    } else if (hasClashableCounter(slot.card)) {
+      // マッチ可能反撃は自分の手番では何もせず、後から攻撃されるのを待つ。
+      // resolved にしないことで、より遅い攻撃からもマッチを受けられる。
+      if (!slot._counterWaitLogged) { log(`[マッチ可能反撃] ${playerLabel(slot.owner)}の「${slot.card.name}」は攻撃を待機中。`); slot._counterWaitLogged = true; }
     } else {
       await resolveOneSided(slot); slot.resolved = true;
     }
@@ -791,6 +798,7 @@ function surrender() { if (confirm('降参しますか？')) { gameState.p1.hp =
 function syncResultLog() { const s = document.getElementById('log'), t = document.getElementById('result-log'); if (s && t) { t.innerHTML = s.innerHTML; t.scrollTop = t.scrollHeight; } }
 function checkGameEnd() {
   const modal = document.getElementById('result-modal'), title = document.getElementById('result-title');
+  if (gameState.p1.hp <= 0 && gameState.p2.hp <= 0) { title.innerText = 'DRAW'; title.className = 'result-title draw'; syncResultLog(); modal.style.display = 'flex'; return true; }
   if (gameState.p2.hp <= 0) { title.innerText = 'VICTORY'; title.className = 'result-title win'; syncResultLog(); modal.style.display = 'flex'; emitHook('onMatchWin', { player: 'p1' }); emitHook('onMatchLose', { player: 'p2' }); return true; }
   if (gameState.p1.hp <= 0) { title.innerText = 'DEFEAT'; title.className = 'result-title lose'; syncResultLog(); modal.style.display = 'flex'; emitHook('onMatchWin', { player: 'p2' }); emitHook('onMatchLose', { player: 'p1' }); return true; }
   return false;
