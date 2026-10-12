@@ -534,8 +534,9 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     const enemy=resolvedTarget;
     addCombatStatus(enemy,'attack_power_down',2,1);
     addStatusNextTurn(enemy,'bind',2,1);
-    ['p1','p2'].forEach(a=>addStatusNextTurn(a,'haste',3,1));
-    log(`[E.G.O] Crow's Eye View: ${playerLabel(enemy)}へ攻撃威力減少2、この幕終了後に束縛2。次幕に味方全員迅速3。`);
+    // 原作の「全味方に迅速3」は、1対1では使用者本人のみを対象とする（簡略化）。
+    addStatusNextTurn(player,'haste',3,1);
+    log(`[E.G.O] 烏瞰図: ${playerLabel(enemy)}へ攻撃威力減少2、次幕に束縛2。次幕に${playerLabel(player)}へ迅速3。`);
   }
   if (effectSource?.special === 'ego_don_scissors_hit') {
     addStatusNextTurn(resolvedTarget, 'power_down', 1, 1);
