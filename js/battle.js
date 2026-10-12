@@ -35,7 +35,7 @@ function setupCharacter(p, core, egoIds = {}) {
   state.usedEgosThisTurn = [];
   state.pendingStatuses = {};
   state.activeEgoPassives = []; state.pendingEgoPassives = []; state.egoUsedOnce = {};
-  // 装備しているだけで有効なE.G.Oパッシブ（着影揮刀「刃先の酒滴」はキムサッガのページで常時有効）
+  // 装備しているだけで有効なE.G.Oパッシブ（着影揮刀「剣先にしたたる酒滴」はキムサッガのページで常時有効）
   state.equippedEgos.forEach(e => { if (e.egoPassiveAlwaysFor && e.egoPassiveAlwaysFor === core.id) state.activeEgoPassives.push(e.egoPassiveId); });
   const initialZayin = state.equippedEgos.find(e => e.risk === 'ZAYIN');
   state.sinRes = { ...(initialZayin?.sinRes || { wrath:1, lust:1, sloth:1, gluttony:1, gloom:1, pride:1, envy:1 }) };
@@ -87,7 +87,7 @@ function startNewRound() {
     player.sinkingThinkingHitCount = 0;
     player.usedEgosThisTurn = [];
     applyPendingStatuses(p);
-    processDrinkTurnStart(p); // 弔い酒・怨恨（blade_lineage.js）
+    processDrinkTurnStart(p); // 追慕酒・怨恨（blade_lineage.js）
     if (player.isStaggered && player.staggerSkipDone) {
       player.isStaggered = false; player.staggerSkipDone = false;
       log(`[復帰] ${playerLabel(p)}が混乱状態から回復しました！`);
@@ -510,6 +510,7 @@ function applyCoreClashWinPassive(player) {
 // コアページ「本国流剣術」: 1試合に1回、致死ダメージを受けたその幕はHP1未満にならない。
 function applyLethalGuard(player, hpDamage) {
   const p = gameState[player];
+  hpDamage = applyYieldHpFloor(player, hpDamage); // 恨の宿った鞘「肉斬」（blade_lineage.js）
   if (!p.core?.lethalGuardOnce) return hpDamage;
   if (p.lethalGuardRound === gameState.round) return Math.min(hpDamage, Math.max(0, p.hp - 1));
   if (!p.lethalGuardUsed && hpDamage >= p.hp) {
@@ -594,6 +595,7 @@ async function resolveClashInner(slotA, slotB) {
       if (follow) {
         log(`[追撃] ${playerLabel(loser)}の「${loserSlot.card.name}」: マッチ敗北後、「${follow.name}」を使用！`);
         const fslot = { ...loserSlot, card: follow, _finalCoinBonus: 0 };
+        prepareSkillExecution(loser, follow, fslot, null); // 骨断の使用時効果（恨の宿った鞘・結ばれゆくしこり）
         await withStaggerImmunity(loser, follow, () => executeWinningSkillCoins(loser, follow, winner, follow.coinCount, fslot, false));
       }
     }
@@ -788,6 +790,8 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   }
   if (options.finalCoinBonus) skillDamageMult += options.finalCoinBonus;
   if (attacker) skillDamageMult += getExecBonus(attacker, options.skill, 'damageBonus');
+  const grudgeBonus = attacker ? getGrudgeFinisherBonus(attacker, options.skill, options.coinIndex) : 0;
+  skillDamageMult += grudgeBonus;
   if (attacker) skillDamageMult += getChargeDamageBonus(attacker, options.skill) + getStriderDamageBonus(attacker) + getSpeedRuptureDamageBonus(attacker, target, options.skill);
   const spd = Number.isInteger(options.coinIndex) ? options.skill?.coins?.[options.coinIndex]?.onHit?.speedDamageBonus : null;
   if (attacker && spd && getExecSpeed(attacker) >= spd.speed) skillDamageMult += spd.bonus;
@@ -808,6 +812,8 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   if (tryDrinkRevive(target, hpDamage)) hpDamage = 0;
   p.hp = Math.max(0, p.hp - hpDamage);
   applyResentmentHeal(attacker, hpDamage);
+  onHpDamageTaken(target, hpDamage);
+  if (grudgeBonus > 0) consumeGrudge(attacker);
   if (finalDmg > 0 && attacker) p.cumulativeDamageTaken = (p.cumulativeDamageTaken || 0) + finalDmg;
   log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? `混乱中補正 ×${staggerMultiplier.toFixed(1)}` : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(sin)}) ×${sinResistance}` : ''} / Lv差 ${levelDiff}→×${levelMult.toFixed(3)} / 与ダメ×${outputMult.toFixed(2)} / 被ダメ×${takenMult.toFixed(2)} / バリア吸収${shieldDamage}）`);
   emitHook('onDamage', { target, diceType: attackType, amount: finalDmg, attacker });

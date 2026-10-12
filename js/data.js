@@ -392,14 +392,14 @@ const CARD_DATABASE = [
   // [Yield My Flesh] 剣契師範ムルソー S3（斬撃 20 -8 ×1。マイナスコイン。LoRから続く技。挑発値は省略）
   skill('card_35', '肉斬', 2, 'attack', 'slash', 'wrath', 20, -8, 1, 'このスキルが終わるまでダメージで混乱しない。マッチ勝利時: 呼吸威力5を得る。マッチ敗北時: 攻撃を受けた後「骨断」を使用。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+3%（最大75%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。', [{}], {
     onClashWin: { status: { id: 'breath', power: 5 } },
-    onClashLoseFollowUp: 'card_36',
+    onClashLoseFollowUp: 'card_36', scabbardSkill: 'yield',
     noStaggerDuringSkill: true, critDamageBonus: 0.3, critPerBreath: { per: 0.03, max: 0.75 }, missingHpDamage: true
   }),
   // [To Claim Their Bones] 剣契師範ムルソー 防御スキル2。「肉斬」のマッチ敗北時にのみ使用（デッキには入らない）。
   // 原作の「単一対象なら与ダメージ+100%」は1対1では常に発動し強すぎるため省略。
   skill('card_36', '骨断', 0, 'attack', 'slash', 'pride', 4, 4, 4, '「肉斬」のマッチ敗北時にのみ使用。このスキルが終わるまで混乱しない。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+2%（最大50%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。4枚目的中時: 出血3・次の幕に麻痺5を与える。', [
     {}, {}, {}, { onHit: { special: 'claim_bones_last' } }
-  ], { hidden: true, noStaggerDuringSkill: true, critDamageBonus: 0.3, critPerBreath: { per: 0.02, max: 0.5 }, missingHpDamage: true }),
+  ], { hidden: true, scabbardSkill: 'claim', noStaggerDuringSkill: true, critDamageBonus: 0.3, critPerBreath: { per: 0.02, max: 0.5 }, missingHpDamage: true }),
   // [LoR: Slay] 斬撃3～8（マッチ勝利で力1）・斬撃3～6（的中で光1回復）。力（攻撃威力+）は攻撃威力増加1（この幕）に置き換え。
   skill('card_37', '処断', 2, 'attack', 'slash', 'wrath', 4, 2, 2, 'マッチ勝利時: 攻撃威力増加1を得る（この幕）。2枚目的中時: 光1回復。', [
     {},
@@ -559,7 +559,7 @@ const EGO_DATABASE = [
     attackType: 'slash', skillType: 'attack', cost: 0, basePower: 12, coinPower: 4, coinCount: 2, sanityCost: 20,
     resourceCost: { pride: 4, wrath: 1, envy: 1 },
     firstUseCost: { coreId: 'core_8', cost: { pride: 3 } },
-    effect: '攻撃前: 自分の呼吸威力4ごとにマッチ威力+1・与ダメージ+10%（最大5）。弔い酒があれば与ダメージ+100%（キムサッガのページなら+200%）。1枚目的中時: 出血4を与え、呼吸回数4を得る。2枚目的中時: 出血回数2を与え、呼吸回数4を得る。攻撃終了時: 弔い酒4を得る。キムサッガのページでの初回使用は資源が傲慢3のみ。',
+    effect: '攻撃前: 自分の呼吸威力4ごとにマッチ威力+1・与ダメージ+10%（最大5）。追慕酒があれば与ダメージ+100%（キムサッガのページなら+200%）。1枚目的中時: 出血4を与え、呼吸回数4を得る。2枚目的中時: 出血回数2を与え、呼吸回数4を得る。攻撃終了時: 追慕酒4を得る。キムサッガのページでの初回使用は資源が傲慢3のみ。',
     coins: [
       { onHit: { statuses: [{ id: 'bleed', power: 4, target: 'opponent' }, { id: 'breath', count: 4 }] } },
       { onHit: { statuses: [{ id: 'bleed', count: 2, target: 'opponent' }, { id: 'breath', count: 4 }] } }
@@ -568,7 +568,7 @@ const EGO_DATABASE = [
     attackEnd: 'ego_bladesinger',
     egoPassiveId: 'ego_bladesinger_passive',
     egoPassiveAlwaysFor: 'core_8',
-    egoPassiveDesc: '刃先の酒滴: 幕開始時に弔い酒があれば怨恨を得る（その幕 速度+2、与えたダメージの10%回復）。キムサッガのページなら装備しているだけで常に有効（それ以外は使用した次の幕から）。',
+    egoPassiveDesc: '剣先にしたたる酒滴: 幕開始時に追慕酒があれば怨恨を得る（その幕 速度+2、与えたダメージの10%回復）。キムサッガのページなら追加で恨の宿った鞘を得る。キムサッガのページなら装備しているだけで常に有効（それ以外は使用した次の幕から）。',
     corrosionSanityCost: 20,
     corrosion: {
       basePower: 13, coinPower: -2, coinCount: 4, attackType: 'slash', skillType: 'attack', indiscriminate: true,

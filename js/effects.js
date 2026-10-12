@@ -15,7 +15,9 @@ const STATUS_DEFINITIONS = {
   uninvited: { name: '招聘されざる者', category: 'debuff', maxPower: 0, maxCount: 2, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '自分の沈潜威力1につき被ダメージ+0.5%（最大10%）。幕終了時に1減少。（最大2）' },
   curse: { name: '呪い', category: 'debuff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕終了時、次の幕に攻撃威力減少1・防御威力減少1・攻撃レベル減少2・防御レベル減少2のうちランダムに1つを受ける。回数-1。' },
   // 着影揮刀（blade_lineage.js）
-  drink_fallen: { name: '弔い酒', category: 'buff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕開始時に呼吸威力+1/スタック（キムサッガのページは+2）。クリティカルダメージ+3%/スタック（最大15%）。呼吸を得るスキルのマッチ威力+1。致死ダメージで全消費し1スタックにつき最大HPの25%で復帰。幕終了時に1減少。' },
+  drink_fallen: { name: '追慕酒', category: 'buff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕開始時に呼吸威力+1/スタック（キムサッガのページは+2）。クリティカルダメージ+3%/スタック（最大15%）。呼吸を得るスキルのマッチ威力+1。致死ダメージで全消費し1スタックにつき最大HPの25%で復帰。幕終了時に1減少。' },
+  resentful_scabbard: { name: '恨の宿った鞘', category: 'buff', maxPower: 0, maxCount: 1, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '体力ダメージを受けると結ばれゆくしこりを得る。自分のスキルで得る/与える状態の威力・回数+2。「肉斬」使用中は体力が10未満に下がらず（1幕1回）マッチ威力-(呼吸威力÷2)。「骨断」使用時に呼吸4を得る。' },
+  growing_resentment: { name: '結ばれゆくしこり', category: 'buff', maxPower: 0, maxCount: 999, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '「骨断」の最終威力+(数値÷100)（最大6）。「肉斬」「骨断」の最後のコイン的中時、与ダメージ+(数値÷10)%して消滅。' },
   resentment: { name: '怨恨', category: 'buff', maxPower: 0, maxCount: 1, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: 'この幕、与えたダメージの10%を回復。' },
   // 黒獣-卯（rupture.js）
   strider_mao: { name: '脚力【卯】', category: 'buff', maxPower: 0, maxCount: 3, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕終了時、次の幕に迅速5を得て1減少。（最大3）' },
@@ -375,7 +377,7 @@ function processStatusTurnEnd(player) {
       log(`[呪い] ${playerLabel(player)}は次の幕に「${STATUS_DEFINITIONS[id].name}」${amount}を受ける。`);
       status.count -= 1;
       if (status.count <= 0) delete statuses[statusId];
-    } else if ((statusId === 'drink_fallen' || statusId === 'resentment') && status.count > 0) {
+    } else if ((statusId === 'drink_fallen' || statusId === 'resentment' || statusId === 'resentful_scabbard') && status.count > 0) {
       status.count -= 1;
       if (status.count <= 0) delete statuses[statusId];
       else log(`[状態減衰] ${playerLabel(player)}の「${status.name}」: ${status.count}`);
@@ -424,7 +426,9 @@ function triggerBleedOnAttackRoll(player) {
   normalizeStatus('bleed', status);
   const p = gameState[player];
   const beforeHp = p.hp;
-  p.hp = Math.max(0, p.hp - applyLethalGuard(player, damage));
+  const bleedHp = applyLethalGuard(player, damage);
+  p.hp = Math.max(0, p.hp - bleedHp);
+  onHpDamageTaken(player, bleedHp);
   log(`[状態ダメージ] ${playerLabel(player)}の「出血」: HP ${beforeHp}→${p.hp}（-${damage}） / 残り回数: ${status.count}`);
   emitHook('onDamage', { target: player, diceType: 'bleed', amount: damage, attacker: null });
   if (status.count <= 0) delete gameState[player].statuses.bleed;
@@ -500,8 +504,9 @@ function applyOnUseEffects(player, card) {
   }
   (card.onUse.statuses || []).forEach(effect => {
     const target = getHitStatusTarget(player, effect);
-    if (effect.count) changeStatusCount(target, effect.id, effect.count, !effect.power);
-    if (effect.power) changeStatusPower(target, effect.id, effect.power, !effect.count);
+    const gb = getOwnStatusGainBonus(player); // 恨の宿った鞘
+    if (effect.count) changeStatusCount(target, effect.id, effect.count + gb, !effect.power);
+    if (effect.power) changeStatusPower(target, effect.id, effect.power + gb, !effect.count);
     log(`[使用時] ${playerLabel(player)}の「${card.name}」: ${formatStatusEffectText(effect)}`);
   });
   (card.onUse.nextTurnStatuses || []).forEach(st => {
@@ -558,7 +563,9 @@ function triggerRupture(player) {
   if (s.count <= 0) delete gameState[player].statuses.rupture;
   const p = gameState[player];
   const before = p.hp;
-  p.hp = Math.max(0, p.hp - applyLethalGuard(player, dmg));
+  const rupHp = applyLethalGuard(player, dmg);
+  p.hp = Math.max(0, p.hp - rupHp);
+  onHpDamageTaken(player, rupHp);
   log(`[破裂] ${playerLabel(player)} 固定ダメージ ${dmg}（HP ${before}→${p.hp}）`);
   if (!p.isStaggered && !p.staggerImmune) checkStaggerThresholds(player);
   return dmg;
@@ -592,6 +599,8 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     if (effect.requireHeads && !coin?.heads) return; // 「表で的中時」の効果
     if (effect.requireCharge && getCharge(player) < effect.requireCharge) return; // 充電N以上のときだけ
     if (effect.maxCharge != null && getCharge(player) > effect.maxCharge) return; // 充電N以下のときだけ
+    const gb = getOwnStatusGainBonus(player); // 恨の宿った鞘（追慕パッシブ最大効果）
+    if (gb) effect = { ...effect, power: effect.power ? effect.power + gb : effect.power, count: effect.count ? effect.count + gb : effect.count };
     const statusTarget = getHitStatusTarget(player, effect);
     let bonus = 0;
     if (effect.id === 'bleed' && effect.target === 'opponent') {
@@ -833,9 +842,10 @@ function applySkillClashWinEffects(player, card, target) {
     const effect = source.status;
     const targetPlayer = getHitStatusTarget(player, effect);
     if (effect.id === 'sinking' && effect.target === 'opponent') markSinkingTarget(player, targetPlayer);
-    // 回数→威力の順（呼吸は回数0だと威力が0に正規化されるため）
-    if (effect.count) changeStatusCount(targetPlayer, effect.id, effect.count, !effect.power);
-    if (effect.power) changeStatusPower(targetPlayer, effect.id, effect.power, !effect.count);
+    // 回数→威力の順（呼吸は回数0だと威力が0に正規化されるため）。恨の宿った鞘で+2
+    const gb = getOwnStatusGainBonus(player);
+    if (effect.count) changeStatusCount(targetPlayer, effect.id, effect.count + gb, !effect.power);
+    if (effect.power) changeStatusPower(targetPlayer, effect.id, effect.power + gb, !effect.count);
     if (effect.id === 'sinking') rollEchoesSinkingBonus(targetPlayer);
     log(`[マッチ勝利] ${playerLabel(player)}の「${card.name}」: ${playerLabel(targetPlayer)}に${formatStatusEffectText(effect)}`);
   }

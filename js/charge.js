@@ -74,6 +74,7 @@ function prepareSkillExecution(player, skill, slot = null, targetSlot = null, un
   if (!skill) return;
   prepareSpeedRuptureExecution(player, skill, bonus, slot, targetSlot, unopposed); // rupture.js
   prepareBladesinger(player, skill, bonus); // blade_lineage.js
+  prepareScabbardSkill(player, skill, bonus); // blade_lineage.js（肉斬・骨断）
   if (skill.onExecute?.charge) gainCharge(player, skill.onExecute.charge, `「${skill.name}」`);
   const cc = skill.chargeConsume;
   if (cc) {
@@ -105,7 +106,7 @@ function prepareSkillExecution(player, skill, slot = null, targetSlot = null, un
     log(`[パッシブ] ${playerLabel(player)}: この幕最初のスキル「${skill.name}」の最終威力+${p.core.firstSkillPowerUp}`);
   }
 }
-function finishSkillExecution(player) { if (gameState[player]) gameState[player].execBonus = null; }
+function finishSkillExecution(player) { if (gameState[player]) { gameState[player].execBonus = null; gameState[player].yieldHpFloorActive = false; } }
 function getExecBonus(player, skill, key) {
   const b = gameState[player]?.execBonus;
   return (b && b.skill === skill) ? (b[key] || 0) : 0;
