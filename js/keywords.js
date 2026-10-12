@@ -34,9 +34,27 @@ const KEYWORD_DESCS = {
   '敵味方識別不可': '対象がランダムに決まる（自分のダイスを狙うこともある）。'
 };
 
+// 他のページの説明から参照されるページ（追撃専用の「骨断」など）も、ページ性能をツールチップで出す。
+// 対象: デッキに入らないページ（hidden）、追撃元（onClashLoseFollowUp を持つページ）、tooltipRef: true のページ
+function getCardTooltipText(card) {
+  const type = { attack: '攻撃', defense: '防御', evade: '回避', counter: '反撃', counter_clash: 'マッチ可能反撃' }[card.skillType] || card.skillType;
+  const atk = { slash: '斬撃', pierce: '貫通', blunt: '打撃' }[card.attackType] || '';
+  const cp = card.coinCount ? `基礎${card.basePower} / コイン${card.coinPower >= 0 ? '+' : ''}${card.coinPower} ×${card.coinCount}` : '';
+  return `【ページ】${card.name}（コスト${card.cost}・${type}${atk ? `（${atk}）` : ''}${cp ? `・${cp}` : ''}）: ${card.effect || '効果なし'}`;
+}
+function getReferencedCards() {
+  const ids = new Set();
+  CARD_DATABASE.forEach(c => {
+    if (c.hidden || c.tooltipRef) ids.add(c.id);
+    if (c.onClashLoseFollowUp) { ids.add(c.id); ids.add(c.onClashLoseFollowUp); }
+  });
+  return CARD_DATABASE.filter(c => ids.has(c.id));
+}
+
 let _kwRegex = null, _kwMap = null;
 function buildKeywordIndex() {
   _kwMap = { ...KEYWORD_DESCS };
+  getReferencedCards().forEach(c => { if (!_kwMap[c.name]) _kwMap[c.name] = getCardTooltipText(c); });
   Object.values(STATUS_DEFINITIONS).forEach(def => {
     if (!def?.name || _kwMap[def.name]) return;
     if (def.desc && /[ぁ-んァ-ヶ一-龠]/.test(def.desc)) _kwMap[def.name] = def.desc;
@@ -46,10 +64,16 @@ function buildKeywordIndex() {
   _kwRegex = new RegExp(names.map(esc).join('|'), 'g');
 }
 function escapeAttr(t) { return String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
-function kw(text) {
+// depth: 説明の中のキーワードにも1段だけツールチップを付ける（例: 恨の宿った鞘 → その説明中の「骨断」）
+function kw(text, depth = 0, exclude = null) {
   if (!text) return text || '';
   if (!_kwRegex) buildKeywordIndex();
-  return String(text).replace(_kwRegex, m => `<span class="kw-tip" role="button" tabindex="0" title="${escapeAttr(_kwMap[m])}" onclick="toggleKwTip(this,event)">${m}<span class="kw-tip-text">${_kwMap[m]}</span></span>`);
+  return String(text).replace(_kwRegex, m => {
+    if (m === exclude) return m; // 自分自身の説明の中では自分にリンクしない
+    const desc = _kwMap[m];
+    const body = depth < 1 ? kw(desc, depth + 1, m) : desc;
+    return `<span class="kw-tip" role="button" tabindex="0" title="${escapeAttr(desc)}" onclick="toggleKwTip(this,event)">${m}<span class="kw-tip-text">${body}</span></span>`;
+  });
 }
 function toggleKwTip(el, event) {
   if (event) { event.stopPropagation(); event.preventDefault(); }

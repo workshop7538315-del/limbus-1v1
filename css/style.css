@@ -770,4 +770,4 @@
 /* キーワードのツールチップ（keywords.js）: PCは title、スマホはタップで下に展開 */
 .kw-tip{color:#ffe08a;border-bottom:1px dotted #f1c40f;cursor:help}
 .kw-tip-text{display:none}
-.kw-tip.open .kw-tip-text{display:block;margin:3px 0;padding:5px 6px;background:#111;border:1px solid #666;border-left:3px solid #f1c40f;border-radius:4px;color:#eee;font-size:10px;line-height:1.45;font-weight:normal;white-space:normal;text-align:left}
+.kw-tip.open > .kw-tip-text{display:block;margin:3px 0;padding:5px 6px;background:#111;border:1px solid #666;border-left:3px solid #f1c40f;border-radius:4px;color:#eee;font-size:10px;line-height:1.45;font-weight:normal;white-space:normal;text-align:left}
