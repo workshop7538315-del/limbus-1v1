@@ -297,10 +297,19 @@ function updateUI(){
     document.getElementById(`${p}-light`).innerText=s.light;document.getElementById(`${p}-maxlight`).innerText=s.maxLight;renderStatusEffects(p);renderEgoResourcePanel(p);
     document.getElementById(`${p}-box`).classList.toggle('staggered',s.isStaggered);
     const slotsDiv=document.getElementById(`${p}-speed-slots`); slotsDiv.innerHTML=`<div class="speed-range-label">速度範囲: ${s.core.speedMin}～${s.core.speedMax}</div>`;
+    renderPanicBox(p);
     if(s.isStaggered){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot">混乱中 (行動不能)</div>';return;}
+    if(s.panicNoAction){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot panic-slot">パニック (行動不能)</div>';return;}
     const cur=getCurrentPlanningSlot(),targeting=isP1Planning()&&selectedHandCard&&p==='p2';
     s.slots.forEach((slot,idx)=>{ const active=cur&&cur.owner===p&&cur.id===slot.id,target=selectedTargetSlot===slot; const targetDesc=slot.targetSlot?`<br><small>→ ${slotLabel(slot.targetSlot)}</small>`:(slot.card?'<br><small>→ 一方攻撃</small>':''); const cardDesc=slot.card?`<br><small style="color:#2ecc71" class="tooltip-target">${slot.card.name}<span class="tooltip-text"><div class="card-effect">${slot.card.effect||''}</div>${skillDetailHtml(slot.card)}</span></small>`:''; const el=document.createElement('div');el.className='speed-slot';if(active)el.classList.add('active-slot');if(targeting)el.classList.add('targetable');if(target)el.classList.add('targeting');el.innerHTML=`速度ダイス${idx+1}<br><strong>速度: ${slot.speed}</strong>${cardDesc}${targetDesc}`;if(targeting)el.onclick=()=>selectTargetSlot(slot);slotsDiv.appendChild(el);});
   });
+}
+function renderPanicBox(player){
+  const el=document.getElementById(`${player}-panic-box`); if(!el||!gameState[player].core)return;
+  const info=getPanicStatusText(player);
+  const cls=info.state==='通常'?'':(info.state==='士気低下'?' panic-low':' panic-on');
+  el.className='panic-box'+cls;
+  el.innerHTML=`パニックタイプ: <span class="tooltip-target">${info.type}${info.overridden?'（変更中）':''}<span class="tooltip-text">${info.desc}</span></span> / 状態: <b>${info.state}</b>`;
 }
 function startRoundLogBlock(round){const logDiv=document.getElementById('log'),block=document.createElement('div');block.className='log-round';block.innerHTML=`<div class="log-round-title">第${round}幕</div><div class="log-round-body"></div>`;logDiv.appendChild(block);logDiv.scrollTop=logDiv.scrollHeight;}
 function log(msg){const logDiv=document.getElementById('log');let body=logDiv.querySelector('.log-round:last-child .log-round-body');if(!body){startRoundLogBlock(gameState.round||1);body=logDiv.querySelector('.log-round:last-child .log-round-body');}const entry=document.createElement('div');entry.className='log-entry';entry.innerHTML=msg;body.appendChild(entry);logDiv.scrollTop=logDiv.scrollHeight;}

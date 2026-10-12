@@ -42,6 +42,7 @@ function setupCharacter(p, core, egoIds = {}) {
   state.sinkingPactUses = 0; state.sinkingMarkedTargets = {};
   state.sinkingThinkingFirstPageAvailable = true; state.sinkingThinkingHitCount = 0;
   state.defenseStock = []; state.counterSkills = [];
+  resetPanicState(p);
 
   document.getElementById(`${p}-title`).innerText = `${playerLabel(p)} (${core.name})`;
   document.getElementById(`${p}-passive-box`).innerHTML = `パッシブ: <span class="tooltip-target">${core.passiveName}<span class="tooltip-text">${core.passiveDesc}</span></span>`;
@@ -71,6 +72,7 @@ function startNewRound() {
   selectedHandCard = null; selectedTargetSlot = null; gameState.round += 1;
   startRoundLogBlock(gameState.round);
 
+  let endedAtTurnStart = false;
   ['p1', 'p2'].forEach(p => {
     const player = gameState[p];
     player.shield = 0;
@@ -88,15 +90,18 @@ function startNewRound() {
     } else if (player.isStaggered) {
       player.staggerSkipDone = true; log(`[混乱] ${playerLabel(p)}はこの幕、行動不能です。`);
     }
+    // 士気低下・パニック（混乱とは別状態。panic.js）
+    if (processPanicTurnStart(p)) endedAtTurnStart = true;
     processEgoTurnStart(p);
     if (player.core.onTurnStart) player.core.onTurnStart(p);
     emitHook('onTurnStart', { player: p });
   });
+  if (endedAtTurnStart) { updateUI(); checkGameEnd(); return; }
 
   ['p1', 'p2'].forEach(p => {
     const player = gameState[p];
     player.slots = []; player.defenseStock = []; player.counterSkills = [];
-    if (!player.isStaggered) {
+    if (!player.isStaggered && !player.panicNoAction) {
       for (let i = 0; i < player.core.speedDiceCount; i++) {
         player.slots.push({
           id: i, owner: p,
@@ -204,6 +209,11 @@ function playCardToSlot(player, slot, card, targetSlot) {
     gameState[player].sinRes = { ...(card.sinRes || gameState[player].sinRes) };
     updateResDisplay(player);
     log(`[E.G.O] ${playerLabel(player)}の罪悪耐性が「${card.name}」に切り替わりました。`);
+  }
+  // 敵味方識別不可（狂人のパニック等）: 対象をランダムに再抽選する。反撃系は対象を持たないので除外。
+  if (isPanicIndiscriminate(player) && card && !['counter', 'counter_clash'].includes(card.skillType)) {
+    targetSlot = getIndiscriminateTarget(player, slot);
+    log(`[敵味方識別不可] ${playerLabel(player)}の「${card.name}」の対象がランダムに決まりました → ${slotLabel(targetSlot)}`);
   }
   slot.card = card; slot.targetSlot = targetSlot || null;
   slot.bloodPactFirstPage = markFirstUsedPage(player, card);
@@ -379,6 +389,7 @@ async function executeFullTurn() {
       gameState[p].corrosionEgoId = null;
       log('[E.G.O侵蝕終了] '+playerLabel(p)+'の精神力が0に戻りました。');
     }
+    processPanicTurnEnd(p);
   });
   ['p1', 'p2'].forEach(p => emitHook('onTurnEnd', { player: p }));
   updateUI();
@@ -619,7 +630,7 @@ function executeAttackDamage(attacker, skill, defender, amount, coinIndex, slot,
   // 一方、防御成功でダメージが0ならこの関数自体を通らないため、デバフは発生しない。
   // 特殊なダメージ補正で0ダメージの攻撃についても、明示的な攻撃コインとしてはOn Hitを発火させる。
   if (amount > 0) {
-    applyDamage(defender, skill.attackType, amount, attacker, { isEgo: !!skill.isEgo, sin: skill.sin, skill });
+    applyDamage(defender, skill.attackType, amount, attacker, { isEgo: !!skill.isEgo, sin: skill.sin, skill, headsHit: !!coin?.heads });
     if (gameState[defender].hp < 0) gameState[defender].hp = 0;
   }
   if (amount > 0) triggerOnHit(attacker, skill, defender, coin, slot);
@@ -669,7 +680,9 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   const sinResistance = options.isEgo ? (p.sinRes?.[sin] ?? 1.0) : 1.0;
   const staggerMultiplier = p.isStaggered ? (2 + Math.min(1, p.staggerLevel || 0) * 0.5) : resistance;
   const mult = staggerMultiplier;
-  const outputMult = attacker ? getDamageOutputMultiplier(attacker, attackType, sin) : 1;
+  // 表のコインで的中した場合の補正（士気低下: 邸宅の木霊）
+  const headsBonus = (attacker && options.headsHit) ? getPanicHeadsDamageBonus(attacker) : 0;
+  const outputMult = attacker ? getDamageOutputMultiplier(attacker, attackType, sin) * (1 + 0.1 * headsBonus) : 1;
   const takenMult = getDamageTakenMultiplier(target, attackType, sin);
   const offLevel = attacker ? Math.max(1, getOffenseLevel(attacker, options.skill)) : 1;
   const defLevel = Math.max(1, getDefenseLevel(target, options.defenseSkill || null));

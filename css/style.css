@@ -725,3 +725,8 @@
 .ego-loadout-details summary:before{content:'▶';display:inline-block;margin-right:4px;font-size:7px}
 .ego-loadout-details[open] summary:before{transform:rotate(90deg)}
 .ego-loadout-detail-content{font-size:8px;line-height:1.45;margin-top:3px;color:#eee}
+/* パニック表示（panic.js / ui.js renderPanicBox） */
+.panic-box{margin-top:3px;font-size:10px;color:#ccc}
+.panic-box.panic-low{color:#f39c12}
+.panic-box.panic-on{color:#e74c3c;font-weight:bold}
+.panic-slot{border-color:#c0392b}

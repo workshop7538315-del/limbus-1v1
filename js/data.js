@@ -18,15 +18,62 @@ const SIN_LABELS = {
   envy: '嫉妬'
 };
 
+// パニックタイプ定義（処理は js/panic.js）。
+// 原作: limbuscompany.wiki.gg/wiki/Sanity の Panic Types 表。
+//   士気低下(lowMorale): 幕開始時に精神力 -30 以下
+//   パニック(panic)    : 幕開始時に精神力 -45
+// 1対1では「味方」が存在しないため、味方への精神力ダメージ等は省略している（desc に明記）。
+// フィールド:
+//   desc          表示用の説明（実際の処理と一致させること）
+//   statuses      幕開始時に得る状態 [{ id, amount }]
+//   noAction      その幕は行動しない（速度ダイスなし）
+//   noActionFirst 最初の士気低下時のみ行動しない
+//   indiscriminate / indiscriminateFirst 敵味方識別不可（対象をランダム化）
+//   headsDamageBonus 表のコインで的中したとき与ダメージ +10%×値
+//   duration      パニックが続く幕数（未指定なら1幕で精神力0に回復）
+//   onExpire      duration 経過時の結果: 'flee'（逃走）/ 'death'（死亡）→ いずれも敗北扱い
 const PANIC_TYPE_DEFS = {
-  'パニック': '1ターンの間、行動しない。',
-  '萎縮': '幕開始時、攻撃威力減少4を得る。',
-  '憤怒': '幕開始時、ダメージ量増加5・脆弱5を得る。',
-  '徘徊': '3ターンの間、幕終了時に味方へ精神力5ダメージ。3ターン終了時に逃走。',
-  '自殺': '3ターンの間、行動不能。幕開始時に死亡し、全味方の精神力を-10する。',
-  '狂人': '敵味方識別不可。マッチ威力+1、ダメージ量増加2を得る。'
+  'パニック': {
+    en: 'Panic',
+    lowMorale: { desc: 'なし。' },
+    panic: { desc: 'この幕、行動しない。', noAction: true }
+  },
+  '萎縮': {
+    en: 'Atrophied',
+    lowMorale: { desc: '幕開始時、攻撃威力減少2を得る。', statuses: [{ id: 'attack_power_down', amount: 2 }] },
+    panic: { desc: '幕開始時、攻撃威力減少4を得る。', statuses: [{ id: 'attack_power_down', amount: 4 }] }
+  },
+  '憤怒': {
+    en: 'Agitated',
+    lowMorale: { desc: '幕開始時、与ダメージ増加1・脆弱2を得る。', statuses: [{ id: 'damage_up', amount: 1 }, { id: 'fragile', amount: 2 }] },
+    panic: { desc: '幕開始時、与ダメージ増加2・脆弱5を得る。', statuses: [{ id: 'damage_up', amount: 2 }, { id: 'fragile', amount: 5 }] }
+  },
+  '徘徊': {
+    en: 'Wandering',
+    lowMorale: { desc: 'なし（原作は味方へ精神力2ダメージ。1対1では味方がいないため省略）。' },
+    panic: { desc: '3幕後に逃走（敗北）。（原作の味方への精神力ダメージは省略）', duration: 3, onExpire: 'flee' }
+  },
+  '自殺': {
+    en: 'Suicidal',
+    lowMorale: { desc: '最初の士気低下時、その幕は行動しない。', noActionFirst: true },
+    panic: { desc: '3幕の間行動しない。その後の幕開始時に死亡（敗北）。（原作の全味方精神力-10は省略）', noAction: true, duration: 3, onExpire: 'death' }
+  },
+  '狂人': {
+    en: 'Maddened',
+    lowMorale: { desc: '最初の士気低下時、その幕は敵味方識別不可。', indiscriminateFirst: true },
+    panic: { desc: '敵味方識別不可。幕開始時、マッチ威力増加1・与ダメージ増加2を得る。', indiscriminate: true, statuses: [{ id: 'clash_power_up', amount: 1 }, { id: 'damage_up', amount: 2 }] }
+  },
+  '邸宅の木霊': {
+    en: 'Echoes of the Manor',
+    lowMorale: { desc: '幕開始時、マッチ威力減少1を得る。表のコインで的中したとき与ダメージ+10%。', statuses: [{ id: 'clash_power_down', amount: 1 }], headsDamageBonus: 1 },
+    panic: { desc: '幕開始時、マッチ威力減少2・与ダメージ増加1を得る。（原作の他の味方への邸宅の木霊付与は省略）', statuses: [{ id: 'clash_power_down', amount: 2 }, { id: 'damage_up', amount: 1 }] }
+  }
 };
-function getPanicTypeEffect(type) { return PANIC_TYPE_DEFS[type] || '効果未設定'; }
+function getPanicTypeEffect(type) {
+  const def = PANIC_TYPE_DEFS[type];
+  if (!def) return '効果未設定';
+  return `士気低下(精神-30以下): ${def.lowMorale.desc} / パニック(精神-45): ${def.panic.desc}`;
+}
 
 function getResText(val) {
   if (val <= 0.5) return { text: '耐性', class: 'res-05' };
