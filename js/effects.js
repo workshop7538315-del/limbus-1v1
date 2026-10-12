@@ -496,6 +496,18 @@ function applyOnUseEffects(player, card) {
     addStatusNextTurn(player, st.id, st.amount, 1);
     log(`[使用時] ${playerLabel(player)}の「${card.name}」: 次の幕に「${STATUS_DEFINITIONS[st.id]?.name || st.id}」${st.amount}`);
   });
+  if (card.onUse.special === 'consume_charge_draw') {
+    if (getCharge(player) >= card.onUse.chargeCost) {
+      consumeCharge(player, card.onUse.chargeCost, `「${card.name}」`);
+      for (let i = 0; i < card.onUse.draw; i++) drawCard(player);
+      log(`[使用時] ${playerLabel(player)}の「${card.name}」: ${card.onUse.draw}枚引く`);
+    }
+  }
+  if (card.onUse.special === 'overcharge') {
+    gainCharge(player, getChargeCap(player), `「${card.name}」`);
+    gameState[player].skipNextTurn = true;
+    log(`[使用時] ${playerLabel(player)}の「${card.name}」: 次の幕は行動できない`);
+  }
   if (card.onUse.special === 'slash_power_up_2turns') {
     addCombatStatus(player, 'slash_power_up', 1, 1); addStatusNextTurn(player, 'slash_power_up', 1, 1);
     log(`[使用時] ${playerLabel(player)}の「${card.name}」: 斬撃威力増加1（この幕と次の幕）`);

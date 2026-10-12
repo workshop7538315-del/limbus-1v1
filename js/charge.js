@@ -8,7 +8,7 @@
 // スキルのデータで使うフィールド（data.js）:
 //   onExecute: { charge: N }                 実行時（攻撃開始時）に充電+N
 //   chargeConsume: { amount, coinPower, partialMin, partialHpPer, lackHpLoss }
-//        実行時に充電を amount 消費してコイン威力+coinPower。
+//        実行時に充電を amount 消費してコイン威力+coinPower（finalPower なら最終威力+）。
 //        partialMin 以上 amount 未満なら全消費し、不足1につき最大HPの partialHpPer を失って同じ効果（良秀 D.D.E.D.R.）。
 //        lackHpLoss: 足りなければ最大HPのこの割合を失う（効果なし。ドンキ 空間裂き）。
 //   chargePowerUp: { amount, powerUp }     実行時に充電を amount 消費し、この幕「威力増加 powerUp」を得る
@@ -78,8 +78,9 @@ function prepareSkillExecution(player, skill) {
     const c = getCharge(player);
     if (c >= cc.amount) {
       consumeCharge(player, cc.amount, `「${skill.name}」`);
-      bonus.coinPower += cc.coinPower;
-      log(`[充電] 「${skill.name}」: 充電${cc.amount}消費でコイン威力+${cc.coinPower}`);
+      bonus.coinPower += cc.coinPower || 0;
+      bonus.finalPower += cc.finalPower || 0;
+      log(`[充電] 「${skill.name}」: 充電${cc.amount}消費で${cc.coinPower ? `コイン威力+${cc.coinPower}` : ''}${cc.finalPower ? `最終威力+${cc.finalPower}` : ''}`);
     } else if (cc.partialMin && c >= cc.partialMin) {
       const used = consumeCharge(player, c, `「${skill.name}」`);
       loseHpFromSkill(player, (cc.amount - used) * (cc.partialHpPer || 0), `充電不足分 ${cc.amount - used}`);
@@ -95,7 +96,7 @@ function prepareSkillExecution(player, skill) {
     addCombatStatus(player, 'power_up', cp.powerUp, 1);
     log(`[充電] 「${skill.name}」: この幕、威力増加${cp.powerUp}を得る`);
   }
-  // W社職員(槍)「士気崩し」相当: その幕で最初に使う攻撃スキルの最終威力+1
+  // core.firstSkillPowerUp: その幕で最初に使う攻撃スキルの最終威力+N（現在このフィールドを持つコアページはない）
   if (p.core?.firstSkillPowerUp && p.firstSkillPowerUpRound !== gameState.round && skill.skillType === 'attack') {
     p.firstSkillPowerUpRound = gameState.round;
     bonus.finalPower += p.core.firstSkillPowerUp;

@@ -43,6 +43,7 @@ function setupCharacter(p, core, egoIds = {}) {
   state.sinkingThinkingFirstPageAvailable = true; state.sinkingThinkingHitCount = 0;
   state.defenseStock = []; state.counterSkills = [];
   resetPanicState(p);
+  state.skipNextTurn = false; state.skipThisTurn = false;
   state.lethalGuardUsed = false; state.lethalGuardRound = null; state.staggerImmune = false;
 
   document.getElementById(`${p}-title`).innerText = `${playerLabel(p)} (${core.name})`;
@@ -93,6 +94,9 @@ function startNewRound() {
     }
     // 士気低下・パニック（混乱とは別状態。panic.js）
     if (processPanicTurnStart(p)) endedAtTurnStart = true;
+    // 過充電（LoR）: 前の幕に使用していればこの幕は行動不能
+    player.skipThisTurn = !!player.skipNextTurn; player.skipNextTurn = false;
+    if (player.skipThisTurn) log(`[過充電] ${playerLabel(p)}はこの幕、行動できません。`);
     processEgoTurnStart(p);
     if (player.core.onTurnStart) player.core.onTurnStart(p);
     emitHook('onTurnStart', { player: p });
@@ -102,7 +106,7 @@ function startNewRound() {
   ['p1', 'p2'].forEach(p => {
     const player = gameState[p];
     player.slots = []; player.defenseStock = []; player.counterSkills = [];
-    if (!player.isStaggered && !player.panicNoAction) {
+    if (!player.isStaggered && !player.panicNoAction && !player.skipThisTurn) {
       for (let i = 0; i < player.core.speedDiceCount; i++) {
         player.slots.push({
           id: i, owner: p,
@@ -489,7 +493,7 @@ function applyCoreClashWinPassive(player) {
     if (p.clashWinChargeRound !== gameState.round) { p.clashWinChargeRound = gameState.round; p.clashWinChargeCount = 0; }
     if (p.clashWinChargeCount < core.clashWinCharge.perRound) {
       p.clashWinChargeCount++;
-      gainCharge(player, core.clashWinCharge.amount, '次元裂きの刃');
+      gainCharge(player, core.clashWinCharge.amount, core.clashWinCharge.name || 'パッシブ');
     }
   }
   if (core?.clashWinBreath) {

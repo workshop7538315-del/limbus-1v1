@@ -326,7 +326,8 @@ function updateUI(){
     const cb=document.getElementById(`${p}-charge-box`);
     if(cb){ const c=getCharge(p), cap=getChargeCap(p); const show=!!s.core?.chargeCap||c>0; cb.style.display=show?'':'none'; if(show) cb.innerHTML=`充電: <b>${c}</b>/${cap}<span class="charge-bar"><span style="width:${Math.min(100,c/cap*100)}%"></span></span>`; }
     if(s.isStaggered){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot">混乱中 (行動不能)</div>';return;}
-    if(s.panicNoAction){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot panic-slot">パニック (行動不能)</div>';return;}
+    if(s.skipThisTurn){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot">過充電の反動 (行動不能)</div>';return;}
+        if(s.panicNoAction){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot panic-slot">パニック (行動不能)</div>';return;}
     const cur=getCurrentPlanningSlot(),targeting=isP1Planning()&&selectedHandCard&&p==='p2';
     s.slots.forEach((slot,idx)=>{ const active=cur&&cur.owner===p&&cur.id===slot.id,target=selectedTargetSlot===slot; const targetDesc=slot.targetSlot?`<br><small>→ ${slotLabel(slot.targetSlot)}</small>`:(slot.card?'<br><small>→ 一方攻撃</small>':''); const cardDesc=slot.card?`<br><small style="color:#2ecc71" class="tooltip-target">${slot.card.name}<span class="tooltip-text"><div class="card-effect">${slot.card.effect||''}</div>${skillDetailHtml(slot.card)}</span></small>`:''; const el=document.createElement('div');el.className='speed-slot';if(active)el.classList.add('active-slot');if(targeting)el.classList.add('targetable');if(target)el.classList.add('targeting');el.innerHTML=`速度ダイス${idx+1}<br><strong>速度: ${slot.speed}</strong>${cardDesc}${targetDesc}`;if(targeting)el.onclick=()=>selectTargetSlot(slot);slotsDiv.appendChild(el);});
   });
