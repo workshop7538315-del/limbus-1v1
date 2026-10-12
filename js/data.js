@@ -309,27 +309,27 @@ const CARD_DATABASE = [
     { onHit: { status: { id: 'breath', power: 1 } } }
   ], { onUse: { light: 1, statuses: [{ id: 'breath', power: 2, count: 1 }] }, breathCoinBonus: { min: 5, bonus: 1 } }),
   // [Striker's Stance] 剣契殺手イサン S1
-  skill('card_28', '構え', 1, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力2を得る。各コイン的中時: 呼吸威力1を得る。', [
+  skill('card_28', '撃勢', 1, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力2を得る。各コイン的中時: 呼吸威力1を得る。', [
     { onHit: { status: { id: 'breath', power: 1 } } },
     { onHit: { status: { id: 'breath', power: 1 } } },
     { onHit: { status: { id: 'breath', power: 1 } } }
   ], { onUse: { statuses: [{ id: 'breath', power: 2 }] } }),
   // [Heel Turn] 剣契殺手イサン S2
-  skill('card_29', '踵返し', 1, 'attack', 'slash', 'wrath', 5, 1, 2, 'マッチ勝利時: 呼吸威力2・呼吸回数1を得る。', [{}, {}], {
+  skill('card_29', 'ひんねじる', 1, 'attack', 'slash', 'wrath', 5, 1, 2, 'マッチ勝利時: 呼吸威力2・呼吸回数1を得る。', [{}, {}], {
     onClashWin: { status: { id: 'breath', power: 2, count: 1 } }
   }),
   // [Flank Thrust] 剣契殺手イサン S3
-  skill('card_30', '脇腹突き', 2, 'attack', 'slash', 'envy', 6, 3, 1, '表で的中時: 呼吸威力2を得る。クリティカル時ダメージ+70%。', [
+  skill('card_30', '異面賛刺', 2, 'attack', 'slash', 'envy', 6, 3, 1, '表で的中時: 呼吸威力2を得る。クリティカル時ダメージ+70%。', [
     { onHit: { status: { id: 'breath', power: 2, requireHeads: true }, critDamageBonus: 0.7 } }
   ]),
   // [Acupuncture] 剣契師範ムルソー S2
-  skill('card_31', '刺方', 2, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力3を得る。マッチ勝利時: 斬撃威力増加1（この幕と次の幕）・光1回復。1枚目的中時: 呼吸威力3を得る。3枚目: クリティカル時ダメージ+60%。自分の呼吸威力7以上でコイン威力+1。', [
+  skill('card_31', '刺法', 2, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力3を得る。マッチ勝利時: 斬撃威力増加1（この幕と次の幕）・光1回復。1枚目的中時: 呼吸威力3を得る。3枚目: クリティカル時ダメージ+60%。自分の呼吸威力7以上でコイン威力+1。', [
     { onHit: { status: { id: 'breath', power: 3 } } },
     {},
     { onHit: { critDamageBonus: 0.6 } }
   ], { onUse: { statuses: [{ id: 'breath', power: 3 }] }, onClashWin: { special: 'slash_power_up_2turns', light: 1 }, breathCoinBonus: { min: 7, bonus: 1 } }), // 光回復はLoR版のマッチ勝利効果
   // [Blade Arc] 剣契殺手ドンキホーテ S2
-  skill('card_32', '剣弧', 1, 'attack', 'slash', 'envy', 4, 2, 2, '使用時: 呼吸威力2を得る。1枚目的中時: 呼吸威力2を得る。2枚目的中時: 呼吸回数2を得る。自分の呼吸威力7以上でコイン威力+1。', [
+  skill('card_32', '剣軌', 1, 'attack', 'slash', 'envy', 4, 2, 2, '使用時: 呼吸威力2を得る。1枚目的中時: 呼吸威力2を得る。2枚目的中時: 呼吸回数2を得る。自分の呼吸威力7以上でコイン威力+1。', [
     { onHit: { status: { id: 'breath', power: 2 } } },
     { onHit: { status: { id: 'breath', count: 2 } } }
   ], { onUse: { statuses: [{ id: 'breath', power: 2 }] }, breathCoinBonus: { min: 7, bonus: 1 } }),
