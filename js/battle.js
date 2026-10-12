@@ -329,7 +329,7 @@ function rollSkillForClash(player, skill, remainingCoins, opponentPlayer = null,
   power += getCoinPowerBonus(player, skill);
   power += getSkillFinalPowerModifier(player, skill);
   power += getClashPowerModifier(player);
-  // LoR 笠のキム「一点突破（Singular Strike）」: コイン1枚の（反撃以外の）スキルはマッチ威力+2
+  // LoR キムサッガ「一撃（Singular Strike）」: コイン1枚の（反撃以外の）スキルはマッチ威力+2
   if (gameState[player].core?.singularStrike && (skill.coinCount || 0) === 1 && !['counter', 'counter_clash'].includes(skill.skillType)) power += 2;
   if (skill?.isCorrosion && skill?.egoId === 'ego_don_scissors' && hasResonance(player, 'envy')) power += 1;
   if (opponentPlayer && opponentSkill) {
@@ -486,17 +486,17 @@ function applyCoreClashWinPassive(player) {
   const core = gameState[player]?.core;
   if (core?.clashWinBreath) {
     const r = changeStatusPower(player, 'breath', core.clashWinBreath);
-    log(`[パッシブ] ${core.passiveName}: ${playerLabel(player)}の呼吸威力 ${r.before}→${r.after}`);
+    log(`[パッシブ] 呼吸を整える: ${playerLabel(player)}の呼吸威力 ${r.before}→${r.after}`);
   }
 }
-// コアページ「故郷の剣術」: 1試合に1回、致死ダメージを受けたその幕はHP1未満にならない。
+// コアページ「本国流剣術」: 1試合に1回、致死ダメージを受けたその幕はHP1未満にならない。
 function applyLethalGuard(player, hpDamage) {
   const p = gameState[player];
   if (!p.core?.lethalGuardOnce) return hpDamage;
   if (p.lethalGuardRound === gameState.round) return Math.min(hpDamage, Math.max(0, p.hp - 1));
   if (!p.lethalGuardUsed && hpDamage >= p.hp) {
     p.lethalGuardUsed = true; p.lethalGuardRound = gameState.round;
-    log(`[パッシブ] ${p.core.passiveName}: ${playerLabel(player)}は致死ダメージを耐えた！（この幕はHP1未満にならない）`);
+    log(`[パッシブ] 不屈: ${playerLabel(player)}は致死ダメージを耐えた！（この幕はHP1未満にならない）`);
     return Math.max(0, p.hp - 1);
   }
   return hpDamage;
@@ -567,7 +567,7 @@ async function resolveClashInner(slotA, slotB) {
     applySkillClashWinEffects(pB, skillB, pA);
     await executeWinningSkillCoins(pB, skillB, pA, remB, slotB, true);
   }
-  // マッチ敗北後の追撃（肉を断ち → 骨を断つ）。敗者が生きていれば勝者へ一方攻撃。
+  // マッチ敗北後の追撃（肉斬 → 骨断）。敗者が生きていれば勝者へ一方攻撃。
   for (const [loserSlot, loser, winner, rem] of [[slotA, pA, pB, remA], [slotB, pB, pA, remB]]) {
     const followId = loserSlot.card?.onClashLoseFollowUp;
     if (rem <= 0 && followId && gameState[loser].hp > 0 && gameState[winner].hp > 0) {

@@ -22,8 +22,8 @@
 | パニックタイプ変更 | panic.js `setPanicTypeOverride` | 邸宅の木霊で使用 |
 | E.G.O「過ぎし日」 | data.js `ego_bygone_days`、effects.js `applyBygoneDaysHit` ほか | 招聘されざる者・呪い・邸宅の木霊・パッシブ含む |
 | 呼吸（=LCBのPoise） | battle.js `tryBreathCritical` / `getCritDamageBonus`、effects.js `getBreathCoinPowerBonus` | クリティカル率 威力×5%、1.2倍＋スキルの追加倍率。回数0で消える |
-| 剣契（コアページ core_7/core_8、card_27〜37） | data.js（LCB人格スキル＋LoRの剣契ページ・キーページ） | 肉を断ち→骨を断つの追撃（`onClashLoseFollowUp`）、混乱無効（`noStaggerDuringSkill`）、致死耐え（`lethalGuardOnce`） |
-| デッキ非表示のページ | `hidden: true` | 骨を断つ（追撃専用） |
+| 剣契（コアページ core_7/core_8、card_27〜37） | data.js（LCB人格スキル＋LoRの剣契ページ・キーページ） | 肉斬→骨断の追撃（`onClashLoseFollowUp`）、混乱無効（`noStaggerDuringSkill`）、致死耐え（`lethalGuardOnce`） |
+| デッキ非表示のページ | `hidden: true` | 骨断（追撃専用） |
 | マッチ可能反撃の待機 | battle.js `executeFullTurn` | 待機中のスロットを攻撃で指定するとマッチ |
 
 ## 2. 1対1向けの簡略化（原作と異なる箇所）
@@ -40,7 +40,7 @@
 - 過ぎし日: 「4以上の共鳴」は憂鬱共鳴の発生で代用、味方回復は自分のみ（侵蝕は省略）、攻撃の重さは省略。
 - 他人の鎖のパッシブ「3つ以上のスキルに指定」→「2つ以上」（相手の速度ダイスが最大2つのため）。
 - 呼吸: 以前は「威力=クリティカル率%、1.5倍」だったが、LCBのPoiseに合わせ「威力×5%、1.2倍」に変更（剣契のクリティカル追加倍率前提）。
-- 剣契: 原作の味方への呼吸付与は自分に置き換え。挑発値・攻撃の重さは省略。骨を断つの「単一対象+100%」は1対1で常時発動になるため省略。
+- 剣契: 原作の味方への呼吸付与は自分に置き換え。挑発値・攻撃の重さは省略。骨断の「単一対象+100%」は1対1で常時発動になるため省略。
 - 麻痺は回数=0にするコインの枚数（valueFromCount）。
 - 出血・沈潜等は、威力のみ付与されたら回数1、回数のみなら威力1（原作準拠）。
 

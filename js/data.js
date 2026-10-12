@@ -170,12 +170,12 @@ const CORE_PAGES = [
     id: 'core_7', name: '剣契の殺手のページ',
     level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 0.5, pierce: 1.5, blunt: 1.0 },
-    passiveName: '呼吸を整える & 鋭い一撃',
+    passiveName: '呼吸を整える & 鋭利な一撃',
     panicType: 'パニック',
     // LCB 剣契殺手イサン「Poised」: マッチ勝利時に呼吸1、呼吸5ごとにコイン威力+1（最大+3）
-    // LoR「剣契の殺手」キーページ（HP77・貫通弱点）の「鋭い一撃」
-    passiveDesc: 'マッチ勝利時、呼吸威力1を得る。自分の呼吸威力5ごとに、全スキルのコイン威力+1（最大+3）。斬撃の攻撃が的中するたび、次の幕に相手へ出血1。',
-    // LoR「鋭い一撃（Razor Strike）」: 斬撃の攻撃が的中すると、次の幕に相手へ出血1
+    // LoR「剣契の殺手」キーページ（HP77・貫通弱点）の「鋭利な一撃」
+    passiveDesc: '呼吸を整える: マッチ勝利時、呼吸威力1を得る。自分の呼吸威力5ごとに、全スキルのコイン威力+1（最大+3）。鋭利な一撃: 斬撃の攻撃が的中するたび、次の幕に相手へ出血1。',
+    // LoR「鋭利な一撃（Razor Strike）」: 斬撃の攻撃が的中すると、次の幕に相手へ出血1
     passives: [{ trigger: 'onHit', effect: (p, ctx) => {
       if (ctx?.card?.attackType !== 'slash' || !ctx.target || ctx.target === p) return;
       addStatusNextTurn(ctx.target, 'bleed', 1, 1);
@@ -184,13 +184,14 @@ const CORE_PAGES = [
     breathCoinPowerPer5: 3
   },
   {
-    id: 'core_8', name: '剣契の師範のページ',
+    id: 'core_8', name: 'キムサッガのページ',
     level: 1, hp: 90, stagger: 45, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
-    passiveName: '故郷の剣術 & 一点突破 & 鋭い一撃',
+    passiveName: '不屈 & 本国流剣術 & 一撃 & 鋭利な一撃',
     panicType: 'パニック',
-    // LoR「笠のキム」キーページ（Bamboo-hatted Kim）: 不屈（致死時ダメージ軽減）・一点突破・鋭い一撃を取り入れた
-    // LoR「鋭い一撃（Razor Strike）」: 斬撃の攻撃が的中すると、次の幕に相手へ出血1
+    // LoR「キムサッガ」キーページ（Bamboo-hatted Kim）＋LCB 剣契師範ムルソー。
+    // 不屈: LoRは致死時に被ダメージ軽減。LCB本国流剣術の「致死ダメージを1回無効」と統合し、HP1で耐える効果とした。
+    // LoR「鋭利な一撃（Razor Strike）」: 斬撃の攻撃が的中すると、次の幕に相手へ出血1
     passives: [{ trigger: 'onHit', effect: (p, ctx) => {
       if (ctx?.card?.attackType !== 'slash' || !ctx.target || ctx.target === p) return;
       addStatusNextTurn(ctx.target, 'bleed', 1, 1);
@@ -198,7 +199,7 @@ const CORE_PAGES = [
     singularStrike: true,
     // LCB 剣契師範ムルソー「Swordplay of the Homeland」: 1遭遇に1回、致死ダメージを無効化しその幕はHP1未満にならない。
     // 呼吸5以上でのコイン威力・クリティカル強化は「呼吸威力5以上で攻撃スキルのコイン威力+1」に簡略化。
-    passiveDesc: '1試合に1回、致死ダメージを受けてもHP1で耐え、その幕はHPが1未満にならない。自分の呼吸威力が5以上のとき、攻撃スキルのコイン威力+1。コイン1枚のスキル（反撃以外）はマッチ威力+2。斬撃の攻撃が的中するたび、次の幕に相手へ出血1。',
+    passiveDesc: '不屈: 1試合に1回、致死ダメージを受けてもHP1で耐え、その幕はHPが1未満にならない。本国流剣術: 自分の呼吸威力が5以上のとき、攻撃スキルのコイン威力+1。一撃: コイン1枚のスキル（反撃以外）はマッチ威力+2。鋭利な一撃: 斬撃の攻撃が的中するたび、次の幕に相手へ出血1。',
     lethalGuardOnce: true,
     breathCoinThreshold: { min: 5, bonus: 1 }
   }
@@ -303,7 +304,7 @@ const CARD_DATABASE = [
   // 元スキル（LCB）を [ ] に記載。呼吸は自分に付与（target 省略 = 自分）。
   // [Draw of the Sword] 剣契殺手ドンキホーテ/師範ムルソー S1
   // LoR版: コスト0・使用時光1回復・斬撃3～6
-  skill('card_27', '抜刀', 1, 'attack', 'pierce', 'pride', 3, 2, 2, '使用時: 光1回復。呼吸威力2・呼吸回数1を得る。各コイン的中時: 呼吸威力1を得る。自分の呼吸威力5以上でコイン威力+1。', [
+  skill('card_27', '抜剣', 1, 'attack', 'pierce', 'pride', 3, 2, 2, '使用時: 光1回復。呼吸威力2・呼吸回数1を得る。各コイン的中時: 呼吸威力1を得る。自分の呼吸威力5以上でコイン威力+1。', [
     { onHit: { status: { id: 'breath', power: 1 } } },
     { onHit: { status: { id: 'breath', power: 1 } } }
   ], { onUse: { light: 1, statuses: [{ id: 'breath', power: 2, count: 1 }] }, breathCoinBonus: { min: 5, bonus: 1 } }),
@@ -322,7 +323,7 @@ const CARD_DATABASE = [
     { onHit: { status: { id: 'breath', power: 2, requireHeads: true }, critDamageBonus: 0.7 } }
   ]),
   // [Acupuncture] 剣契師範ムルソー S2
-  skill('card_31', '鍼', 2, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力3を得る。マッチ勝利時: 斬撃威力増加1（この幕と次の幕）・光1回復。1枚目的中時: 呼吸威力3を得る。3枚目: クリティカル時ダメージ+60%。自分の呼吸威力7以上でコイン威力+1。', [
+  skill('card_31', '刺方', 2, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力3を得る。マッチ勝利時: 斬撃威力増加1（この幕と次の幕）・光1回復。1枚目的中時: 呼吸威力3を得る。3枚目: クリティカル時ダメージ+60%。自分の呼吸威力7以上でコイン威力+1。', [
     { onHit: { status: { id: 'breath', power: 3 } } },
     {},
     { onHit: { critDamageBonus: 0.6 } }
@@ -339,22 +340,22 @@ const CARD_DATABASE = [
     { onHit: { status: { id: 'breath', count: 2 }, critDamageBonus: 0.3 } }
   ], { onUse: { statuses: [{ id: 'breath', power: 5 }] }, breathCoinBonus: { min: 10, bonus: 1 } }),
   // [Overthrow] 剣契師範ムルソー 防御スキル（反撃）
-  skill('card_34', '打ち崩し', 1, 'counter', 'slash', 'envy', 5, 2, 1, '使用時: 斬撃威力増加1（この幕と次の幕）。攻撃を受けたとき反撃。的中時: 呼吸威力2を得る。失ったHP1%につき与ダメージ+0.5%（最大25%）。', [
+  skill('card_34', '殺主', 1, 'counter', 'slash', 'envy', 5, 2, 1, '使用時: 斬撃威力増加1（この幕と次の幕）。攻撃を受けたとき反撃。的中時: 呼吸威力2を得る。失ったHP1%につき与ダメージ+0.5%（最大25%）。', [
     { onHit: { status: { id: 'breath', power: 2 } } }
   ], { onUse: { special: 'slash_power_up_2turns' }, missingHpDamage: true }),
   // [Yield My Flesh] 剣契師範ムルソー S3（LoRから続く技。挑発値は省略）
-  skill('card_35', '肉を断ち', 2, 'attack', 'slash', 'wrath', 4, 4, 1, 'このスキルが終わるまでダメージで混乱しない。マッチ勝利時: 呼吸威力5を得る。マッチ敗北時: 攻撃を受けた後「骨を断つ」を使用。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+3%（最大75%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。', [{}], {
+  skill('card_35', '肉斬', 2, 'attack', 'slash', 'wrath', 4, 4, 1, 'このスキルが終わるまでダメージで混乱しない。マッチ勝利時: 呼吸威力5を得る。マッチ敗北時: 攻撃を受けた後「骨断」を使用。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+3%（最大75%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。', [{}], {
     onClashWin: { status: { id: 'breath', power: 5 } },
     onClashLoseFollowUp: 'card_36',
     noStaggerDuringSkill: true, critDamageBonus: 0.3, critPerBreath: { per: 0.03, max: 0.75 }, missingHpDamage: true
   }),
-  // [To Claim Their Bones] 剣契師範ムルソー 防御スキル2。「肉を断ち」のマッチ敗北時にのみ使用（デッキには入らない）。
+  // [To Claim Their Bones] 剣契師範ムルソー 防御スキル2。「肉斬」のマッチ敗北時にのみ使用（デッキには入らない）。
   // 原作の「単一対象なら与ダメージ+100%」は1対1では常に発動し強すぎるため省略。
-  skill('card_36', '骨を断つ', 0, 'attack', 'slash', 'pride', 4, 2, 4, '「肉を断ち」のマッチ敗北時にのみ使用。このスキルが終わるまで混乱しない。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+2%（最大50%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。4枚目的中時: 出血3・次の幕に麻痺5を与える。', [
+  skill('card_36', '骨断', 0, 'attack', 'slash', 'pride', 4, 2, 4, '「肉斬」のマッチ敗北時にのみ使用。このスキルが終わるまで混乱しない。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+2%（最大50%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。4枚目的中時: 出血3・次の幕に麻痺5を与える。', [
     {}, {}, {}, { onHit: { special: 'claim_bones_last' } }
   ], { hidden: true, noStaggerDuringSkill: true, critDamageBonus: 0.3, critPerBreath: { per: 0.02, max: 0.5 }, missingHpDamage: true }),
   // [LoR: Slay] 斬撃3～8（マッチ勝利で力1）・斬撃3～6（的中で光1回復）。力（攻撃威力+）は攻撃威力増加1（この幕）に置き換え。
-  skill('card_37', '斬り捨て', 2, 'attack', 'slash', 'wrath', 4, 2, 2, 'マッチ勝利時: 攻撃威力増加1を得る（この幕）。2枚目的中時: 光1回復。', [
+  skill('card_37', '処断', 2, 'attack', 'slash', 'wrath', 4, 2, 2, 'マッチ勝利時: 攻撃威力増加1を得る（この幕）。2枚目的中時: 光1回復。', [
     {},
     { onHit: { light: 1 } }
   ], { onClashWin: { status: { id: 'attack_power_up', count: 1 } } }),
