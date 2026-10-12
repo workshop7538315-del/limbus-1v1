@@ -349,6 +349,7 @@ async function executeFullTurn() {
     log('[共鳴検知] '+playerLabel(p)+' 共鳴数 '+Object.entries(info.counts).filter(([,n])=>n>0).map(([s,n])=>getSinLabel(s)+'='+n).join(' / ')+' / 発生: '+active);
   });
   log('=== 幕の戦闘開始 ===');
+  ['p1', 'p2'].forEach(p => processEgoPassivesCombatStart(p));
   const allSlots = [...gameState.p1.slots, ...gameState.p2.slots];
   allSlots.forEach(s => { s.resolved = false; s.defenseStocked = false; s.counterUsed = false; s.counterRegistered = false; });
   ['p1', 'p2'].forEach(p => { gameState[p].defenseStock = []; gameState[p].counterSkills = []; });
@@ -688,7 +689,7 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   const mult = staggerMultiplier;
   // 表のコインで的中した場合の補正（士気低下: 邸宅の木霊）
   const headsBonus = (attacker && options.headsHit) ? getPanicHeadsDamageBonus(attacker) : 0;
-  const outputMult = attacker ? getDamageOutputMultiplier(attacker, attackType, sin) * (1 + 0.1 * headsBonus) : 1;
+  const outputMult = attacker ? getDamageOutputMultiplier(attacker, attackType, sin) * (1 + 0.1 * headsBonus) * getEgoPassiveDamageMultiplier(attacker, target, attackType, sin) : 1;
   const takenMult = getDamageTakenMultiplier(target, attackType, sin);
   const offLevel = attacker ? Math.max(1, getOffenseLevel(attacker, options.skill)) : 1;
   const defLevel = Math.max(1, getDefenseLevel(target, options.defenseSkill || null));
@@ -703,6 +704,7 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   if (finalDmg > 0 && attacker) p.cumulativeDamageTaken = (p.cumulativeDamageTaken || 0) + finalDmg;
   log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? `混乱中補正 ×${staggerMultiplier.toFixed(1)}` : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(sin)}) ×${sinResistance}` : ''} / Lv差 ${levelDiff}→×${levelMult.toFixed(3)} / 与ダメ×${outputMult.toFixed(2)} / 被ダメ×${takenMult.toFixed(2)} / バリア吸収${shieldDamage}）`);
   emitHook('onDamage', { target, diceType: attackType, amount: finalDmg, attacker });
+  if (finalDmg > 0) onEgoPassiveHit(target, attacker);
   if (!p.isStaggered && hpDamage > 0) checkStaggerThresholds(target);
 
   if (!options.suppressCounter && p.hp > 0 && !p.isStaggered && finalDmg > 0) triggerNormalCounter(target, attacker, finalDmg);

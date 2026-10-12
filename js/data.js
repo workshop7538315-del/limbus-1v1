@@ -266,7 +266,10 @@ const EGO_DATABASE = [
     basePower: 18, coinPower: 6, coinCount: 1, sanityCost: 10,
     resourceCost: { wrath: 1, sloth: 3 },
     effect: 'E.G.O: 精神-10。的中時、相手に攻撃威力減少2。次の幕、自分に迅速3、相手に束縛2を付与。',
-    coins: [{ onHit: { special: 'ego_crows_eye' } }]
+    coins: [{ onHit: { special: 'ego_crows_eye' } }],
+    // 原作パッシブ「Silence」（wiki: Crow's Eye View Yi Sang）。処理: effects.js applyEgoPassiveDamageBonus / onEgoPassiveHit
+    egoPassiveId: 'ego_crows_eye_view_passive',
+    egoPassiveDesc: '沈黙: 被弾時、次の幕に束縛3を得る（1幕に1回）。相手の弱点（攻撃タイプまたは罪悪属性の耐性が×1を超える）で攻撃したとき与ダメージ+20%。'
   },
   {
     id: 'ego_chains_of_others', name: '他人の鎖', sinner: 'Meursault', risk: 'ZAYIN',
@@ -274,7 +277,11 @@ const EGO_DATABASE = [
     basePower: 19, coinPower: 3, coinCount: 1, sanityCost: 10,
     resourceCost: { sloth: 1, gloom: 1, envy: 2 },
     effect: 'E.G.O: 精神-10。的中時、相手に次の幕の束縛5・攻撃威力減少4、自分に次の幕の束縛3・攻撃威力減少3・保護2。',
-    coins: [{ onHit: { special: 'ego_chains_others' } }]
+    coins: [{ onHit: { special: 'ego_chains_others' } }],
+    // 原作パッシブ「Refusal to Judge」（wiki: Chains of Others Meursault）は「3つ以上のスキルに指定されたら保護3」。
+    // 1対1では相手の速度ダイスが最大2つのため「2つ以上」に置き換え。処理: effects.js processEgoPassivesCombatStart
+    egoPassiveId: 'ego_chains_of_others_passive',
+    egoPassiveDesc: '裁きの拒絶: 戦闘開始時、相手のスキル2つ以上に指定されていれば保護3を得る（原作は3つ以上）。'
   },
   {
     id: 'ego_don_scissors', name: '私はチョキを出すね、そっちは？', sinner: 'Don Quixote', risk: 'ZAYIN',
@@ -284,6 +291,7 @@ const EGO_DATABASE = [
     effect: '嫉妬5。マッチ勝利後: 自分のHPを回復し、精神力5回復。マッチ敗北: バリアを得て、この攻撃のダメージを大幅強化。',
     coins: [{ unbreakable: true, onHit: { status: { id: 'power_down', count: 1, target: 'opponent' }, special: 'ego_don_scissors_hit' } }],
     egoPassiveId: 'ego_don_scissors_passive',
+    egoPassiveDesc: '嫉妬スキルの与ダメージ+10%（嫉妬共鳴発生時はさらに+5%）。累積被ダメージ20ごとに攻撃レベル+1（最大3）。',
     corrosionSanityCost: 20,
     corrosion: {
       basePower: 4, coinPower: 4, coinCount: 3, attackType: 'slash', skillType: 'attack', indiscriminate: true,

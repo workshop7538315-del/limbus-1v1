@@ -675,6 +675,35 @@ function applyEgoAttackEnd(attacker, skill, defender) {
   }
 }
 
+// ===== 烏瞰図・他人の鎖のE.G.Oパッシブ =====
+function hasEgoPassive(player, id) { return !!gameState[player]?.activeEgoPassives?.includes(id); }
+// 沈黙: 相手の弱点で攻撃したとき与ダメージ+20%（倍率で返す）
+function getEgoPassiveDamageMultiplier(attacker, target, attackType, sin) {
+  if (!hasEgoPassive(attacker, 'ego_crows_eye_view_passive')) return 1;
+  const typeWeak = getResistanceWithDown(target, attackType, sin) > 1;
+  const sinWeak = !!sin && (gameState[target].sinRes?.[sin] ?? 1) > 1;
+  return (typeWeak || sinWeak) ? 1.2 : 1;
+}
+// 沈黙: 被弾時、次の幕に束縛3（1幕に1回）
+function onEgoPassiveHit(target, attacker) {
+  const p = gameState[target];
+  if (!attacker || !hasEgoPassive(target, 'ego_crows_eye_view_passive')) return;
+  if (p.silenceUsedRound === gameState.round) return;
+  p.silenceUsedRound = gameState.round;
+  addStatusNextTurn(target, 'bind', 3, 1);
+  log(`[E.G.Oパッシブ] 沈黙: ${playerLabel(target)}は次の幕に束縛3を得る。`);
+}
+// 裁きの拒絶: 戦闘開始時、相手のスキル2つ以上に指定されていれば保護3
+function processEgoPassivesCombatStart(player) {
+  if (!hasEgoPassive(player, 'ego_chains_of_others_passive')) return;
+  const enemy = opponentOf(player);
+  const n = gameState[enemy].slots.filter(s => s.card && s.targetSlot?.owner === player).length;
+  if (n >= 2) {
+    addCombatStatus(player, 'protection', 3, 1);
+    log(`[E.G.Oパッシブ] 裁きの拒絶: ${playerLabel(player)}は${n}つのスキルに指定され、保護3を得る。`);
+  }
+}
+
 // E.G.Oパッシブは使用（または侵蝕）した幕ではなく、次の幕から有効にする。
 // ここで pendingEgoPassives に積み、processEgoTurnStart で activeEgoPassives へ移す。
 // すでに有効なパッシブは重複して積まない。

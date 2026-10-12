@@ -17,7 +17,7 @@
 | HP混乱閾値 | battle.js `checkStaggerThresholds` / `adjustNextStaggerThreshold` | 閾値は1つだけ（複数閾値は未対応） |
 | E.G.O資源・共鳴 | effects.js `generateEgoResourceForSkill` / `getResonanceCounts` | |
 | E.G.O使用・侵蝕 | battle.js `playCardToSlot` / `applyEgoCorrosionAtTurnStart` | |
-| E.G.Oパッシブ | effects.js `queueEgoPassive` → `processEgoTurnStart` | 使用した幕の次の幕から有効 |
+| E.G.Oパッシブ | effects.js `queueEgoPassive` → `processEgoTurnStart` | 使用した幕の次の幕から有効。全E.G.Oに設定済み（説明は `egoPassiveDesc`） |
 | 士気低下・パニック | js/panic.js、定義は data.js `PANIC_TYPE_DEFS` | 混乱とは別状態。-30で士気低下、-45でパニック |
 | パニックタイプ変更 | panic.js `setPanicTypeOverride` | 邸宅の木霊で使用 |
 | E.G.O「過ぎし日」 | data.js `ego_bygone_days`、effects.js `applyBygoneDaysHit` ほか | 招聘されざる者・呪い・邸宅の木霊・パッシブ含む |
@@ -35,6 +35,7 @@
 - 徘徊のパニックは独自効果「幕開始時に手札をランダムに1枚失う」（原作の逃走は不採用）。
 - ドンキE.G.Oパッシブ: 嫉妬スキルの与ダメージ+10%、嫉妬共鳴発生時はさらに+5%。
 - 過ぎし日: 「4以上の共鳴」は憂鬱共鳴の発生で代用、味方回復は自分のみ（侵蝕は省略）、攻撃の重さは省略。
+- 他人の鎖のパッシブ「3つ以上のスキルに指定」→「2つ以上」（相手の速度ダイスが最大2つのため）。
 - 出血・沈潜等は、威力のみ付与されたら回数1、回数のみなら威力1（原作準拠）。
 
 ## 3. 未実装
