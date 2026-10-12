@@ -202,6 +202,34 @@ const CORE_PAGES = [
     passiveDesc: '不屈: 1試合に1回、致死ダメージを受けてもHP1で耐え、その幕はHPが1未満にならない。本国流剣術: 自分の呼吸威力が5以上のとき、攻撃スキルのコイン威力+1。一撃: コイン1枚のスキル（反撃以外）はマッチ威力+2。鋭利な一撃: 斬撃の攻撃が的中するたび、次の幕に相手へ出血1。',
     lethalGuardOnce: true,
     breathCoinThreshold: { min: 5, bonus: 1 }
+  },
+  // ===== W社（WARP整理班）=====
+  // 参考: LCB「W社3級整理要員 良秀」「W社3級整理要員 ドンキホーテ」（limbuscompany.wiki.gg）、
+  //       LoR「WARP整理班」（libraryofruina.wiki.gg）。充電の上限はLoRの仕様（通常10、スーツで20）に合わせた。
+  // 1対1では「敵撃破時」の効果が決着と同時になるため、マッチ勝利時などに置き換えている。
+  {
+    id: 'core_9', name: 'W社職員(刀)のページ',
+    level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
+    res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
+    passiveName: 'WARP整理班の制服 & 次元裂きの刃',
+    panicType: 'パニック',
+    // LCB 良秀「次元裂きの刃（Dimensional Demon Edge）」: 敵撃破時に充電+3（1幕3回）→ マッチ勝利時に充電+3（1幕2回）
+    passiveDesc: 'WARP整理班の制服: 充電の上限が20になる（通常10）。次元裂きの刃: マッチ勝利時、充電+3（1幕に2回まで）。',
+    chargeCap: 20,
+    clashWinCharge: { amount: 3, perRound: 2 }
+  },
+  {
+    id: 'core_10', name: 'W社職員(槍)のページ',
+    level: 1, hp: 80, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
+    res: { slash: 1.0, pierce: 0.5, blunt: 1.5 },
+    passiveName: 'WARP整理班の制服 & 急速充電 & 士気崩し',
+    panicType: 'パニック',
+    // LCB ドンキホーテ「急速充電（Quick Recharge）」: 戦闘開始時、憂鬱共鳴/3 の充電 → 戦闘開始時に充電+1、憂鬱共鳴があれば+2
+    // サポートパッシブ「Broken Spirit」: 最も速い味方の最初のスキル最終威力+1 → 自分のその幕最初の攻撃スキル最終威力+1
+    passiveDesc: 'WARP整理班の制服: 充電の上限が20になる（通常10）。急速充電: 戦闘開始時、充電+1（憂鬱共鳴が発生していれば+2）。士気崩し: その幕で最初に使う攻撃スキルの最終威力+1。',
+    chargeCap: 20,
+    combatStartCharge: { base: 1, gloomResonance: 2 },
+    firstSkillPowerUp: 1
   }
 ];
 
@@ -230,8 +258,11 @@ function skill(id, name, cost, type, attackType, sin, basePower, coinPower, coin
   if (extra?.onClashWin?.status?.id) tags.add(extra.onClashWin.status.id);
   if (extra?.onClashWin?.special === 'rain_consume_sinking_if_3' || extra?.sinkingPowerPer4) tags.add('sinking');
   if (extra?.counterDice?.length) tags.add('counter');
+  if (extra?.onExecute?.charge || extra?.chargeConsume || extra?.chargePowerUp || extra?.chargeCoinPowerTiers || extra?.chargeDamageTiers || extra?.chargeBasePowerPer5) tags.add('charge');
+  if (extra?.onClashWin?.status?.id) tags.add(extra.onClashWin.status.id);
   if (extra?.legacyDice?.some(d => d.type === 'counter_clash')) tags.add('counter_clash');
 
+  if ([...tags].some(t => t.endsWith('_fragility'))) tags.add('fragile');
   return {
     id, name, cost, skillType: type, attackType, sin,
     basePower, coinPower, coinCount,
@@ -359,6 +390,57 @@ const CARD_DATABASE = [
     {},
     { onHit: { light: 1 } }
   ], { onClashWin: { status: { id: 'attack_power_up', count: 1 } } }),
+  // ===== W社（WARP整理班）=====
+  // [LCB 良秀 S1: E.C.]
+  skill('card_38', 'E.C.', 1, 'attack', 'slash', 'lust', 3, 2, 3, '1・2枚目的中時: 充電+2。充電10以上で与ダメージ+10%、15以上でさらに+10%。', [
+    { onHit: { status: { id: 'charge', count: 2 } } },
+    { onHit: { status: { id: 'charge', count: 2 } } },
+    {}
+  ], { chargeDamageTiers: [{ min: 10, bonus: 0.1 }, { min: 15, bonus: 0.1 }] }),
+  // [LCB 良秀 S2: Leap]（敵撃破時の迅速は1対1では省略）
+  skill('card_39', '跳躍', 2, 'attack', 'slash', 'pride', 4, 2, 2, '使用時: 充電+7。充電10以上でコイン威力+1、15以上でさらに+1。1枚目的中時: 充電10以上なら斬撃脆弱2を与える。2枚目: 相手のHPが30%未満なら与ダメージ+30%。', [
+    { onHit: { status: { id: 'slash_fragility', count: 2, target: 'opponent', requireCharge: 10 } } },
+    { onHit: { lowHpDamageBonus: { below: 0.3, bonus: 0.3 } } }
+  ], { onExecute: { charge: 7 }, chargeCoinPowerTiers: [{ min: 10, bonus: 1 }, { min: 15, bonus: 1 }] }),
+  // [LCB 良秀 S3: D.D.E.D.R.]（敵撃破時の充電障壁は1対1では省略）
+  skill('card_40', 'D.D.E.D.R.', 3, 'attack', 'slash', 'envy', 3, 1, 4, '使用時: 充電15を消費してコイン威力+3。充電7～14なら全て消費し、不足1につき最大HPの3%を失って同じ効果。1～3枚目が表で的中するたび、最後のコインの与ダメージ+10%。', [
+    { onHit: { finalCoinBonusOnHeads: 0.1 } },
+    { onHit: { finalCoinBonusOnHeads: 0.1 } },
+    { onHit: { finalCoinBonusOnHeads: 0.1 } },
+    {}
+  ], { chargeConsume: { amount: 15, coinPower: 3, partialMin: 7, partialHpPer: 0.03 } }),
+  // [LCB 良秀 防御: Charged Evade]
+  skill('card_41', '充電回避', 1, 'evade', null, 'lust', 4, 3, 1, '充電5ごとに基礎威力+1（最大+3）。', [{}], { chargeBasePowerPer5: 3 }),
+  // [LCB ドンキホーテ S1: Rip]（破裂は不採用）
+  skill('card_42', '裂く', 1, 'attack', 'slash', 'sloth', 4, 3, 1, '表で的中時: 充電+4。充電5以上でコイン威力+2。', [
+    { onHit: { status: { id: 'charge', count: 4, requireHeads: true } } }
+  ], { chargeCoinPowerTiers: [{ min: 5, bonus: 2 }] }),
+  // [LCB ドンキホーテ S2: Leap]
+  skill('card_43', '跳躍刺突', 2, 'attack', 'pierce', 'gloom', 3, 2, 3, '1・2枚目的中時: 充電+3。3枚目が表で的中時: 脆弱2を与える。充電7以上でコイン威力+1。', [
+    { onHit: { status: { id: 'charge', count: 3 } } },
+    { onHit: { status: { id: 'charge', count: 3 } } },
+    { onHit: { status: { id: 'fragile', count: 2, target: 'opponent', requireHeads: true } } }
+  ], { chargeCoinPowerTiers: [{ min: 7, bonus: 1 }] }),
+  // [LCB ドンキホーテ S3: Rip Space / LoR: 空間裂き]（破裂は脆弱に置き換え）
+  skill('card_44', '空間裂き', 3, 'attack', 'slash', 'envy', 2, 2, 5, '使用時: 充電10を消費してコイン威力+2。足りなければ最大HPの20%を失う。表で的中するたび脆弱1を与える。', [
+    { onHit: { status: { id: 'fragile', count: 1, target: 'opponent', requireHeads: true } } },
+    { onHit: { status: { id: 'fragile', count: 1, target: 'opponent', requireHeads: true } } },
+    { onHit: { status: { id: 'fragile', count: 1, target: 'opponent', requireHeads: true } } },
+    { onHit: { status: { id: 'fragile', count: 1, target: 'opponent', requireHeads: true } } },
+    { onHit: { status: { id: 'fragile', count: 1, target: 'opponent', requireHeads: true } } }
+  ], { chargeConsume: { amount: 10, coinPower: 2, lackHpLoss: 0.2 } }),
+  // ----- LoR「WARP整理班」のページ名を借りた独自ページ（LoR wikiに効果データがないため効果は独自）-----
+  skill('card_45', 'エネルギー循環', 0, 'defense', null, 'sloth', 3, 2, 1, '使用時: 充電+3。', [{}], { onUse: { statuses: [{ id: 'charge', count: 3 }] } }),
+  skill('card_46', '過充電', 1, 'defense', null, 'gluttony', 4, 2, 1, '使用時: 充電+5。次の幕、威力増加1を得る。', [{}], { onUse: { statuses: [{ id: 'charge', count: 5 }], nextTurnStatuses: [{ id: 'power_up', amount: 1 }] } }),
+  skill('card_47', '次元の裂け目', 2, 'attack', 'pierce', 'gluttony', 4, 2, 2, '使用時: 充電5を消費し、この幕「威力増加1」を得る。的中時: 脆弱1を与える。', [
+    { onHit: { status: { id: 'fragile', count: 1, target: 'opponent' } } },
+    { onHit: { status: { id: 'fragile', count: 1, target: 'opponent' } } }
+  ], { chargePowerUp: { amount: 5, powerUp: 1 } }),
+  skill('card_48', '波紋', 1, 'attack', 'blunt', 'gloom', 3, 2, 2, '的中時: 脆弱1を与える。充電10以上なら代わりに脆弱2。', [
+    { onHit: { statuses: [{ id: 'fragile', count: 1, target: 'opponent', maxCharge: 9 }, { id: 'fragile', count: 2, target: 'opponent', requireCharge: 10 }] } },
+    { onHit: { statuses: [{ id: 'fragile', count: 1, target: 'opponent', maxCharge: 9 }, { id: 'fragile', count: 2, target: 'opponent', requireCharge: 10 }] } }
+  ]),
+  skill('card_49', '巻き戻し', 1, 'evade', null, 'sloth', 4, 2, 1, 'マッチ勝利時: 光1回復・充電+2。', [{}], { onClashWin: { light: 1, status: { id: 'charge', count: 2 } } })
 ];
 
 const EGO_DATABASE = [

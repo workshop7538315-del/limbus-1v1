@@ -323,6 +323,8 @@ function updateUI(){
     document.getElementById(`${p}-box`).classList.toggle('staggered',s.isStaggered);
     const slotsDiv=document.getElementById(`${p}-speed-slots`); slotsDiv.innerHTML=`<div class="speed-range-label">速度範囲: ${s.core.speedMin}～${s.core.speedMax}</div>`;
     renderPanicBox(p);
+    const cb=document.getElementById(`${p}-charge-box`);
+    if(cb){ const c=getCharge(p), cap=getChargeCap(p); const show=!!s.core?.chargeCap||c>0; cb.style.display=show?'':'none'; if(show) cb.innerHTML=`充電: <b>${c}</b>/${cap}<span class="charge-bar"><span style="width:${Math.min(100,c/cap*100)}%"></span></span>`; }
     if(s.isStaggered){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot">混乱中 (行動不能)</div>';return;}
     if(s.panicNoAction){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot panic-slot">パニック (行動不能)</div>';return;}
     const cur=getCurrentPlanningSlot(),targeting=isP1Planning()&&selectedHandCard&&p==='p2';

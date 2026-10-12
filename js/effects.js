@@ -69,12 +69,13 @@ const BASIC_STATUS_DEFS = {
   ego_resource_amp:['E.G.O資源増幅','Gain additional E.G.O Resources when using skills','buff'],
   paralyze:['麻痺','Fix X Coin(s) to 0','debuff'],
   poise:['呼吸準備','Critical chance +5% per Potency for the next Count hits','buff'],
-  charge:['充電','Resource for Charge skills; lose 1 Count at turn end','buff']
+  charge:['充電','充電X。スキルで消費して効果を強化するリソース。幕終了時に1減少。','buff']
 };
 Object.entries(BASIC_STATUS_DEFS).forEach(([id,[name,desc,category]])=>{
   STATUS_DEFINITIONS[id]={ name, category, maxPower:99, maxCount:99, defaultPower:0, defaultCount:0, desc };
 });
 const VALUE_FROM_COUNT_STATUS_IDS = new Set([
+  'charge',   // 充電: 回数=充電量（charge.js）
   'paralyze', // 麻痺: 回数=0にするコインの枚数（flipCoin が1枚ごとに1消費）
   'haste','bind','attack_power_up','attack_power_down','defense_power_up','defense_power_down',
   'clash_power_up','clash_power_down','power_up','power_down','base_power_up',
@@ -94,19 +95,18 @@ const VALUE_FROM_COUNT_STATUS_IDS = new Set([
   'wrath_protection','lust_protection','sloth_protection','gluttony_protection','gloom_protection','pride_protection','envy_protection',
   'wrath_resist_down','lust_resist_down','sloth_resist_down','gluttony_resist_down','gloom_resist_down','pride_resist_down','envy_resist_down'
 ]);
-VALUE_FROM_COUNT_STATUS_IDS.forEach(id => {
-  if (STATUS_DEFINITIONS[id]) STATUS_DEFINITIONS[id].valueFromCount = true;
-});
 const DAMAGE_TYPES = ['slash','pierce','blunt'];
+const DAMAGE_TYPE_LABELS = { slash: '斬撃', pierce: '貫通', blunt: '打撃' };
 const STATUS_SINS = ['wrath','lust','sloth','gluttony','gloom','pride','envy'];
 DAMAGE_TYPES.forEach(t=>{
-  STATUS_DEFINITIONS[`${t}_damage_up`] = {name:`${t}ダメージ増加`,category:'buff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Deal +(X*10)% damage with ${t} skills this turn`};
-  STATUS_DEFINITIONS[`${t}_damage_down`] = {name:`${t}ダメージ減少`,category:'debuff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Deal -(X*10)% damage with ${t} skills this turn`};
-  STATUS_DEFINITIONS[`${t}_power_up`] = {name:`${t}威力増加`,category:'buff',maxPower:99,maxCount:1,defaultPower:0,defaultCount:0,desc:`${t} Skill Final Power +X for this turn`};
-  STATUS_DEFINITIONS[`${t}_power_down`] = {name:`${t}威力減少`,category:'debuff',maxPower:99,maxCount:1,defaultPower:0,defaultCount:0,desc:`${t} Skill Final Power -X for this turn`};
-  STATUS_DEFINITIONS[`${t}_fragility`] = {name:`${t}脆弱`,category:'debuff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Take +(X*10)% damage from ${t} skills this turn`};
-  STATUS_DEFINITIONS[`${t}_protection`] = {name:`${t}保護`,category:'buff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Take -(X*10)% damage from ${t} skills this turn`};
-  STATUS_DEFINITIONS[`${t}_resist_down`] = {name:`${t}耐性減少`,category:'debuff',maxPower:20,maxCount:20,defaultPower:0,defaultCount:0,desc:`Increase ${t} Resistance by 0.1 per Count`};
+  const tl = DAMAGE_TYPE_LABELS[t];
+  STATUS_DEFINITIONS[`${t}_damage_up`] = {name:`${tl}ダメージ増加`,category:'buff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Deal +(X*10)% damage with ${t} skills this turn`};
+  STATUS_DEFINITIONS[`${t}_damage_down`] = {name:`${tl}ダメージ減少`,category:'debuff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Deal -(X*10)% damage with ${t} skills this turn`};
+  STATUS_DEFINITIONS[`${t}_power_up`] = {name:`${tl}威力増加`,category:'buff',maxPower:99,maxCount:1,defaultPower:0,defaultCount:0,desc:`${t} Skill Final Power +X for this turn`};
+  STATUS_DEFINITIONS[`${t}_power_down`] = {name:`${tl}威力減少`,category:'debuff',maxPower:99,maxCount:1,defaultPower:0,defaultCount:0,desc:`${t} Skill Final Power -X for this turn`};
+  STATUS_DEFINITIONS[`${t}_fragility`] = {name:`${tl}脆弱`,category:'debuff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Take +(X*10)% damage from ${t} skills this turn`};
+  STATUS_DEFINITIONS[`${t}_protection`] = {name:`${tl}保護`,category:'buff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Take -(X*10)% damage from ${t} skills this turn`};
+  STATUS_DEFINITIONS[`${t}_resist_down`] = {name:`${tl}耐性減少`,category:'debuff',maxPower:20,maxCount:20,defaultPower:0,defaultCount:0,desc:`Increase ${t} Resistance by 0.1 per Count`};
 });
 STATUS_SINS.forEach(s=>{
   const label = typeof SIN_LABELS!=='undefined' ? SIN_LABELS[s] : s;
@@ -117,6 +117,13 @@ STATUS_SINS.forEach(s=>{
   STATUS_DEFINITIONS[`${s}_fragility`] = {name:`${label}脆弱`,category:'debuff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Take +(X*10)% damage from ${label} skills this turn`};
   STATUS_DEFINITIONS[`${s}_protection`] = {name:`${label}保護`,category:'buff',maxPower:10,maxCount:10,defaultPower:0,defaultCount:0,desc:`Take -(X*10)% damage from ${label} skills this turn`};
   STATUS_DEFINITIONS[`${s}_resist_down`] = {name:`${label}耐性減少`,category:'debuff',maxPower:20,maxCount:20,defaultPower:0,defaultCount:0,desc:`Increase ${label} Resistance by 0.1 per Count`};
+});
+
+// 注意: 攻撃タイプ別・罪悪属性別の定義（下のループ）より後に適用すること。
+// 以前はループより前に適用していたため、「斬撃脆弱」「斬撃威力増加」等が上書きされて
+// valueFromCount を失い、効果量が常に0になっていた。
+VALUE_FROM_COUNT_STATUS_IDS.forEach(id => {
+  if (STATUS_DEFINITIONS[id]) STATUS_DEFINITIONS[id].valueFromCount = true;
 });
 
 function getStatus(player, statusId) {
@@ -150,7 +157,7 @@ function changeStatusCount(player, statusId, delta, autoFill = true) {
   const status = ensureStatus(player, statusId);
   if (!status) return null;
   const before = status.count;
-  status.count = clampStatusValue(status.count + delta, STATUS_DEFINITIONS[statusId].maxCount);
+  status.count = clampStatusValue(status.count + delta, statusId === 'charge' ? getChargeCap(player) : STATUS_DEFINITIONS[statusId].maxCount);
   if (autoFill && delta > 0 && POTENCY_COUNT_STATUS_IDS.has(statusId) && status.power <= 0) status.power = 1;
   normalizeStatus(statusId, status);
   return { status, before, after: status.count };
@@ -244,6 +251,7 @@ function getEffectiveCoinPower(player, skill, coinPower) {
   const down=positive ? 'plus_coin_drop' : 'minus_coin_drop';
   cp += getActiveStatusPower(player,id) - getActiveStatusPower(player,down);
   cp += getBreathCoinPowerBonus(player, skill);
+  cp += getChargeCoinPowerBonus(player, skill) + getExecBonus(player, skill, 'coinPower');
   return cp;
 }
 // 呼吸（LCBのPoise）威力に応じたコイン威力ボーナス。
@@ -484,6 +492,10 @@ function applyOnUseEffects(player, card) {
     if (effect.power) changeStatusPower(target, effect.id, effect.power, !effect.count);
     log(`[使用時] ${playerLabel(player)}の「${card.name}」: ${formatStatusEffectText(effect)}`);
   });
+  (card.onUse.nextTurnStatuses || []).forEach(st => {
+    addStatusNextTurn(player, st.id, st.amount, 1);
+    log(`[使用時] ${playerLabel(player)}の「${card.name}」: 次の幕に「${STATUS_DEFINITIONS[st.id]?.name || st.id}」${st.amount}`);
+  });
   if (card.onUse.special === 'slash_power_up_2turns') {
     addCombatStatus(player, 'slash_power_up', 1, 1); addStatusNextTurn(player, 'slash_power_up', 1, 1);
     log(`[使用時] ${playerLabel(player)}の「${card.name}」: 斬撃威力増加1（この幕と次の幕）`);
@@ -548,6 +560,8 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
   const applyStatusEffect = (effect) => {
     if (!effect) return;
     if (effect.requireHeads && !coin?.heads) return; // 「表で的中時」の効果
+    if (effect.requireCharge && getCharge(player) < effect.requireCharge) return; // 充電N以上のときだけ
+    if (effect.maxCharge != null && getCharge(player) > effect.maxCharge) return; // 充電N以下のときだけ
     const statusTarget = getHitStatusTarget(player, effect);
     let bonus = 0;
     if (effect.id === 'bleed' && effect.target === 'opponent') {
@@ -730,6 +744,14 @@ function onEgoPassiveHit(target, attacker) {
   log(`[E.G.Oパッシブ] 沈黙: ${playerLabel(target)}は次の幕に束縛3を得る。`);
 }
 // 判断拒否: 戦闘開始時、相手のスキル2つ以上に指定されていれば保護3
+// コアページの戦闘開始時パッシブ（W社職員(槍)「急速充電」）
+function processCoreCombatStart(player) {
+  const core = gameState[player]?.core;
+  if (core?.combatStartCharge) {
+    const n = hasResonance(player, 'gloom') ? core.combatStartCharge.gloomResonance : core.combatStartCharge.base;
+    gainCharge(player, n, '急速充電');
+  }
+}
 function processEgoPassivesCombatStart(player) {
   if (!hasEgoPassive(player, 'ego_chains_of_others_passive')) return;
   const enemy = opponentOf(player);
@@ -810,6 +832,7 @@ function getStatusTooltip(status) {
   if (status.id === 'tremor') return `振動${status.power} / Count${status.count}。振動爆発時、振動威力分だけ混乱閾値を上昇。幕終了時Count-1。`;
   if (status.id === 'rupture') return `破裂${status.power} / Count${status.count}。攻撃を受けたとき固定ダメージ${status.power}を与え、Count-1。`;
   if (status.id === 'sinking') return `沈潜X / 回数Y。攻撃を受けたとき精神をX減少し、回数を1減少。最大値: 威力99 / 回数99。`;
+  if (status.id === 'charge') return `充電 ${status.count}。スキルで消費して効果を強化するリソース。幕終了時に1減少。`;
   if (status.id === 'blood_feast') return `この幕、ダメージ+${status.power}。幕終了時に解除。`;
   const def = STATUS_DEFINITIONS[status.id];
   if (def?.desc) {
@@ -823,8 +846,9 @@ function getSkillHitEffectTexts(card, coin) {
   const source = coin?.onHit || card?.onHit || null;
   if (!source) return [];
   const texts = [];
-  [source.status, ...(source.statuses || [])].filter(Boolean).forEach(st => { const t = formatStatusEffectText(st); if (t) texts.push(`${st.requireHeads ? '【表で的中】' : '【的中】'}${t}`); });
+  [source.status, ...(source.statuses || [])].filter(Boolean).forEach(st => { const t = formatStatusEffectText(st); if (t) texts.push(`${st.requireHeads ? '【表で的中】' : '【的中】'}${st.requireCharge ? `充電${st.requireCharge}以上なら` : ''}${t}`); });
   if (source.light) texts.push(`【的中】光を${source.light}回復`);
+  if (source.lowHpDamageBonus) texts.push(`【的中】相手のHPが${Math.round(source.lowHpDamageBonus.below*100)}%未満なら与ダメージ+${Math.round(source.lowHpDamageBonus.bonus*100)}%`);
   if (source.finalCoinBonusOnHeads) texts.push(`【表で的中】最後のコインの与ダメージ+${Math.round(source.finalCoinBonusOnHeads * 100)}%`);
   if (source.critDamageBonus) texts.push(`【クリティカル】ダメージ+${Math.round(source.critDamageBonus * 100)}%`);
   if (source.special === 'claim_bones_last') texts.push('【的中】出血3・次の幕に麻痺5を与える');

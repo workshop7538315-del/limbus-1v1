@@ -295,7 +295,7 @@ function flipCoin(player, skill, coinIndex, includeSkillBonus = true) {
   const positive = rawCoinPower >= 0;
   const paralyze = getStatus(player, 'paralyze');
   const paralyzed = !!(paralyze?.count > 0);
-  let power = (skill.basePower || 0) + getSkillBasePowerBonus(player);
+  let power = (skill.basePower || 0) + getSkillBasePowerBonus(player) + getChargeBasePowerBonus(player, skill);
   if (heads && !paralyzed) power += effectiveCoinPower;
   if (paralyzed) {
     power = 0;
@@ -307,7 +307,7 @@ function flipCoin(player, skill, coinIndex, includeSkillBonus = true) {
     bonus = getCoinPowerBonus(player, skill);
     power += bonus;
   }
-  power += getSkillFinalPowerModifier(player, skill);
+  power += getSkillFinalPowerModifier(player, skill) + getExecBonus(player, skill, 'finalPower');
   if (skill?.isCorrosion && skill?.egoId === 'ego_don_scissors' && hasResonance(player, 'envy')) power += 1;
   if (gameState[player].core?.powerAlwaysZero) {
     power = 0;
@@ -318,7 +318,7 @@ function flipCoin(player, skill, coinIndex, includeSkillBonus = true) {
 
 function rollSkillForClash(player, skill, remainingCoins, opponentPlayer = null, opponentSkill = null) {
   const results = [];
-  const basePower = (skill.basePower || 0) + getSkillBasePowerBonus(player);
+  const basePower = (skill.basePower || 0) + getSkillBasePowerBonus(player) + getChargeBasePowerBonus(player, skill);
   let power = basePower;
   const effectiveCoinPower = getEffectiveCoinPower(player, skill, skill.coinPower || 0);
   for (let i = 0; i < remainingCoins; i++) {
@@ -327,7 +327,7 @@ function rollSkillForClash(player, skill, remainingCoins, opponentPlayer = null,
     if (c.heads && !c.paralyzed) power += effectiveCoinPower;
   }
   power += getCoinPowerBonus(player, skill);
-  power += getSkillFinalPowerModifier(player, skill);
+  power += getSkillFinalPowerModifier(player, skill) + getExecBonus(player, skill, 'finalPower');
   power += getClashPowerModifier(player);
   // LoR キムサッガ「一撃（Singular Strike）」: コイン1枚の（反撃以外の）スキルはマッチ威力+2
   if (gameState[player].core?.singularStrike && (skill.coinCount || 0) === 1 && !['counter', 'counter_clash'].includes(skill.skillType)) power += 2;
@@ -352,7 +352,7 @@ async function executeFullTurn() {
     log('[共鳴検知] '+playerLabel(p)+' 共鳴数 '+Object.entries(info.counts).filter(([,n])=>n>0).map(([s,n])=>getSinLabel(s)+'='+n).join(' / ')+' / 発生: '+active);
   });
   log('=== 幕の戦闘開始 ===');
-  ['p1', 'p2'].forEach(p => processEgoPassivesCombatStart(p));
+  ['p1', 'p2'].forEach(p => { processEgoPassivesCombatStart(p); processCoreCombatStart(p); });
   const allSlots = [...gameState.p1.slots, ...gameState.p2.slots];
   allSlots.forEach(s => { s.resolved = false; s.defenseStocked = false; s.counterUsed = false; s.counterRegistered = false; });
   ['p1', 'p2'].forEach(p => { gameState[p].defenseStock = []; gameState[p].counterSkills = []; });
@@ -484,6 +484,14 @@ async function withStaggerImmunity(player, skill, fn) {
 // コアページの「マッチ勝利時」パッシブ（core.clashWinBreath: 呼吸威力+X）
 function applyCoreClashWinPassive(player) {
   const core = gameState[player]?.core;
+  const p = gameState[player];
+  if (core?.clashWinCharge) {
+    if (p.clashWinChargeRound !== gameState.round) { p.clashWinChargeRound = gameState.round; p.clashWinChargeCount = 0; }
+    if (p.clashWinChargeCount < core.clashWinCharge.perRound) {
+      p.clashWinChargeCount++;
+      gainCharge(player, core.clashWinCharge.amount, '次元裂きの刃');
+    }
+  }
   if (core?.clashWinBreath) {
     const r = changeStatusPower(player, 'breath', core.clashWinBreath);
     log(`[パッシブ] 呼吸を整える: ${playerLabel(player)}の呼吸威力 ${r.before}→${r.after}`);
@@ -511,6 +519,7 @@ async function resolveClashInner(slotA, slotB) {
     return resolveLegacyClashableCounter(slotA, slotB);
   }
   logClashSummary(slotA, slotB);
+  prepareSkillExecution(pA, skillA); prepareSkillExecution(pB, skillB); // 実行時（On Use）: 充電の獲得・消費など
   generateEgoResourceForSkill(pA, skillA, slotA);
   generateEgoResourceForSkill(pB, skillB, slotB);
   emitHook('onClashStart', { playerA: pA, playerB: pB, cardA: skillA, cardB: skillB });
@@ -583,6 +592,7 @@ async function resolveClashInner(slotA, slotB) {
   if (remB <= 0 && skillB) { applyDonScissorsClashLose(pB, skillB); if (skillB.isCorrosion) slotB._donCorrosionLoss = true; if (skillB.isUnbreakable || skillB.coins?.some(c => c?.unbreakable)) await executeDonScissorsUnbreakableLoss(pB, skillB, pA, slotB); }
   if (isDefenseSkill(skillA)) stockUnusedDefenseCoins(slotA, Math.max(0, remA));
   if (isDefenseSkill(skillB)) stockUnusedDefenseCoins(slotB, Math.max(0, remB));
+  finishSkillExecution(pA); finishSkillExecution(pB);
 }
 
 async function executeWinningSkillCoins(attacker, skill, defender, coinCount, slot, fromClash = false) {
@@ -624,6 +634,7 @@ async function resolveOneSidedInner(slot) {
     stockUnusedDefenseCoins(slot, 0); return;
   }
   const attackCoinCount = slot.card.coinCount || 0;
+  prepareSkillExecution(attacker, slot.card); // 実行時（On Use）: 充電の獲得・消費など
   generateEgoResourceForSkill(attacker, slot.card, slot);
   applyEgoBeforeAttack(attacker, slot.card);
   for (let i = 0; i < attackCoinCount; i++) {
@@ -641,6 +652,7 @@ async function resolveOneSidedInner(slot) {
     if (gameState[defender].hp <= 0) break;
   }
   applyEgoAttackEnd(attacker, slot.card, defender);
+  finishSkillExecution(attacker);
 }
 
 function resolveDefenseAgainstAttack(attacker, attackSkill, defender, defense, index, attackerSlot = null) {
@@ -748,6 +760,9 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
     skillDamageMult += Math.min(0.25, ((a.maxHp - a.hp) / a.maxHp) * 100 * 0.005);
   }
   if (options.finalCoinBonus) skillDamageMult += options.finalCoinBonus;
+  if (attacker) skillDamageMult += getChargeDamageBonus(attacker, options.skill);
+  const lowHp = Number.isInteger(options.coinIndex) ? options.skill?.coins?.[options.coinIndex]?.onHit?.lowHpDamageBonus : null;
+  if (lowHp && p.maxHp > 0 && p.hp / p.maxHp < lowHp.below) skillDamageMult += lowHp.bonus;
   const outputMult = attacker ? getDamageOutputMultiplier(attacker, attackType, sin) * (1 + 0.1 * headsBonus) * getEgoPassiveDamageMultiplier(attacker, target, attackType, sin) * skillDamageMult : 1;
   const takenMult = getDamageTakenMultiplier(target, attackType, sin);
   const offLevel = attacker ? Math.max(1, getOffenseLevel(attacker, options.skill)) : 1;
