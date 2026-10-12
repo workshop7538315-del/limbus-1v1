@@ -88,28 +88,34 @@ const CORE_PAGES = [
     id: 'core_1', name: '見習い司書のページ',
     level: 1, hp: 80, stagger: 40, maxLight: 4, speedDiceCount: 2, speedMin: 2, speedMax: 6,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.0 },
-    passiveName: '二刀流 & 予備光線',
+    passiveList: [
+      { name: '二刀流', desc: '速度ダイス数:2。' },
+      { name: '予備光線', desc: '光の最大値が1増加する(最大4)。' }
+    ],
     panicType: 'パニック',
-    passiveDesc: '速度ダイス数:2。光の最大値が1増加する(最大4)。'
   },
   {
     id: 'core_2', name: '裏路地の暗殺者のページ',
     level: 1, hp: 70, stagger: 35, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
-    passiveName: '疾風 & 鋭い刃',
+    passiveList: [
+      { name: '疾風', desc: '速度ダイス数:2。' },
+      { name: '鋭い刃', desc: '全ての斬撃コインの威力+1。' }
+    ],
     panicType: '萎縮',
-    passiveDesc: '速度ダイス数:2。全ての斬撃コインの威力+1。',
     slashBonus: 1
   },
   {
     id: 'core_3', name: '盾持ち兵士のページ',
     level: 1, hp: 100, stagger: 50, maxLight: 3, speedDiceCount: 1, speedMin: 1, speedMax: 3,
     res: { slash: 1.0, pierce: 0.5, blunt: 0.5 },
-    passiveName: '重装 & 態勢再整頓',
+    passiveList: [
+      { name: '重装', desc: '速度ダイス数:1。' },
+      { name: '態勢再整頓', desc: '幕の開始時、次の混乱閾値を3下げる（混乱しにくくなる）。' }
+    ],
     panicType: '憤怒',
     // 旧仕様「混乱耐性を3回復」はHP閾値方式では存在しないため、
     // 「次の混乱閾値を3下げる（混乱しにくくなる）」に置き換えた簡略化。
-    passiveDesc: '速度ダイス数:1。幕の開始時、次の混乱閾値を3下げる（混乱しにくくなる）。',
     onTurnStart: (p) => {
       if (!gameState[p].isStaggered) adjustNextStaggerThreshold(p, -3, '態勢再整頓');
     }
@@ -118,9 +124,8 @@ const CORE_PAGES = [
     id: 'core_4', name: '黒雲会の組員のページ',
     level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 2, speedMax: 6,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.5 },
-    passiveName: '血の掟',
+    passiveList: [{ name: '血の掟', desc: '自分がバトルページによって出血を付与するとき出血威力+1。幕の最初のページは的中時、最初の1回に出血回数2、以降は1。' }],
     panicType: '狂人',
-    passiveDesc: '自分がバトルページによって出血を付与するとき出血威力+1。幕の最初のページは的中時、最初の1回に出血回数2、以降は1。',
     passives: [
       {
         trigger: 'onHit',
@@ -135,18 +140,16 @@ const CORE_PAGES = [
     id: 'core_5', name: 'サンドバッグ',
     level: 1, hp: 999, stagger: 999, maxLight: 3, speedDiceCount: 1, speedMin: 1, speedMax: 3,
     res: { slash: 0.0, pierce: 0.0, blunt: 0.0 },
-    passiveName: 'サンドバッグ',
+    passiveList: [{ name: 'サンドバッグ', desc: '自身のすべてのコインの威力が常に0になる。' }],
     panicType: 'パニック',
-    passiveDesc: '自身のすべてのコインの威力が常に0になる。',
     powerAlwaysZero: true
   },
   {
     id: 'core_6', name: '雨天事務所フィクサーのページ',
     level: 1, hp: 75, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.5 },
-    passiveName: '沈む思考',
+    passiveList: [{ name: '沈む思考', desc: 'その幕の最初のバトルページのみ、最初の的中時に沈潜回数2、2回目以降の的中時は1。' }],
     panicType: '徘徊',
-    passiveDesc: 'その幕の最初のバトルページのみ、最初の的中時に沈潜回数2、2回目以降の的中時は1。',
     passives: [
       {
         trigger: 'onHit',
@@ -170,11 +173,13 @@ const CORE_PAGES = [
     id: 'core_7', name: '剣契の殺手のページ',
     level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 0.5, pierce: 1.5, blunt: 1.0 },
-    passiveName: '呼吸を整える & 鋭利な一撃',
+    passiveList: [
+      { name: '呼吸を整える', desc: 'マッチ勝利時、呼吸威力1を得る。自分の呼吸威力5ごとに、全スキルのコイン威力+1（最大+3）。' },
+      { name: '鋭利な一撃', desc: '斬撃の攻撃が的中するたび、次の幕に相手へ出血1。' }
+    ],
     panicType: 'パニック',
     // LCB 剣契殺手イサン「Poised」: マッチ勝利時に呼吸1、呼吸5ごとにコイン威力+1（最大+3）
     // LoR「剣契の殺手」キーページ（HP77・貫通弱点）の「鋭利な一撃」
-    passiveDesc: '呼吸を整える: マッチ勝利時、呼吸威力1を得る。自分の呼吸威力5ごとに、全スキルのコイン威力+1（最大+3）。鋭利な一撃: 斬撃の攻撃が的中するたび、次の幕に相手へ出血1。',
     // LoR「鋭利な一撃（Razor Strike）」: 斬撃の攻撃が的中すると、次の幕に相手へ出血1
     passives: [{ trigger: 'onHit', effect: (p, ctx) => {
       if (ctx?.card?.attackType !== 'slash' || !ctx.target || ctx.target === p) return;
@@ -187,8 +192,13 @@ const CORE_PAGES = [
     id: 'core_8', name: 'キムサッガのページ',
     level: 1, hp: 100, stagger: 50, maxLight: 4, speedDiceCount: 2, speedMin: 3, speedMax: 6,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
-    passiveName: '不屈 & 本国流剣術 & 一撃 & 鋭利な一撃',
     // 2026-10-12: LCB 剣契師範ムルソー（HP259）に合わせて上方修正。黒獣-卯と同格の想定。
+    passiveList: [
+      { name: '不屈', desc: '1試合に1回、致死ダメージを受けてもHP1で耐え、その幕はHPが1未満にならない。' },
+      { name: '本国流剣術', desc: '自分の呼吸威力が5以上のとき、攻撃スキルのコイン威力+1。' },
+      { name: '一撃', desc: 'コイン1枚のスキル（反撃以外）はマッチ威力+2。' },
+      { name: '鋭利な一撃', desc: '斬撃の攻撃が的中するたび、次の幕に相手へ出血1。' }
+    ],
     panicType: 'パニック',
     // LoR「キムサッガ」キーページ（Bamboo-hatted Kim）＋LCB 剣契師範ムルソー。
     // 不屈: LoRは致死時に被ダメージ軽減。LCB本国流剣術の「致死ダメージを1回無効」と統合し、HP1で耐える効果とした。
@@ -200,7 +210,6 @@ const CORE_PAGES = [
     singularStrike: true,
     // LCB 剣契師範ムルソー「Swordplay of the Homeland」: 1遭遇に1回、致死ダメージを無効化しその幕はHP1未満にならない。
     // 呼吸5以上でのコイン威力・クリティカル強化は「呼吸威力5以上で攻撃スキルのコイン威力+1」に簡略化。
-    passiveDesc: '不屈: 1試合に1回、致死ダメージを受けてもHP1で耐え、その幕はHPが1未満にならない。本国流剣術: 自分の呼吸威力が5以上のとき、攻撃スキルのコイン威力+1。一撃: コイン1枚のスキル（反撃以外）はマッチ威力+2。鋭利な一撃: 斬撃の攻撃が的中するたび、次の幕に相手へ出血1。',
     lethalGuardOnce: true,
     breathCoinThreshold: { min: 5, bonus: 1 }
   },
@@ -212,10 +221,12 @@ const CORE_PAGES = [
     id: 'core_9', name: 'W社3級整理要員(刀)のページ',
     level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
-    passiveName: 'W社のスーツ & 次元屈折刃 - Type: Blade Mk7',
+    passiveList: [
+      { name: 'W社のスーツ', desc: '充電の上限が20になる（通常10）。' },
+      { name: '次元屈折刃 - Type: Blade Mk7', desc: 'マッチ勝利時、充電+3（1幕に2回まで）。（原作は敵撃破時）' }
+    ],
     panicType: 'パニック',
     // LCB 良秀「次元屈折刃 - Type: Blade Mk7」: 敵撃破時に充電+3（1幕3回）→ マッチ勝利時に充電+3（1幕2回）
-    passiveDesc: 'W社のスーツ: 充電の上限が20になる（通常10）。次元屈折刃 - Type: Blade Mk7: マッチ勝利時、充電+3（1幕に2回まで）。（原作は敵撃破時）',
     chargeCap: 20,
     clashWinCharge: { amount: 3, perRound: 2, name: '次元屈折刃 - Type: Blade Mk7' }
   },
@@ -223,10 +234,12 @@ const CORE_PAGES = [
     id: 'core_10', name: 'W社3級整理要員(双剣)のページ',
     level: 1, hp: 80, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
     res: { slash: 1.0, pierce: 0.5, blunt: 1.5 },
-    passiveName: 'W社のスーツ & 急速充電',
+    passiveList: [
+      { name: 'W社のスーツ', desc: '充電の上限が20になる（通常10）。' },
+      { name: '急速充電', desc: '戦闘開始時、充電+1（憂鬱共鳴が発生していれば+2）。' }
+    ],
     panicType: 'パニック',
     // LCB ドンキホーテ「急速充電」: 戦闘開始時、憂鬱共鳴/3 の充電 → 戦闘開始時に充電+1、憂鬱共鳴があれば+2
-    passiveDesc: 'W社のスーツ: 充電の上限が20になる（通常10）。急速充電: 戦闘開始時、充電+1（憂鬱共鳴が発生していれば+2）。',
     chargeCap: 20,
     combatStartCharge: { base: 1, gloomResonance: 2 }
   },
@@ -238,12 +251,20 @@ const CORE_PAGES = [
     id: 'core_11', name: '黒獣-卯のページ',
     level: 1, hp: 95, stagger: 47, maxLight: 4, speedDiceCount: 2, speedMin: 4, speedMax: 7,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
-    passiveName: '黒獣化[卯]',
+    passiveList: [
+      { name: '黒獣化[卯]', desc: '脚力【卯】1につき与ダメージ+5%（最大15%）。脚力【卯】は幕終了時に次の幕の迅速5を得て1減少する。' }
+    ],
     panicType: 'パニック',
-    passiveDesc: '黒獣化[卯]: 脚力【卯】1につき与ダメージ+5%（最大15%）。脚力【卯】は幕終了時に次の幕の迅速5を得て1減少する。',
     striderDamagePer: 0.05, striderDamageMax: 0.15
   }
 ];
+
+// コアページのパッシブ一覧（passiveList: [{ name, desc }]）。表示は1行に1つずつ。
+function getCorePassiveList(core) {
+  if (core?.passiveList?.length) return core.passiveList;
+  return core?.passiveName ? [{ name: core.passiveName, desc: core.passiveDesc || '' }] : [];
+}
+function getCorePassiveNames(core) { return getCorePassiveList(core).map(x => x.name).join('・'); }
 
 function skill(id, name, cost, type, attackType, sin, basePower, coinPower, coinCount, effect, coins, extra = {}) {
   const tags = new Set();

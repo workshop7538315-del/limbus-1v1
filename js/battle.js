@@ -49,7 +49,7 @@ function setupCharacter(p, core, egoIds = {}) {
   state.lethalGuardUsed = false; state.lethalGuardRound = null; state.staggerImmune = false;
 
   document.getElementById(`${p}-title`).innerText = `${playerLabel(p)} (${core.name})`;
-  document.getElementById(`${p}-passive-box`).innerHTML = `パッシブ: <span class="tooltip-target">${core.passiveName}<span class="tooltip-text">${core.passiveDesc}</span></span>`;
+  document.getElementById(`${p}-passive-box`).innerHTML = `<div class="passive-title">パッシブ</div>` + getCorePassiveList(core).map(ps => `<div class="passive-line"><span class="tooltip-target">${ps.name}<span class="tooltip-text">${ps.desc}</span></span></div>`).join('');
   updateResDisplay(p);
 }
 
@@ -290,7 +290,7 @@ function getCoinPowerBonus(player, skill) {
 }
 function getCoinPowerBonusReason(player, skill) {
   const reasons = [];
-  if (skill?.attackType === 'slash' && gameState[player]?.core?.slashBonus) reasons.push(gameState[player].core.passiveName || '斬撃威力補正');
+  if (skill?.attackType === 'slash' && gameState[player]?.core?.slashBonus) reasons.push(getCorePassiveNames(gameState[player].core) || '斬撃威力補正');
   if (skill?.sinkingPowerPer4) {
     const s = getStatus(opponentOf(player), 'sinking');
     const n = s ? Math.floor((s.power || 0) / 4) : 0;

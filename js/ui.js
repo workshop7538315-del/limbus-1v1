@@ -36,7 +36,7 @@ function renderCoreSelectionList(elementId, selectedArray, toggleSelectFunc, own
         <div>HP: ${core.hp} / 混乱耐性: ${core.stagger} / 最大光: ${core.maxLight} / 速度: ${core.speedMin}～${core.speedMax}</div>
         <div style="margin-top:2px;">パニックタイプ: <strong>${core.panicType || 'パニック'}</strong></div>
         <div style="margin-top:2px;">パニック効果: ${kw(getPanicTypeEffect(core.panicType || 'パニック'))}</div>
-        <div style="margin-top:2px;">パッシブ: <strong>${core.passiveName}</strong> - ${kw(core.passiveDesc)}</div>
+        <div style="margin-top:2px;">パッシブ:</div><div class="passive-list">${getCorePassiveList(core).map(ps=>`<div class="passive-line"><strong>${ps.name}</strong><span>${kw(ps.desc)}</span></div>`).join('')}</div>
         <div class="res-group"><span class="res-tag ${getResText(core.res.slash).class}">斬:${getResText(core.res.slash).text} ×${core.res.slash}</span><span class="res-tag ${getResText(core.res.pierce).class}">突:${getResText(core.res.pierce).text} ×${core.res.pierce}</span><span class="res-tag ${getResText(core.res.blunt).class}">打:${getResText(core.res.blunt).text} ×${core.res.blunt}</span></div>
       </div>`;
     div.onclick = () => toggleSelectFunc(core.id); container.appendChild(div);

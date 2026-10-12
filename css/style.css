@@ -771,3 +771,9 @@
 .kw-tip{color:#ffe08a;border-bottom:1px dotted #f1c40f;cursor:help}
 .kw-tip-text{display:none}
 .kw-tip.open > .kw-tip-text{display:block;margin:3px 0;padding:5px 6px;background:#111;border:1px solid #666;border-left:3px solid #f1c40f;border-radius:4px;color:#eee;font-size:10px;line-height:1.45;font-weight:normal;white-space:normal;text-align:left}
+/* パッシブを1行に1つずつ表示（data.js getCorePassiveList） */
+.passive-list{display:flex;flex-direction:column;gap:3px;margin:2px 0 0 4px}
+.passive-line strong{display:block;color:#f1c40f}
+.passive-list .passive-line > span{display:block}
+.passive-title{font-size:11px;color:#aaa}
+#p1-passive-box .passive-line,#p2-passive-box .passive-line{font-size:11px}

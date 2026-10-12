@@ -28,6 +28,7 @@
 | 黒獣-卯（core_11、card_50〜53） | data.js、js/rupture.js | 速度差・破裂・脚力【卯】・呪殺【迅速】・コイン再使用。他より一段強い想定 |
 | 破裂 | effects.js `triggerRupture` | 的中時、そのコインの効果より先に発動（付与した破裂は次の的中から） |
 | E.G.O「着影揮刀」（HE） | data.js `ego_bladesinger`、js/blade_lineage.js | 追慕酒・怨恨・パッシブ剣先にしたたる酒滴（キムサッガで常時有効）・初回コスト軽減 |
+| コアページのパッシブ | data.js `passiveList: [{ name, desc }]`、`getCorePassiveList()` | 1行に1つずつ表示。「A & B」形式は廃止 |
 | キーワードのツールチップ | js/keywords.js `kw()` | 説明文中の状態名に説明を付ける（PCは title、スマホはタップで展開）。STATUS_DEFINITIONS に日本語の desc を書けば自動対象 |
 | デッキ非表示のページ | `hidden: true` | 骨断（追撃専用） |
 | マッチ可能反撃の待機 | battle.js `executeFullTurn` | 待機中のスロットを攻撃で指定するとマッチ |
