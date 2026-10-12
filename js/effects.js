@@ -10,7 +10,11 @@ const STATUS_DEFINITIONS = {
   haste: { name: '迅速', category: 'buff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0, desc: 'Speed +X for this turn' },
   bind: { name: '束縛', category: 'debuff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0, desc: 'Speed -X for this turn' },
   attack_power_down: { name: '攻撃威力減少', category: 'debuff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0, desc: 'Attack Skill Final Power -X for this turn' },
-  protection: { name: '保護', category: 'buff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0, desc: 'Take -(X*10)% damage this turn' }
+  protection: { name: '保護', category: 'buff', maxPower: 99, maxCount: 10, defaultPower: 0, defaultCount: 0, desc: 'Take -(X*10)% damage this turn' },
+  // 以下は E.G.O「過ぎし日」で使用（回数=スタック数）
+  uninvited: { name: '招聘されざる者', category: 'debuff', maxPower: 0, maxCount: 2, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '自分の沈潜威力1につき被ダメージ+0.5%（最大10%）。幕終了時に1減少。（最大2）' },
+  curse: { name: '呪い', category: 'debuff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕終了時、次の幕に攻撃威力減少1・防御威力減少1・攻撃レベル減少2・防御レベル減少2のうちランダムに1つを受ける。回数-1。' },
+  echoes_of_manor: { name: '邸宅の木霊', category: 'debuff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '沈潜の威力か回数を得るたび50%で沈潜回数+1。パニックタイプが「邸宅の木霊」になる。幕終了時に1減少。付与時は値を上書き。' }
 };
 
 const BASIC_STATUS_IDS = [
@@ -271,6 +275,10 @@ function getDamageTakenMultiplier(player, attackType, sin) {
   if (sin) {
     bonus += getActiveStatusPower(player,sin+'_fragility') - getActiveStatusPower(player,sin+'_protection');
   }
+  // 招聘されざる者: 自分の沈潜威力1につき +0.5%（最大10%）。bonus は10%単位なので 0.05/威力、最大1.0
+  if (getActiveStatusPower(player,'uninvited') > 0) {
+    bonus += Math.min(1, 0.05 * (getStatus(player,'sinking')?.power || 0));
+  }
   return Math.max(0, 1 + 0.1 * bonus);
 }
 function getResistanceWithDown(player, attackType, sin) {
@@ -329,6 +337,20 @@ function processStatusTurnEnd(player) {
     } else if (statusId === 'blood_feast' && status.count > 0) {
       delete statuses[statusId];
       log(`[状態減衰] ${playerLabel(player)}の「${status.name}」が終了`);
+    } else if (statusId === 'curse' && status.count > 0) {
+      const options = [['attack_power_down',1],['defense_power_down',1],['offense_level_down',2],['defense_level_down',2]];
+      const [id, amount] = options[Math.floor(Math.random() * options.length)];
+      addStatusNextTurn(player, id, amount, 1);
+      log(`[呪い] ${playerLabel(player)}は次の幕に「${STATUS_DEFINITIONS[id].name}」${amount}を受ける。`);
+      status.count -= 1;
+      if (status.count <= 0) delete statuses[statusId];
+    } else if ((statusId === 'uninvited' || statusId === 'echoes_of_manor') && status.count > 0) {
+      status.count -= 1;
+      if (status.count <= 0) {
+        delete statuses[statusId];
+        log(`[状態減衰] ${playerLabel(player)}の「${status.name}」が終了`);
+        if (statusId === 'echoes_of_manor') setPanicTypeOverride(player, null, '邸宅の木霊が終了');
+      } else log(`[状態減衰] ${playerLabel(player)}の「${status.name}」: ${status.count}`);
     }
   });
 }
@@ -525,6 +547,7 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
       const r = changeStatusCount(statusTarget, effect.id, amount);
       log(`[的中] ${playerLabel(player)}の「${card.name}」: ${playerLabel(statusTarget)}の${STATUS_DEFINITIONS[effect.id]?.name || effect.id}回数 ${r.before}→${r.after}`);
     }
+    if (effect.id === 'sinking' && (effect.power || effect.count)) rollEchoesSinkingBonus(statusTarget);
   };
 
   if (effectSource?.status) applyStatusEffect(effectSource.status);
@@ -564,6 +587,10 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     addStatusNextTurn(player,'protection',2,1);
     log(`[E.G.O] Chains of Others: 次幕に相手へ束縛5・攻撃威力減少4、自分へ束縛3・攻撃威力減少3・保護2。`);
   }
+  if (effectSource?.special === 'ego_bygone_days_hit' || effectSource?.special === 'ego_bygone_days_corrosion_hit') {
+    applyBygoneDaysHit(player, resolvedTarget, effectSource.special === 'ego_bygone_days_corrosion_hit');
+  }
+  applyInterloperReception(player, resolvedTarget);
   if (effectSource?.special === 'blood_festival') {
     const bleed = getStatus(resolvedTarget, 'bleed');
     if (bleed?.power >= 3) { drawCard(player); log(`[的中] ${playerLabel(player)}の「${card.name}」: 出血威力3以上のため追加で1枚ドロー`); }
@@ -582,6 +609,67 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
   if (effectSource?.special === 'abyss_draw_if_5') {
     const sinking = getStatus(resolvedTarget, 'sinking');
     if (sinking?.power >= 5) { for (let i = 0; i < 3; i++) drawCard(player); log(`[的中] ${playerLabel(player)}の「${card.name}」: 沈潜威力5以上のため3枚ドロー`); }
+  }
+}
+
+// ===== E.G.O「過ぎし日」関連（データは data.js の ego_bygone_days）=====
+// 邸宅の木霊: 沈潜の威力か回数を得るたび、50%で沈潜回数+1。
+function rollEchoesSinkingBonus(target) {
+  if (getActiveStatusPower(target, 'echoes_of_manor') <= 0) return;
+  if (Math.random() >= 0.5) return;
+  const r = changeStatusCount(target, 'sinking', 1);
+  log(`[邸宅の木霊] ${playerLabel(target)}の沈潜回数+1 ${r.before}→${r.after}`);
+}
+// 「4以上の共鳴」等は、1対1（速度ダイス最大2）では憂鬱共鳴の発生で代用する。
+function isBygoneGloomResonance(player) { return hasResonance(player, 'gloom'); }
+function applyBygoneDaysHit(player, target, isCorrosion) {
+  const name = isCorrosion ? '過ぎし日（侵蝕）' : '過ぎし日';
+  if (isCorrosion) changeStatusCount(target, 'sinking', 2);
+  else changeStatusPower(target, 'sinking', 3);
+  rollEchoesSinkingBonus(target);
+  addCombatStatus(target, 'curse', isCorrosion ? 1 : 2, 1);
+  const un = ensureStatus(target, 'uninvited');
+  un.count = Math.min(STATUS_DEFINITIONS.uninvited.maxCount, (un.count || 0) + 2);
+  const parts = [isCorrosion ? '沈潜回数2' : '沈潜威力3', `呪い${isCorrosion ? 1 : 2}`, '招聘されざる者2'];
+  if (isBygoneGloomResonance(player)) { addCombatStatus(target, 'gloom_fragility', 1, 1); parts.push('憂鬱脆弱1'); }
+  if (isCorrosion) {
+    // 付与時は値を上書き
+    const ec = ensureStatus(target, 'echoes_of_manor'); ec.count = 2;
+    setPanicTypeOverride(target, '邸宅の木霊', '邸宅の木霊');
+    parts.push('邸宅の木霊2');
+  }
+  log(`[E.G.O] ${name}: ${playerLabel(target)}に${parts.join('・')}。`);
+}
+// E.G.Oパッシブ「招かざる客の出迎え」: 招聘されざる者を持つ相手に的中→自分の精神力+5（1幕1回）。
+// 原作は「精神力が最も低い味方1人」だが、1対1では自分。
+function applyInterloperReception(player, target) {
+  const p = gameState[player];
+  if (!p?.activeEgoPassives?.includes('ego_bygone_days_passive')) return;
+  if (target === player || getActiveStatusPower(target, 'uninvited') <= 0) return;
+  if (p.interloperUsedRound === gameState.round) return;
+  p.interloperUsedRound = gameState.round;
+  changeSanity(player, 5, '招かざる客の出迎え');
+}
+// スキルの攻撃前/攻撃終了時の処理。攻撃（一方攻撃・マッチ勝利後の攻撃）を行うときだけ呼ばれる。
+function applyEgoBeforeAttack(attacker, skill) {
+  if (skill?.beforeAttack === 'ego_bygone_days_corrosion') {
+    const p = gameState[attacker];
+    const loss = Math.floor(p.maxHp * 0.10);
+    const before = p.hp;
+    p.hp = Math.max(1, p.hp - loss); // この減少では混乱判定をしない（checkStaggerThresholdsを呼ばない）
+    log(`[E.G.O侵蝕] 過ぎし日: ${playerLabel(attacker)}は攻撃前にHPを失う ${before}→${p.hp}`);
+  }
+}
+function applyEgoAttackEnd(attacker, skill, defender) {
+  if (skill?.attackEnd === 'ego_bygone_days') {
+    const p = gameState[attacker];
+    const sinking = getStatus(defender, 'sinking');
+    const sinkTotal = sinking ? (sinking.power || 0) + (sinking.count || 0) : 0;
+    let heal = Math.min(Math.floor(p.maxHp * 0.20), Math.floor(p.maxHp * 0.10) + Math.floor(sinkTotal / 3));
+    if (isBygoneGloomResonance(attacker)) heal += Math.floor(p.maxHp * 0.10);
+    const before = p.hp;
+    p.hp = Math.min(p.maxHp, p.hp + heal);
+    log(`[E.G.O] 過ぎし日: 攻撃終了、${playerLabel(attacker)}のHP ${before}→${p.hp}（+${heal}）`);
   }
 }
 
@@ -619,6 +707,7 @@ function applySkillClashWinEffects(player, card, target) {
     if (effect.id === 'sinking' && effect.target === 'opponent') markSinkingTarget(player, targetPlayer);
     if (effect.power) changeStatusPower(targetPlayer, effect.id, effect.power);
     if (effect.count) changeStatusCount(targetPlayer, effect.id, effect.count);
+    if (effect.id === 'sinking') rollEchoesSinkingBonus(targetPlayer);
     log(`[マッチ勝利] ${playerLabel(player)}の「${card.name}」: ${playerLabel(targetPlayer)}に${formatStatusEffectText(effect)}`);
   }
   if (source.special === 'dusk_draw_if_stagger_half') {
@@ -660,6 +749,8 @@ function getSkillHitEffectTexts(card, coin) {
   if (source.special === 'blood_feast') texts.push('【的中】相手の出血威力が3以上なら、この幕のダメージ+5');
   if (source.special === 'sunken_memory_reuse') texts.push('【的中】相手の沈潜威力が4以上なら、このコインを最大3回まで再使用');
   if (source.special === 'abyss_draw_if_5') texts.push('【的中】相手の沈潜威力が5以上なら、3枚引く');
+  if (source.special === 'ego_bygone_days_hit') texts.push('【的中】沈潜威力3・呪い2・招聘されざる者2（憂鬱共鳴時: 憂鬱脆弱1）');
+  if (source.special === 'ego_bygone_days_corrosion_hit') texts.push('【的中】沈潜回数2・呪い1・招聘されざる者2・邸宅の木霊2（憂鬱共鳴時: 憂鬱脆弱1）');
   if (source.special === 'underwater_consume_sinking') texts.push('【的中】相手の沈潜回数を最大3消費し、解除した沈潜威力×回数だけ威力増加');
   return texts;
 }

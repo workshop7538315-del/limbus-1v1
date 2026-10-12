@@ -293,6 +293,33 @@ const EGO_DATABASE = [
         { unbreakable: true, onHit: { status: { id: 'power_down', count: 1, target: 'opponent' }, special: 'ego_don_scissors_corrosion_hit' } }
       ]
     }
+  },
+  // 過ぎし日（Bygone Days）: 原作 limbuscompany.wiki.gg/wiki/Bygone_Days_Ishmael（Tier IV）。
+  // 1対1向けの簡略化:
+  //   - 「4以上の共鳴」「3以上の憂鬱共鳴」→ 速度ダイスが最大2つのため「憂鬱の共鳴が発生（2以上）」に置き換え
+  //   - 覚醒の「HPの低い味方2人を回復」→ 使用者本人を回復
+  //   - 侵蝕の「他の味方3人を回復」→ 他の味方がいないため省略（HP10%消費のみ）
+  //   - 攻撃の重さ（Atk Weight）はこのゲームに無いため省略
+  //   - 招聘されざる者の「死亡時に他の味方へ伝播」は、1対1では死亡=決着のため省略
+  // 処理: effects.js（ego_bygone_days_* の special、applyEgoBeforeAttack / applyEgoAttackEnd）
+  {
+    id: 'ego_bygone_days', name: '過ぎし日', sinner: 'Ishmael', risk: 'TETH',
+    sin: 'gloom', sinRes: { wrath:1, lust:1, sloth:1, gluttony:2, gloom:0.5, pride:1, envy:2 },
+    attackType: 'slash', skillType: 'attack', cost: 0, basePower: 17, coinPower: 9, coinCount: 1, sanityCost: 20,
+    resourceCost: { lust: 2, sloth: 1, gloom: 3 },
+    effect: '的中時: 沈潜威力3・呪い2・招聘されざる者2を付与。憂鬱共鳴時、憂鬱脆弱1も付与。攻撃終了時: 自分のHPを最大HPの10%＋相手の沈潜(威力+回数)の1/3回復（最大20%）。憂鬱共鳴時さらに10%回復。',
+    coins: [{ onHit: { special: 'ego_bygone_days_hit' } }],
+    attackEnd: 'ego_bygone_days',
+    egoPassiveId: 'ego_bygone_days_passive',
+    egoPassiveDesc: '招かざる客の出迎え: 招聘されざる者を持つ相手に的中したとき、自分の精神力を5回復（1幕に1回）。',
+    corrosionSanityCost: 20,
+    corrosion: {
+      basePower: 28, coinPower: -10, coinCount: 1, attackType: 'slash', skillType: 'attack', indiscriminate: true,
+      resourceCost: { lust: 2, sloth: 1, gloom: 3 },
+      effect: '侵蝕: 敵味方識別不可。攻撃前に最大HPの10%を失う（この減少では混乱しない）。的中時: 沈潜回数2・呪い1・招聘されざる者2・邸宅の木霊2を付与。憂鬱共鳴時、憂鬱脆弱1も付与。（原作の味方回復は1対1では省略）',
+      coins: [{ onHit: { special: 'ego_bygone_days_corrosion_hit' } }],
+      beforeAttack: 'ego_bygone_days_corrosion'
+    }
   }
 ];
 

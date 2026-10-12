@@ -730,3 +730,5 @@
 .panic-box.panic-low{color:#f39c12}
 .panic-box.panic-on{color:#e74c3c;font-weight:bold}
 .panic-slot{border-color:#c0392b}
+/* E.G.O編成カードの罪悪色（未定義だった属性を追加。手札の .ego-card と同じ色） */
+.ego-loadout-option.sin-wrath{background:#5b1820}.ego-loadout-option.sin-lust{background:#e67e22}.ego-loadout-option.sin-gluttony{background:#1c5c37}.ego-loadout-option.sin-gloom{background:#24506d}

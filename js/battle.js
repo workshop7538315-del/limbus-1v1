@@ -139,6 +139,8 @@ function getCorrosionCard(ego) {
     sanityCost: ego.corrosionSanityCost ?? ego.sanityCost,
     coins: ego.corrosion.coins,
     effect: ego.corrosion.effect || '',
+    beforeAttack: ego.corrosion.beforeAttack || null,
+    attackEnd: ego.corrosion.attackEnd || null,
     indiscriminate: true
   };
 }
@@ -548,6 +550,7 @@ async function executeWinningSkillCoins(attacker, skill, defender, coinCount, sl
     }
     return;
   }
+  applyEgoBeforeAttack(attacker, skill);
   for (let i = 0; i < coinCount; i++) {
     const beforeHp = gameState[defender].hp;
     await animateOneSided({ attacker: playerLabel(attacker), defender: playerLabel(defender), left: animSideFromSkill(attacker, skill, '－', [], coinCount-i), right: animSideFromSkill(defender, skill, '－', [], 0) });
@@ -556,6 +559,7 @@ async function executeWinningSkillCoins(attacker, skill, defender, coinCount, sl
     await animateHit({ attacker: playerLabel(attacker), defender: playerLabel(defender), damage, effects: 'コイン効果 / On Hit', left: { ...animSideFromSkill(attacker, skill, damage, [], coinCount-i-1), resultText: `${damage}ダメージ` }, right: { ...animSideFromSkill(defender, skill, gameState[defender].hp, [], 0), resultText: `残り${gameState[defender].hp}` } });
     if (gameState[defender].hp <= 0) break;
   }
+  applyEgoAttackEnd(attacker, skill, defender);
 }
 
 async function resolveOneSided(slot) {
@@ -569,6 +573,7 @@ async function resolveOneSided(slot) {
   }
   const attackCoinCount = slot.card.coinCount || 0;
   generateEgoResourceForSkill(attacker, slot.card, slot);
+  applyEgoBeforeAttack(attacker, slot.card);
   for (let i = 0; i < attackCoinCount; i++) {
     await animateOneSided({ attacker: playerLabel(attacker), defender: playerLabel(defender), left: animSideFromSkill(attacker, slot.card, '－', [], attackCoinCount-i), right: { player: defender, name: playerLabel(defender), skill: gameState[defender].slots?.find(s => s?.resolved === false)?.card || null, power:'－', modifier:'防御判定待ち', coins:[], remaining:0 } });
     const beforeHp = gameState[defender].hp;
@@ -583,6 +588,7 @@ async function resolveOneSided(slot) {
     await animateHit({ attacker: playerLabel(attacker), defender: playerLabel(defender), damage, effects: defense ? '防御/回避判定' : 'On Hit', left: { ...animSideFromSkill(attacker, slot.card, damage, [], attackCoinCount-i-1), resultText: `${damage}ダメージ` }, right: { player: defender, skill: defense?.skill || null, name: playerLabel(defender), power: gameState[defender].hp, modifier: defense ? '防御処理済み' : '', coins:[], remaining:0, resultText: `残り${gameState[defender].hp}` } });
     if (gameState[defender].hp <= 0) break;
   }
+  applyEgoAttackEnd(attacker, slot.card, defender);
 }
 
 function resolveDefenseAgainstAttack(attacker, attackSkill, defender, defense, index, attackerSlot = null) {
