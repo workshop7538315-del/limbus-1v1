@@ -86,21 +86,25 @@ function tethEgoBeforeAttack(attacker, skill) {
   if (skill?.egoId === LIFETIME_STEW_ID) {
     const p = gameState[attacker];
     const lust = p.egoResources?.lust || 0;
-    // 色欲威力増加1（この幕と次の幕。原作の「次の幕に配置順で味方へ」は本人に置き換え）
-    // （状態なので、このスキルの攻撃にも getSkillFinalPowerModifier 経由でそのまま反映される）
-    addCombatStatus(attacker, 'lust_power_up', 1, 1); addStatusNextTurn(attacker, 'lust_power_up', 1, 1);
+    // 色欲資源6つにつき、編成順に味方1名へ次のターンに色欲威力増加1（侵蝕は色欲ダメージ量増加1も）（最大5名）。
+    // 1対1では味方は自分だけなので「色欲資源6以上なら自分に次の幕」。
+    const allyUnits = Math.min(5, Math.floor(lust / 6));
+    const buffText = allyUnits > 0 ? (skill.isCorrosion ? '次の幕に色欲威力増加1・色欲ダメージ量増加1' : '次の幕に色欲威力増加1') : '色欲資源6未満のため付与なし';
+    if (allyUnits > 0) {
+      addStatusNextTurn(attacker, 'lust_power_up', 1, 1);
+      if (skill.isCorrosion) addStatusNextTurn(attacker, 'lust_damage_up', 1, 1);
+    }
     let dmg;
     if (!skill.isCorrosion) {
       dmg = Math.min(1.2, lust * 0.06);
-      log(`[一生シチュー] 色欲威力増加1（この幕と次の幕）・色欲資源${lust} → 与ダメージ+${Math.round(dmg * 100)}%`);
+      log(`[一生シチュー] 色欲資源${lust}: ${buffText}・与ダメージ+${Math.round(dmg * 100)}%`);
     } else {
-      addCombatStatus(attacker, 'lust_damage_up', 1, 1); addStatusNextTurn(attacker, 'lust_damage_up', 1, 1);
       dmg = Math.min(1.0, lust * 0.05);
       const want = Math.min(8, getResonanceValue(attacker, 'lust') * 2);
       const used = Math.min(want, p.egoResources.lust || 0);
       if (used > 0) p.egoResources.lust -= used;
       const extra = Math.min(1.6, used * 0.2);
-      log(`[一生シチュー・侵蝕] 色欲威力増加1・色欲ダメージ増加1（この幕と次の幕）・色欲資源${lust} → 与ダメージ+${Math.round(dmg * 100)}%、色欲資源${used}消費 → +${Math.round(extra * 100)}%`);
+      log(`[一生シチュー・侵蝕] 色欲資源${lust}: ${buffText}・与ダメージ+${Math.round(dmg * 100)}%、色欲資源${used}消耗 → +${Math.round(extra * 100)}%`);
       dmg += extra;
     }
     bonus.damageBonus = (bonus.damageBonus || 0) + dmg;
@@ -170,8 +174,8 @@ function tethEgoTurnStart(player) {
   log(`[暴食のるつぼ] ${playerLabel(player)}: ${getSinLabel(sin)}資源1を色欲に変換（色欲${r.lust}）`);
 }
 
-// 暴食のるつぼ: 色欲の基本スキル（E.G.O以外）の与ダメージ+色欲資源1につき1%（最大10%）（applyDamage から）
+// 暴食のるつぼ: 色欲属性の基本攻撃スキル（E.G.O以外）の与ダメージ+色欲資源1につき1%（最大10%）（applyDamage から）
 function getTethEgoDamageBonus(attacker, skill) {
-  if (!hasEgoPassive(attacker, 'ego_lifetime_stew_passive') || skill?.isEgo || skill?.sin !== 'lust') return 0;
+  if (!hasEgoPassive(attacker, 'ego_lifetime_stew_passive') || skill?.isEgo || skill?.sin !== 'lust' || skill?.skillType !== 'attack') return 0;
   return Math.min(0.10, (gameState[attacker].egoResources?.lust || 0) * 0.01);
 }

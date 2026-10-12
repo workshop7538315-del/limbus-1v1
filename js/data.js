@@ -625,16 +625,16 @@ const EGO_DATABASE = [
     sin: 'lust', sinRes: { wrath:1, lust:0.5, sloth:2, gluttony:1, gloom:2, pride:1, envy:1 },
     attackType: 'blunt', skillType: 'attack', cost: 0, basePower: 21, coinPower: 4, coinCount: 1, sanityCost: 20,
     resourceCost: { lust: 5 },
-    effect: '相手の火傷と出血の威力4ごとに最終威力+1（最大3）。攻撃前: 色欲威力増加1を得る（この幕と次の幕）。色欲資源1につき与ダメージ+6%（最大120%）。的中時: 火傷3・出血3を与える。',
-    coins: [{ onHit: { statuses: [{ id: 'burn', power: 3, target: 'opponent' }, { id: 'bleed', power: 3, target: 'opponent' }] } }],
+    effect: '相手の火傷と出血の合計4につき最終威力+1（最大3）。攻撃前: 保有している色欲資源6つにつき、次の幕に色欲威力増加1を得る（1対1では自分のみ）。色欲資源1つにつき与ダメージ+6%（最大120%）。的中時: 火傷回数+3・出血回数+3。',
+    coins: [{ onHit: { statuses: [{ id: 'burn', count: 3, target: 'opponent' }, { id: 'bleed', count: 3, target: 'opponent' }] } }],
     egoPassiveId: 'ego_lifetime_stew_passive',
-    egoPassiveDesc: '暴食のるつぼ: 幕開始時、色欲以外の罪悪資源1つをランダムに色欲資源へ変換する（色欲資源が上限なら代わりに色欲威力増加1を得る）。色欲の基本スキルの与ダメージ+色欲資源1につき1%（最大10%）。',
+    egoPassiveDesc: '暴食のるつぼ: 幕開始時、色欲以外の罪悪資源1つをランダムに色欲資源へ変換する（色欲資源が上限（原作は20以上、このゲームは10）なら発動せず、代わりに色欲威力増加1を得る）。色欲属性基本攻撃スキルの攻撃開始前、色欲資源1つにつき与ダメージ+1%（最大10%）。',
     corrosionSanityCost: 20,
     corrosion: {
       basePower: 22, coinPower: 5, coinCount: 1, attackType: 'blunt', skillType: 'attack', indiscriminate: true,
       resourceCost: { lust: 5 },
-      effect: '侵蝕: 敵味方識別不可。破壊不能コイン。相手の火傷と出血の威力4ごとに最終威力+1（最大3）。攻撃前: 色欲威力増加1・色欲ダメージ増加1を得る（この幕と次の幕）。色欲資源1につき与ダメージ+5%（最大100%）。色欲資源を(色欲の共鳴数×2)消費し（最大8）、1につき与ダメージ+20%。的中時: 火傷4・出血4を与える。',
-      coins: [{ unbreakable: true, onHit: { statuses: [{ id: 'burn', power: 4, target: 'opponent' }, { id: 'bleed', power: 4, target: 'opponent' }] } }]
+      effect: '侵蝕: 敵味方識別不可。破壊不能コイン。相手の火傷と出血の合計4につき最終威力+1（最大3）。攻撃前: 保有している色欲資源6つにつき、次の幕に色欲威力増加1・色欲ダメージ増加1を得る（1対1では自分のみ）。色欲資源1つにつき与ダメージ+5%（最大100%）。その後、色欲資源を(色欲の共鳴数×2)消耗し（最大8）、1つにつき与ダメージ+20%（最大160%）。的中時: 火傷回数+4・出血回数+4。',
+      coins: [{ unbreakable: true, onHit: { statuses: [{ id: 'burn', count: 4, target: 'opponent' }, { id: 'bleed', count: 4, target: 'opponent' }] } }]
     }
   }
 ];
