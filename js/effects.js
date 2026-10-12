@@ -14,6 +14,9 @@ const STATUS_DEFINITIONS = {
   // 以下は E.G.O「過ぎし日」で使用（回数=スタック数）
   uninvited: { name: '招聘されざる者', category: 'debuff', maxPower: 0, maxCount: 2, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '自分の沈潜威力1につき被ダメージ+0.5%（最大10%）。幕終了時に1減少。（最大2）' },
   curse: { name: '呪い', category: 'debuff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕終了時、次の幕に攻撃威力減少1・防御威力減少1・攻撃レベル減少2・防御レベル減少2のうちランダムに1つを受ける。回数-1。' },
+  // 着影揮刀（blade_lineage.js）
+  drink_fallen: { name: '弔い酒', category: 'buff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕開始時に呼吸威力+1/スタック（キムサッガのページは+2）。クリティカルダメージ+3%/スタック（最大15%）。呼吸を得るスキルのマッチ威力+1。致死ダメージで全消費し1スタックにつき最大HPの25%で復帰。幕終了時に1減少。' },
+  resentment: { name: '怨恨', category: 'buff', maxPower: 0, maxCount: 1, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: 'この幕、与えたダメージの10%を回復。' },
   // 黒獣-卯（rupture.js）
   strider_mao: { name: '脚力【卯】', category: 'buff', maxPower: 0, maxCount: 3, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕終了時、次の幕に迅速5を得て1減少。（最大3）' },
   deathrite_haste: { name: '呪殺【迅速】', category: 'debuff', maxPower: 0, maxCount: 3, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '速度10以上の相手の攻撃で破裂が発動するたび1減少し破裂回数+1。0になると破裂威力分の暴食ダメージを受けて消える。付与中は再付与されない。' },
@@ -372,6 +375,10 @@ function processStatusTurnEnd(player) {
       log(`[呪い] ${playerLabel(player)}は次の幕に「${STATUS_DEFINITIONS[id].name}」${amount}を受ける。`);
       status.count -= 1;
       if (status.count <= 0) delete statuses[statusId];
+    } else if ((statusId === 'drink_fallen' || statusId === 'resentment') && status.count > 0) {
+      status.count -= 1;
+      if (status.count <= 0) delete statuses[statusId];
+      else log(`[状態減衰] ${playerLabel(player)}の「${status.name}」: ${status.count}`);
     } else if (statusId === 'strider_mao' && status.count > 0) {
       processStriderTurnEnd(player, status);
     } else if ((statusId === 'uninvited' || statusId === 'echoes_of_manor') && status.count > 0) {
@@ -737,6 +744,7 @@ function applyEgoBeforeAttack(attacker, skill) {
   }
 }
 function applyEgoAttackEnd(attacker, skill, defender) {
+  bladesingerAttackEnd(attacker, skill);
   if (skill?.attackEnd === 'ego_bygone_days') {
     const p = gameState[attacker];
     const sinking = getStatus(defender, 'sinking');

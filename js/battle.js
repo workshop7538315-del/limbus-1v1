@@ -34,7 +34,9 @@ function setupCharacter(p, core, egoIds = {}) {
   state.equippedEgos = EGO_RISK_LEVELS.map(risk => egoIds[risk]).filter(Boolean).map(id => EGO_DATABASE.find(e => e.id === id)).filter(Boolean);
   state.usedEgosThisTurn = [];
   state.pendingStatuses = {};
-  state.activeEgoPassives = []; state.pendingEgoPassives = [];
+  state.activeEgoPassives = []; state.pendingEgoPassives = []; state.egoUsedOnce = {};
+  // 装備しているだけで有効なE.G.Oパッシブ（着影揮刀「刃先の酒滴」はキムサッガのページで常時有効）
+  state.equippedEgos.forEach(e => { if (e.egoPassiveAlwaysFor && e.egoPassiveAlwaysFor === core.id) state.activeEgoPassives.push(e.egoPassiveId); });
   const initialZayin = state.equippedEgos.find(e => e.risk === 'ZAYIN');
   state.sinRes = { ...(initialZayin?.sinRes || { wrath:1, lust:1, sloth:1, gluttony:1, gloom:1, pride:1, envy:1 }) };
   state.hand = []; state.discard = []; state.slots = []; state.statuses = {};
@@ -85,6 +87,7 @@ function startNewRound() {
     player.sinkingThinkingHitCount = 0;
     player.usedEgosThisTurn = [];
     applyPendingStatuses(p);
+    processDrinkTurnStart(p); // 弔い酒・怨恨（blade_lineage.js）
     if (player.isStaggered && player.staggerSkipDone) {
       player.isStaggered = false; player.staggerSkipDone = false;
       log(`[復帰] ${playerLabel(p)}が混乱状態から回復しました！`);
@@ -145,6 +148,7 @@ function getCorrosionCard(ego) {
     coins: ego.corrosion.coins,
     effect: ego.corrosion.effect || '',
     beforeAttack: ego.corrosion.beforeAttack || null,
+    bladesinger: ego.corrosion.bladesinger || null,
     attackEnd: ego.corrosion.attackEnd || null,
     indiscriminate: true
   };
@@ -200,11 +204,13 @@ function playCardToSlot(player, slot, card, targetSlot) {
       log(`[E.G.O] ${playerLabel(player)}はこの幕に「${card.name}」をすでに使用しています。`);
       return false;
     }
-    if (!canPayEgoResource(player, card.resourceCost)) {
+    const egoCost = getEgoResourceCost(player, card);
+    if (!canPayEgoResource(player, egoCost)) {
       log(`[E.G.O] ${playerLabel(player)}は罪悪資源不足で「${card.name}」を使用できません。`);
       return false;
     }
-    payEgoResource(player, card.resourceCost);
+    payEgoResource(player, egoCost);
+    gameState[player].egoUsedOnce = { ...(gameState[player].egoUsedOnce || {}), [card.egoId]: true };
     changeSanity(player, -card.sanityCost, `E.G.O「${card.name}」`);
     gameState[player].usedEgosThisTurn.push(card.egoId);
     if (!card.isCorrosion && shouldRandomCorrode(player, card)) {
@@ -332,7 +338,7 @@ function rollSkillForClash(player, skill, remainingCoins, opponentPlayer = null,
   }
   power += getCoinPowerBonus(player, skill);
   power += getSkillFinalPowerModifier(player, skill) + getExecBonus(player, skill, 'finalPower');
-  power += getClashPowerModifier(player);
+  power += getClashPowerModifier(player) + getExecBonus(player, skill, 'clashPower') + getDrinkClashBonus(player, skill);
   // LoR キムサッガ「一撃（Singular Strike）」: コイン1枚の（反撃以外の）スキルはマッチ威力+2
   if (gameState[player].core?.singularStrike && (skill.coinCount || 0) === 1 && !['counter', 'counter_clash'].includes(skill.skillType)) power += 2;
   if (skill?.isCorrosion && skill?.egoId === 'ego_don_scissors' && hasResonance(player, 'envy')) power += 1;
@@ -781,6 +787,7 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
     skillDamageMult += Math.min(0.25, ((a.maxHp - a.hp) / a.maxHp) * 100 * 0.005);
   }
   if (options.finalCoinBonus) skillDamageMult += options.finalCoinBonus;
+  if (attacker) skillDamageMult += getExecBonus(attacker, options.skill, 'damageBonus');
   if (attacker) skillDamageMult += getChargeDamageBonus(attacker, options.skill) + getStriderDamageBonus(attacker) + getSpeedRuptureDamageBonus(attacker, target, options.skill);
   const spd = Number.isInteger(options.coinIndex) ? options.skill?.coins?.[options.coinIndex]?.onHit?.speedDamageBonus : null;
   if (attacker && spd && getExecSpeed(attacker) >= spd.speed) skillDamageMult += spd.bonus;
@@ -798,7 +805,9 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   p.shield = Math.max(0, shieldBefore - shieldDamage);
   let hpDamage = Math.max(0, finalDmg - shieldDamage);
   hpDamage = applyLethalGuard(target, hpDamage);
+  if (tryDrinkRevive(target, hpDamage)) hpDamage = 0;
   p.hp = Math.max(0, p.hp - hpDamage);
+  applyResentmentHeal(attacker, hpDamage);
   if (finalDmg > 0 && attacker) p.cumulativeDamageTaken = (p.cumulativeDamageTaken || 0) + finalDmg;
   log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? `混乱中補正 ×${staggerMultiplier.toFixed(1)}` : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(sin)}) ×${sinResistance}` : ''} / Lv差 ${levelDiff}→×${levelMult.toFixed(3)} / 与ダメ×${outputMult.toFixed(2)} / 被ダメ×${takenMult.toFixed(2)} / バリア吸収${shieldDamage}）`);
   emitHook('onDamage', { target, diceType: attackType, amount: finalDmg, attacker });
@@ -817,6 +826,7 @@ function getCritDamageBonus(attacker, skill, coinIndex) {
   if (Number.isInteger(coinIndex)) bonus += skill?.coins?.[coinIndex]?.onHit?.critDamageBonus || 0;
   const potency = getStatus(attacker, 'breath')?.power || 0;
   if (skill?.critPerBreath) bonus += Math.min(skill.critPerBreath.max, potency * skill.critPerBreath.per);
+  bonus += getDrinkCritBonus(attacker);
   return bonus;
 }
 function tryBreathCritical(attacker, amount, options = {}) {

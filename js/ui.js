@@ -218,11 +218,11 @@ function renderEgoCards(handDiv) {
   gameState.p1.equippedEgos?.forEach(ego => {
     const card = makeEgoCard(ego);
     const selected = selectedHandCard?.egoId === ego.id;
-    const canUse = canPayEgoResource('p1', ego.resourceCost) && !gameState.p1.usedEgosThisTurn?.includes(ego.id);
+    const canUse = canPayEgoResource('p1', getEgoResourceCost('p1', ego)) && !gameState.p1.usedEgosThisTurn?.includes(ego.id);
     const cardEl = document.createElement('div');
     cardEl.className = `card ego-card sin-${ego.sin}${selected?' selected':''}${canUse?'':' unavailable'}`;
 
-    const costs = Object.entries(ego.resourceCost || {})
+    const costs = Object.entries(getEgoResourceCost('p1', ego) || {})
       .map(([sin,n]) => `${getSinLabel(sin)}×${n}`).join(' ') || 'なし';
 
     const power = ego.coinPower >= 0 ? `${ego.basePower}～${ego.basePower + ego.coinPower}` : `${ego.basePower + ego.coinPower}～${ego.basePower}`;

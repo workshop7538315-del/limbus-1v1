@@ -185,9 +185,10 @@ const CORE_PAGES = [
   },
   {
     id: 'core_8', name: 'キムサッガのページ',
-    level: 1, hp: 90, stagger: 45, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
+    level: 1, hp: 100, stagger: 50, maxLight: 4, speedDiceCount: 2, speedMin: 3, speedMax: 6,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
     passiveName: '不屈 & 本国流剣術 & 一撃 & 鋭利な一撃',
+    // 2026-10-12: LCB 剣契師範ムルソー（HP259）に合わせて上方修正。黒獣-卯と同格の想定。
     panicType: 'パニック',
     // LoR「キムサッガ」キーページ（Bamboo-hatted Kim）＋LCB 剣契師範ムルソー。
     // 不屈: LoRは致死時に被ダメージ軽減。LCB本国流剣術の「致死ダメージを1回無効」と統合し、HP1で耐える効果とした。
@@ -348,8 +349,8 @@ const CARD_DATABASE = [
   // ===== 剣契（Blade Lineage）=====
   // 元スキル（LCB）を [ ] に記載。呼吸は自分に付与（target 省略 = 自分）。
   // [Draw of the Sword] 剣契殺手ドンキホーテ/師範ムルソー S1
-  // LoR版: コスト0・使用時光1回復・斬撃3～6
-  skill('card_27', '抜剣', 1, 'attack', 'pierce', 'pride', 3, 2, 2, '使用時: 光1回復。呼吸威力2・呼吸回数1を得る。各コイン的中時: 呼吸威力1を得る。自分の呼吸威力5以上でコイン威力+1。', [
+  // LoR版: コスト0・使用時光1回復・斬撃3～6。数値はLCB 剣契師範ムルソー S1（斬撃 3 +4 ×2）
+  skill('card_27', '抜剣', 1, 'attack', 'slash', 'pride', 3, 4, 2, '使用時: 光1回復。呼吸威力2・呼吸回数1を得る。各コイン的中時: 呼吸威力1を得る。自分の呼吸威力5以上でコイン威力+1。', [
     { onHit: { status: { id: 'breath', power: 1 } } },
     { onHit: { status: { id: 'breath', power: 1 } } }
   ], { onUse: { light: 1, statuses: [{ id: 'breath', power: 2, count: 1 }] }, breathCoinBonus: { min: 5, bonus: 1 } }),
@@ -367,8 +368,8 @@ const CARD_DATABASE = [
   skill('card_30', '異面賛刺', 2, 'attack', 'slash', 'envy', 6, 3, 1, '表で的中時: 呼吸威力2を得る。クリティカル時ダメージ+70%。', [
     { onHit: { status: { id: 'breath', power: 2, requireHeads: true }, critDamageBonus: 0.7 } }
   ]),
-  // [Acupuncture] 剣契師範ムルソー S2
-  skill('card_31', '刺法', 2, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力3を得る。マッチ勝利時: 斬撃威力増加1（この幕と次の幕）・光1回復。1枚目的中時: 呼吸威力3を得る。3枚目: クリティカル時ダメージ+60%。自分の呼吸威力7以上でコイン威力+1。', [
+  // [Acupuncture] 剣契師範ムルソー S2（斬撃 3 +5 ×3）
+  skill('card_31', '刺法', 2, 'attack', 'slash', 'pride', 3, 5, 3, '使用時: 呼吸威力3を得る。マッチ勝利時: 斬撃威力増加1（この幕と次の幕）・光1回復。1枚目的中時: 呼吸威力3を得る。3枚目: クリティカル時ダメージ+60%。自分の呼吸威力7以上でコイン威力+1。', [
     { onHit: { status: { id: 'breath', power: 3 } } },
     {},
     { onHit: { critDamageBonus: 0.6 } }
@@ -384,19 +385,19 @@ const CARD_DATABASE = [
     { onHit: { finalCoinBonusOnHeads: 0.1 } },
     { onHit: { status: { id: 'breath', count: 2 }, critDamageBonus: 0.3 } }
   ], { onUse: { statuses: [{ id: 'breath', power: 5 }] }, breathCoinBonus: { min: 10, bonus: 1 } }),
-  // [Overthrow] 剣契師範ムルソー 防御スキル（反撃）
-  skill('card_34', '殺主', 1, 'counter', 'slash', 'envy', 5, 2, 1, '使用時: 斬撃威力増加1（この幕と次の幕）。攻撃を受けたとき反撃。的中時: 呼吸威力2を得る。失ったHP1%につき与ダメージ+0.5%（最大25%）。', [
+  // [Overthrow] 剣契師範ムルソー 防御スキル（反撃、斬撃 8 +10 ×1）
+  skill('card_34', '殺主', 2, 'counter', 'slash', 'envy', 8, 10, 1, '使用時: 斬撃威力増加1（この幕と次の幕）。攻撃を受けたとき反撃。的中時: 呼吸威力2を得る。失ったHP1%につき与ダメージ+0.5%（最大25%）。', [
     { onHit: { status: { id: 'breath', power: 2 } } }
   ], { onUse: { special: 'slash_power_up_2turns' }, missingHpDamage: true }),
-  // [Yield My Flesh] 剣契師範ムルソー S3（LoRから続く技。挑発値は省略）
-  skill('card_35', '肉斬', 2, 'attack', 'slash', 'wrath', 4, 4, 1, 'このスキルが終わるまでダメージで混乱しない。マッチ勝利時: 呼吸威力5を得る。マッチ敗北時: 攻撃を受けた後「骨断」を使用。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+3%（最大75%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。', [{}], {
+  // [Yield My Flesh] 剣契師範ムルソー S3（斬撃 20 -8 ×1。マイナスコイン。LoRから続く技。挑発値は省略）
+  skill('card_35', '肉斬', 2, 'attack', 'slash', 'wrath', 20, -8, 1, 'このスキルが終わるまでダメージで混乱しない。マッチ勝利時: 呼吸威力5を得る。マッチ敗北時: 攻撃を受けた後「骨断」を使用。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+3%（最大75%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。', [{}], {
     onClashWin: { status: { id: 'breath', power: 5 } },
     onClashLoseFollowUp: 'card_36',
     noStaggerDuringSkill: true, critDamageBonus: 0.3, critPerBreath: { per: 0.03, max: 0.75 }, missingHpDamage: true
   }),
   // [To Claim Their Bones] 剣契師範ムルソー 防御スキル2。「肉斬」のマッチ敗北時にのみ使用（デッキには入らない）。
   // 原作の「単一対象なら与ダメージ+100%」は1対1では常に発動し強すぎるため省略。
-  skill('card_36', '骨断', 0, 'attack', 'slash', 'pride', 4, 2, 4, '「肉斬」のマッチ敗北時にのみ使用。このスキルが終わるまで混乱しない。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+2%（最大50%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。4枚目的中時: 出血3・次の幕に麻痺5を与える。', [
+  skill('card_36', '骨断', 0, 'attack', 'slash', 'pride', 4, 4, 4, '「肉斬」のマッチ敗北時にのみ使用。このスキルが終わるまで混乱しない。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+2%（最大50%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。4枚目的中時: 出血3・次の幕に麻痺5を与える。', [
     {}, {}, {}, { onHit: { special: 'claim_bones_last' } }
   ], { hidden: true, noStaggerDuringSkill: true, critDamageBonus: 0.3, critPerBreath: { per: 0.02, max: 0.5 }, missingHpDamage: true }),
   // [LoR: Slay] 斬撃3～8（マッチ勝利で力1）・斬撃3～6（的中で光1回復）。力（攻撃威力+）は攻撃威力増加1（この幕）に置き換え。
@@ -548,6 +549,38 @@ const EGO_DATABASE = [
       effect: '侵蝕: 敵味方識別不可。攻撃前に最大HPの10%を失う（この減少では混乱しない）。的中時: 沈潜回数2・呪い1・招聘されざる者2・邸宅の木霊2を付与。憂鬱共鳴時、憂鬱脆弱1も付与。（原作の味方回復は1対1では省略）',
       coins: [{ onHit: { special: 'ego_bygone_days_corrosion_hit' } }],
       beforeAttack: 'ego_bygone_days_corrosion'
+    }
+  },
+  // 着影揮刀（Shadow-vested Bladesinger）: 原作 HE / 傲慢。処理: js/blade_lineage.js
+  // 精神力の消費量・罪悪耐性は資料で確認できなかったため仮の値（精神-20、傲慢×0.75、ほかは×1）。
+  {
+    id: 'ego_bladesinger', name: '着影揮刀', sinner: 'Meursault', risk: 'HE',
+    sin: 'pride', sinRes: { wrath:1, lust:1, sloth:1, gluttony:1, gloom:1, pride:0.75, envy:1 },
+    attackType: 'slash', skillType: 'attack', cost: 0, basePower: 12, coinPower: 4, coinCount: 2, sanityCost: 20,
+    resourceCost: { pride: 4, wrath: 1, envy: 1 },
+    firstUseCost: { coreId: 'core_8', cost: { pride: 3 } },
+    effect: '攻撃前: 自分の呼吸威力4ごとにマッチ威力+1・与ダメージ+10%（最大5）。弔い酒があれば与ダメージ+100%（キムサッガのページなら+200%）。1枚目的中時: 出血4を与え、呼吸回数4を得る。2枚目的中時: 出血回数2を与え、呼吸回数4を得る。攻撃終了時: 弔い酒4を得る。キムサッガのページでの初回使用は資源が傲慢3のみ。',
+    coins: [
+      { onHit: { statuses: [{ id: 'bleed', power: 4, target: 'opponent' }, { id: 'breath', count: 4 }] } },
+      { onHit: { statuses: [{ id: 'bleed', count: 2, target: 'opponent' }, { id: 'breath', count: 4 }] } }
+    ],
+    bladesinger: 'awakening',
+    attackEnd: 'ego_bladesinger',
+    egoPassiveId: 'ego_bladesinger_passive',
+    egoPassiveAlwaysFor: 'core_8',
+    egoPassiveDesc: '刃先の酒滴: 幕開始時に弔い酒があれば怨恨を得る（その幕 速度+2、与えたダメージの10%回復）。キムサッガのページなら装備しているだけで常に有効（それ以外は使用した次の幕から）。',
+    corrosionSanityCost: 20,
+    corrosion: {
+      basePower: 13, coinPower: -2, coinCount: 4, attackType: 'slash', skillType: 'attack', indiscriminate: true,
+      resourceCost: { pride: 4, wrath: 1, envy: 1 },
+      effect: '侵蝕: 敵味方識別不可。攻撃前: 呼吸威力4ごとにマッチ威力+1・与ダメージ+10%（最大5）、敵味方全員が呼吸回数4・斬撃ダメージ増加1・斬撃脆弱1を得る。破壊不能コイン。1～3枚目的中時: 出血1。4枚目的中時: 出血回数2。',
+      coins: [
+        { unbreakable: true, onHit: { status: { id: 'bleed', power: 1, target: 'opponent' } } },
+        { unbreakable: true, onHit: { status: { id: 'bleed', power: 1, target: 'opponent' } } },
+        { unbreakable: true, onHit: { status: { id: 'bleed', power: 1, target: 'opponent' } } },
+        { unbreakable: true, onHit: { status: { id: 'bleed', count: 2, target: 'opponent' } } }
+      ],
+      bladesinger: 'corrosion'
     }
   }
 ];

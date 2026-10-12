@@ -73,6 +73,7 @@ function prepareSkillExecution(player, skill, slot = null, targetSlot = null, un
   p.execBonus = bonus;
   if (!skill) return;
   prepareSpeedRuptureExecution(player, skill, bonus, slot, targetSlot, unopposed); // rupture.js
+  prepareBladesinger(player, skill, bonus); // blade_lineage.js
   if (skill.onExecute?.charge) gainCharge(player, skill.onExecute.charge, `「${skill.name}」`);
   const cc = skill.chargeConsume;
   if (cc) {
