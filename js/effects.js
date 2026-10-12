@@ -693,14 +693,14 @@ function onEgoPassiveHit(target, attacker) {
   addStatusNextTurn(target, 'bind', 3, 1);
   log(`[E.G.Oパッシブ] 沈黙: ${playerLabel(target)}は次の幕に束縛3を得る。`);
 }
-// 裁きの拒絶: 戦闘開始時、相手のスキル2つ以上に指定されていれば保護3
+// 判断拒否: 戦闘開始時、相手のスキル2つ以上に指定されていれば保護3
 function processEgoPassivesCombatStart(player) {
   if (!hasEgoPassive(player, 'ego_chains_of_others_passive')) return;
   const enemy = opponentOf(player);
   const n = gameState[enemy].slots.filter(s => s.card && s.targetSlot?.owner === player).length;
   if (n >= 2) {
     addCombatStatus(player, 'protection', 3, 1);
-    log(`[E.G.Oパッシブ] 裁きの拒絶: ${playerLabel(player)}は${n}つのスキルに指定され、保護3を得る。`);
+    log(`[E.G.Oパッシブ] 判断拒否: ${playerLabel(player)}は${n}つのスキルに指定され、保護3を得る。`);
   }
 }
 

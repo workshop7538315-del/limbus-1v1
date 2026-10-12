@@ -281,7 +281,7 @@ const EGO_DATABASE = [
     // 原作パッシブ「Refusal to Judge」（wiki: Chains of Others Meursault）は「3つ以上のスキルに指定されたら保護3」。
     // 1対1では相手の速度ダイスが最大2つのため「2つ以上」に置き換え。処理: effects.js processEgoPassivesCombatStart
     egoPassiveId: 'ego_chains_of_others_passive',
-    egoPassiveDesc: '裁きの拒絶: 戦闘開始時、相手のスキル2つ以上に指定されていれば保護3を得る（原作は3つ以上）。'
+    egoPassiveDesc: '判断拒否: 戦闘開始時、相手のスキル2つ以上に指定されていれば保護3を得る（原作は3つ以上）。'
   },
   {
     id: 'ego_don_scissors', name: '私はチョキを出すね、そっちは？', sinner: 'Don Quixote', risk: 'ZAYIN',
