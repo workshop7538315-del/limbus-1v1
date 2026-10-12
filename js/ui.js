@@ -35,8 +35,8 @@ function renderCoreSelectionList(elementId, selectedArray, toggleSelectFunc, own
       <div class="core-card-detail ${isOpen?'open':''}">
         <div>HP: ${core.hp} / 混乱耐性: ${core.stagger} / 最大光: ${core.maxLight} / 速度: ${core.speedMin}～${core.speedMax}</div>
         <div style="margin-top:2px;">パニックタイプ: <strong>${core.panicType || 'パニック'}</strong></div>
-        <div style="margin-top:2px;">パニック効果: ${getPanicTypeEffect(core.panicType || 'パニック')}</div>
-        <div style="margin-top:2px;">パッシブ: <strong>${core.passiveName}</strong> - ${core.passiveDesc}</div>
+        <div style="margin-top:2px;">パニック効果: ${kw(getPanicTypeEffect(core.panicType || 'パニック'))}</div>
+        <div style="margin-top:2px;">パッシブ: <strong>${core.passiveName}</strong> - ${kw(core.passiveDesc)}</div>
         <div class="res-group"><span class="res-tag ${getResText(core.res.slash).class}">斬:${getResText(core.res.slash).text} ×${core.res.slash}</span><span class="res-tag ${getResText(core.res.pierce).class}">突:${getResText(core.res.pierce).text} ×${core.res.pierce}</span><span class="res-tag ${getResText(core.res.blunt).class}">打:${getResText(core.res.blunt).text} ×${core.res.blunt}</span></div>
       </div>`;
     div.onclick = () => toggleSelectFunc(core.id); container.appendChild(div);
@@ -79,7 +79,7 @@ function getCardLogTooltipHtml(card){ const t=getCardUseEffectTexts(card); retur
 function formatCardNameWithTooltip(card){ const t=getCardLogTooltipHtml(card); return t?`<span class="tooltip-target log-card-tooltip">${card.name}${t}</span>`:card.name; }
 function skillDetailHtml(card){
   if(!card) return '';
-  const coins=(card.coins||[]).map((c,i)=>{ const t=getSkillHitEffectTexts(card,c); return `<span class="coin-chip">● ${i+1}${t.length?`<small>${t.join('<br>')}</small>`:''}</span>`; }).join(' ');
+  const coins=(card.coins||[]).map((c,i)=>{ const t=getSkillHitEffectTexts(card,c).map(kw); return `<span class="coin-chip">● ${i+1}${t.length?`<small>${t.join('<br>')}</small>`:''}</span>`; }).join(' ');
   const legacy=(card.legacyDice||[]).filter(d=>!d.useCoins).map(d=>`<span class="dice-tag counter_clash">${getSkillDisplayLabel({skillType:'counter_clash',legacyDice:[d]})} ${d.min}～${d.max}</span>`).join(' ');
   const legacyCounter=(card.counterDice||[]).map(d=>`<span class="dice-tag counter">${getSkillDisplayLabel({skillType:'counter',attackType:d.attackType||'blunt'})} ${d.min}～${d.max}</span>`).join(' ');
   return `<div class="skill-line"><strong>${getSkillDisplayLabel(card)}</strong> <span class="sin-badge sin-${card.sin}">${getSinLabel(card.sin)}</span></div>${card.coinCount?`<div class="skill-power-line">${getSkillPowerText(card)}</div><div class="card-dice-list">${coins}</div>`:''}${legacy?`<div class="card-dice-list">${legacy}</div>`:''}${legacyCounter?`<div class="card-dice-list">${legacyCounter}</div>`:''}`;
@@ -112,15 +112,15 @@ function renderEgoLoadout(player) {
       const key = `${player}:${ego.id}`;
       const res = Object.entries(ego.sinRes || {}).map(([sin,v]) => `${getSinLabel(sin)}×${v}`).join(' ');
       const cost = Object.entries(ego.resourceCost || {}).map(([sin,n]) => `${getSinLabel(sin)}×${n}`).join(' ');
-      const corrosion = ego.corrosion ? `<div class="ego-ld-row"><b>侵蝕</b><span>威力 ${egoPowerRange(ego.corrosion.basePower, ego.corrosion.coinPower)} / ${ego.corrosion.coinCount||0}コイン / ${getAttackTypeLabel(ego.corrosion.attackType)}<br>${ego.corrosion.effect||'追加効果なし'}</span></div>` : '';
-      const passive = ego.egoPassiveDesc ? `<div class="ego-ld-row"><b>パッシブ</b><span>${ego.egoPassiveDesc}（使用した次の幕から有効）</span></div>` : '';
+      const corrosion = ego.corrosion ? `<div class="ego-ld-row"><b>侵蝕</b><span>威力 ${egoPowerRange(ego.corrosion.basePower, ego.corrosion.coinPower)} / ${ego.corrosion.coinCount||0}コイン / ${getAttackTypeLabel(ego.corrosion.attackType)} / 精神-${ego.corrosionSanityCost ?? ego.sanityCost ?? 0}<br>${kw(ego.corrosion.effect)||'追加効果なし'}</span></div>` : '';
+      const passive = ego.egoPassiveDesc ? `<div class="ego-ld-row"><b>パッシブ</b><span>${kw(ego.egoPassiveDesc)}${ego.egoPassiveAlwaysFor?'':'（使用した次の幕から有効）'}</span></div>` : '';
       return `<div class="ego-loadout-option ${selected?'selected':''} sin-${ego.sin}" role="button" tabindex="0" aria-pressed="${selected}" onclick="toggleEgoLoadout('${player}','${ego.id}')">
         <div class="ego-lo-head"><strong>${getEgoDisplayName(ego)}</strong>${selected?'<span class="ego-lo-badge">装備中</span>':''}</div>
         <small>${ego.sinner} / ${getSinLabel(ego.sin)} / 資源 ${cost}</small>
         <details class="ego-loadout-details" ${egoLoadoutDetailOpen[key]?'open':''} onclick="event.stopPropagation()" ontoggle="egoLoadoutDetailOpen['${key}']=this.open"><summary>詳細を見る</summary>
           <div class="ego-loadout-detail-content">
             <div class="ego-ld-row"><b>覚醒</b><span>威力 ${egoPowerRange(ego.basePower, ego.coinPower)} / ${ego.coinCount||0}コイン / ${getAttackTypeLabel(ego.attackType)} / 精神-${ego.sanityCost??0}</span></div>
-            <div class="ego-ld-row"><b>効果</b><span>${ego.effect||'追加効果なし'}</span></div>
+            <div class="ego-ld-row"><b>効果</b><span>${kw(ego.effect)||'追加効果なし'}</span></div>
             ${passive}${corrosion}
             <div class="ego-ld-row"><b>罪悪耐性</b><span>${res||'未設定'}</span></div>
           </div>
@@ -164,7 +164,7 @@ function renderBuilder(){
       </div>
     </div>
     <div class="pool-item-body ${isOpen?'open':''}">
-      ${card.effect?`<div class="card-effect">${card.effect}</div>`:''}
+      ${card.effect?`<div class="card-effect">${kw(card.effect)}</div>`:''}
       ${skillDetailHtml(card)}
     </div>`;
     pool.appendChild(div);
@@ -239,11 +239,11 @@ function renderEgoCards(handDiv) {
       </div>
       <div class="ego-detail-block">
         <b>効果</b><br>
-        ${ego.effect || '追加効果なし'}
+        ${kw(ego.effect) || '追加効果なし'}
       </div>${ego.egoPassiveDesc ? `
       <div class="ego-detail-block">
         <b>E.G.Oパッシブ</b><br>
-        ${ego.egoPassiveDesc}（使用した次の幕から有効）
+        ${kw(ego.egoPassiveDesc)}${ego.egoPassiveAlwaysFor?'':'（使用した次の幕から有効）'}
       </div>` : ''}`;
 
     const corrosion = ego.corrosion ? `
@@ -253,7 +253,7 @@ function renderEgoCards(handDiv) {
         / ${ego.corrosion.coinCount}コイン
         / コイン威力${ego.corrosion.coinPower >= 0 ? '+' : ''}${ego.corrosion.coinPower}<br>
         攻撃: ${getAttackTypeLabel(ego.corrosion.attackType)}<br>
-        ${ego.corrosion.effect || '侵蝕時の追加効果なし'}
+        ${kw(ego.corrosion.effect) || '侵蝕時の追加効果なし'}
       </div>` : '';
 
     cardEl.innerHTML = `
@@ -294,7 +294,7 @@ function renderHand(){
   const handDiv=document.getElementById('p1-hand'); handDiv.innerHTML=''; const currentSlot=getCurrentPlanningSlot(); if(!currentSlot||currentSlot.owner!=='p1')return;
   renderEgoCards(handDiv);
   gameState.p1.hand.forEach(card=>{ const cardEl=document.createElement('div'),selected=selectedHandCard===card; cardEl.className='card'+(selected?' selected':'');
-    cardEl.innerHTML=`<strong>${card.name}</strong><br><small>コスト: ${card.cost} / ${getSinLabel(card.sin)} / 表率: ${getHeadsChance('p1')}%</small><div class="skill-power-line">${getSkillPowerText(card)}</div>${card.effect?`<div class="card-effect">${card.effect}</div>`:''}<hr>${skillDetailHtml(card)}`;
+    cardEl.innerHTML=`<strong>${card.name}</strong><br><small>コスト: ${card.cost} / ${getSinLabel(card.sin)} / 表率: ${getHeadsChance('p1')}%</small><div class="skill-power-line">${getSkillPowerText(card)}</div>${card.effect?`<div class="card-effect">${kw(card.effect)}</div>`:''}<hr>${skillDetailHtml(card)}`;
     cardEl.onclick=()=>{ if(!card.isEgo && gameState.p1.light<card.cost)return alert('光が不足しています！'); selectedHandCard=selected?null:card; if(!selectedHandCard)selectedTargetSlot=null; else if(selectedHandCard.skillType==='counter')selectedTargetSlot=null; else if(gameState.p2.slots.length===1)selectedTargetSlot=gameState.p2.slots[0]; else if(selectedTargetSlot&&!gameState.p2.slots.includes(selectedTargetSlot))selectedTargetSlot=null; renderHand();updatePlanningPrompt();updateUI();}; handDiv.appendChild(cardEl); });
 }
 function renderStatusEffects(player){

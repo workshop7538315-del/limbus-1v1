@@ -552,10 +552,9 @@ const EGO_DATABASE = [
     }
   },
   // 着影揮刀（Shadow-vested Bladesinger）: 原作 HE / 傲慢。処理: js/blade_lineage.js
-  // 精神力の消費量・罪悪耐性は資料で確認できなかったため仮の値（精神-20、傲慢×0.75、ほかは×1）。
   {
     id: 'ego_bladesinger', name: '着影揮刀', sinner: 'Meursault', risk: 'HE',
-    sin: 'pride', sinRes: { wrath:1, lust:1, sloth:1, gluttony:1, gloom:1, pride:0.75, envy:1 },
+    sin: 'pride', sinRes: { wrath:1, lust:0.75, sloth:2, gluttony:1, gloom:2, pride:0.5, envy:1 },
     attackType: 'slash', skillType: 'attack', cost: 0, basePower: 12, coinPower: 4, coinCount: 2, sanityCost: 20,
     resourceCost: { pride: 4, wrath: 1, envy: 1 },
     firstUseCost: { coreId: 'core_8', cost: { pride: 3 } },
@@ -569,7 +568,7 @@ const EGO_DATABASE = [
     egoPassiveId: 'ego_bladesinger_passive',
     egoPassiveAlwaysFor: 'core_8',
     egoPassiveDesc: '剣先にしたたる酒滴: 幕開始時に追慕酒があれば怨恨を得る（その幕 速度+2、与えたダメージの10%回復）。キムサッガのページなら追加で恨の宿った鞘を得る。キムサッガのページなら装備しているだけで常に有効（それ以外は使用した次の幕から）。',
-    corrosionSanityCost: 20,
+    corrosionSanityCost: 25,
     corrosion: {
       basePower: 13, coinPower: -2, coinCount: 4, attackType: 'slash', skillType: 'attack', indiscriminate: true,
       resourceCost: { pride: 4, wrath: 1, envy: 1 },
