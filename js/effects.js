@@ -22,7 +22,10 @@ const STATUS_DEFINITIONS = {
   // 黒獣-卯（rupture.js）
   strider_mao: { name: '脚力【卯】', category: 'buff', maxPower: 0, maxCount: 3, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕終了時、次の幕に迅速5を得て1減少。（最大3）' },
   deathrite_haste: { name: '呪殺【迅速】', category: 'debuff', maxPower: 0, maxCount: 3, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '速度10以上の相手の攻撃で破裂が発動するたび1減少し破裂回数+1。0になると破裂威力分の暴食ダメージを受けて消える。付与中は再付与されない。' },
-  echoes_of_manor: { name: '邸宅の木霊', category: 'debuff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '沈潜の威力か回数を得るたび50%で沈潜回数+1。パニックタイプが「邸宅の木霊」になる。幕終了時に1減少。付与時は値を上書き。' }
+  echoes_of_manor: { name: '邸宅の木霊', category: 'debuff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '沈潜の威力か回数を得るたび50%で沈潜回数+1。パニックタイプが「邸宅の木霊」になる。幕終了時に1減少。付与時は値を上書き。' },
+  // 四本目のマッチの火・一生シチュー（teth_egos.js）
+  burn: { name: '火傷', category: 'debuff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0, desc: '幕終了時、威力分の固定ダメージを受け、回数-1。' },
+  blazing: { name: '燃え盛る', category: 'buff', maxPower: 0, maxCount: 2, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '次の幕の終わりまで: 速度+1。その幕で最初に使う基本攻撃スキルの最終威力+2。そのスキルの的中ごとに最大HPの2%を失う（最大10%、混乱しない・HP1未満にならない）。' }
 };
 
 const BASIC_STATUS_IDS = [
@@ -160,7 +163,7 @@ function normalizeStatus(statusId, status) {
 // 威力と回数を両方持つ状態異常。原作では、威力だけを付与されて回数が0なら回数1、
 // 回数だけを付与されて威力が0なら威力1になる（威力と回数を同時に付与する効果では補完しない）。以前はこの補完がなく、
 // 「出血威力2」等の威力のみ付与するカードが回数0のまま一度も発動しない不具合があった。
-const POTENCY_COUNT_STATUS_IDS = new Set(['bleed', 'sinking', 'tremor', 'rupture', 'breath']);
+const POTENCY_COUNT_STATUS_IDS = new Set(['bleed', 'sinking', 'tremor', 'rupture', 'breath', 'burn']);
 function changeStatusCount(player, statusId, delta, autoFill = true) {
   const status = ensureStatus(player, statusId);
   if (!status) return null;
@@ -323,7 +326,7 @@ function getResistanceWithDown(player, attackType, sin) {
 }
 
 function getSpeedStatusModifier(player) {
-  return getActiveStatusPower(player,'haste') - getActiveStatusPower(player,'bind');
+  return getActiveStatusPower(player,'haste') - getActiveStatusPower(player,'bind') + (getActiveStatusPower(player,'blazing') > 0 ? 1 : 0);
 }
 function getEffectiveSkillPowerModifier(player) { return getSkillFinalPowerModifier(player, { skillType:'attack' }); }
 function getProtectionMultiplier(player) { return getDamageTakenMultiplier(player); }
@@ -381,6 +384,11 @@ function processStatusTurnEnd(player) {
       status.count -= 1;
       if (status.count <= 0) delete statuses[statusId];
       else log(`[状態減衰] ${playerLabel(player)}の「${status.name}」: ${status.count}`);
+    } else if (statusId === 'burn' && status.count > 0) {
+      processBurnTurnEnd(player, status);
+    } else if (statusId === 'blazing' && status.count > 0) {
+      status.count -= 1;
+      if (status.count <= 0) { delete statuses[statusId]; log(`[状態減衰] ${playerLabel(player)}の「${status.name}」が終了`); }
     } else if (statusId === 'strider_mao' && status.count > 0) {
       processStriderTurnEnd(player, status);
     } else if ((statusId === 'uninvited' || statusId === 'echoes_of_manor') && status.count > 0) {
@@ -597,11 +605,13 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
   const applyStatusEffect = (effect) => {
     if (!effect) return;
     if (effect.requireHeads && !coin?.heads) return; // 「表で的中時」の効果
+    if (effect.requireUncracked && slot?._coinCracked) return; // 「破損せず的中時」（破壊不能コインのマッチ敗北後の攻撃では発動しない）
     if (effect.requireCharge && getCharge(player) < effect.requireCharge) return; // 充電N以上のときだけ
     if (effect.maxCharge != null && getCharge(player) > effect.maxCharge) return; // 充電N以下のときだけ
     const gb = getOwnStatusGainBonus(player); // 恨の宿った鞘（追慕パッシブ最大効果）
     if (gb) effect = { ...effect, power: effect.power ? effect.power + gb : effect.power, count: effect.count ? effect.count + gb : effect.count };
-    const statusTarget = getHitStatusTarget(player, effect);
+    // 「相手に与える」効果は実際に的中した対象へ（敵味方識別不可で自分を攻撃した場合は自分）
+    const statusTarget = effect.target === 'opponent' ? resolvedTarget : player;
     let bonus = 0;
     if (effect.id === 'bleed' && effect.target === 'opponent') {
       bonus += ctx.bleedBonus || 0;
@@ -682,6 +692,7 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     applyBygoneDaysHit(player, resolvedTarget, effectSource.special === 'ego_bygone_days_corrosion_hit');
   }
   applyInterloperReception(player, resolvedTarget);
+  tethEgoOnHit(player, card); // 燃え盛る（teth_egos.js）
   if (effectSource?.special === 'blood_festival') {
     const bleed = getStatus(resolvedTarget, 'bleed');
     if (bleed?.power >= 3) { drawCard(player); log(`[的中] ${playerLabel(player)}の「${card.name}」: 出血威力3以上のため追加で1枚ドロー`); }
@@ -744,6 +755,7 @@ function applyInterloperReception(player, target) {
 }
 // スキルの攻撃前/攻撃終了時の処理。攻撃（一方攻撃・マッチ勝利後の攻撃）を行うときだけ呼ばれる。
 function applyEgoBeforeAttack(attacker, skill) {
+  tethEgoBeforeAttack(attacker, skill); // 四本目のマッチの火・一生シチュー（teth_egos.js）
   if (skill?.beforeAttack === 'ego_bygone_days_corrosion') {
     const p = gameState[attacker];
     const loss = Math.floor(p.maxHp * 0.10);
@@ -754,6 +766,7 @@ function applyEgoBeforeAttack(attacker, skill) {
 }
 function applyEgoAttackEnd(attacker, skill, defender) {
   bladesingerAttackEnd(attacker, skill);
+  tethEgoAttackEnd(attacker, skill);
   if (skill?.attackEnd === 'ego_bygone_days') {
     const p = gameState[attacker];
     const sinking = getStatus(defender, 'sinking');
@@ -822,6 +835,7 @@ function processEgoTurnStart(player) {
     p.pendingEgoPassives = [];
     log('[E.G.Oパッシブ] '+playerLabel(player)+'のE.G.Oパッシブが発動。');
   }
+  tethEgoTurnStart(player); // 貪る釜（teth_egos.js）
   if (p.activeEgoPassives?.includes('ego_don_scissors_passive')) {
     p.egoPassiveOffenseBonus = Math.min(3, Math.floor((p.cumulativeDamageTaken || 0) / 20));
     if (p.egoPassiveOffenseBonus > 0) log('[E.G.Oパッシブ] '+playerLabel(player)+'の攻撃レベル+'+p.egoPassiveOffenseBonus+'（累積被ダメージ/20）');
@@ -835,6 +849,7 @@ function restoreLight(player, amount, reason) {
   log(`[光] ${playerLabel(player)}の光 ${before}→${p.light}（${reason}）`);
 }
 function applySkillClashWinEffects(player, card, target) {
+  tethEgoClashWin(player, card, target); // 残り火（teth_egos.js）
   const source = card?.onClashWin;
   if (!source) return;
   if (source.light) restoreLight(player, source.light, `「${card.name}」マッチ勝利`);
@@ -888,7 +903,7 @@ function getSkillHitEffectTexts(card, coin) {
   const source = coin?.onHit || card?.onHit || null;
   if (!source) return [];
   const texts = [];
-  [source.status, ...(source.statuses || [])].filter(Boolean).forEach(st => { const t = formatStatusEffectText(st); if (t) texts.push(`${st.requireHeads ? '【表で的中】' : '【的中】'}${st.requireCharge ? `充電${st.requireCharge}以上なら` : ''}${t}`); });
+  [source.status, ...(source.statuses || [])].filter(Boolean).forEach(st => { const t = formatStatusEffectText(st); if (t) texts.push(`${st.requireHeads ? '【表で的中】' : st.requireUncracked ? '【破損せず的中】' : '【的中】'}${st.requireCharge ? `充電${st.requireCharge}以上なら` : ''}${t}`); });
   if (source.light) texts.push(`【的中】光を${source.light}回復`);
   if (source.lowHpDamageBonus) texts.push(`【的中】相手のHPが${Math.round(source.lowHpDamageBonus.below*100)}%未満なら与ダメージ+${Math.round(source.lowHpDamageBonus.bonus*100)}%`);
   if (source.finalCoinBonusOnHeads) texts.push(`【表で的中】最後のコインの与ダメージ+${Math.round(source.finalCoinBonusOnHeads * 100)}%`);

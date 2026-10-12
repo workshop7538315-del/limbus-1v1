@@ -75,6 +75,7 @@ function prepareSkillExecution(player, skill, slot = null, targetSlot = null, un
   prepareSpeedRuptureExecution(player, skill, bonus, slot, targetSlot, unopposed); // rupture.js
   prepareBladesinger(player, skill, bonus); // blade_lineage.js
   prepareScabbardSkill(player, skill, bonus); // blade_lineage.js（肉斬・骨断）
+  prepareTethEgo(player, skill, bonus); // teth_egos.js（一生シチュー・残り火・燃え盛る）
   if (skill.onExecute?.charge) gainCharge(player, skill.onExecute.charge, `「${skill.name}」`);
   const cc = skill.chargeConsume;
   if (cc) {

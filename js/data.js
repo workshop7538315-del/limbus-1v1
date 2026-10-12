@@ -600,6 +600,42 @@ const EGO_DATABASE = [
       ],
       bladesinger: 'corrosion'
     }
+  },
+  // 四本目のマッチの火（4th Match Flame）: 原作 TETH / 憤怒。解析V（Threadspin Tier V）の数値を移植。処理: js/teth_egos.js
+  {
+    id: 'ego_match_flame', name: '四本目のマッチの火', sinner: 'Yi Sang', risk: 'TETH',
+    sin: 'wrath', sinRes: { wrath:0.5, lust:1, sloth:2, gluttony:1, gloom:2, pride:1, envy:1 },
+    attackType: 'slash', skillType: 'attack', cost: 0, basePower: 14, coinPower: 12, coinCount: 1, sanityCost: 20,
+    resourceCost: { wrath: 5, sloth: 1, gluttony: 1 },
+    effect: '攻撃前: 相手の火傷6ごとに最終威力+1（最大4）、火傷1ごとに与ダメージ+1%（最大30%）。的中時: 火傷4を与える。表で的中時: さらに火傷6を与える。',
+    coins: [{ onHit: { statuses: [{ id: 'burn', power: 4, target: 'opponent' }, { id: 'burn', power: 6, target: 'opponent', requireHeads: true }] } }],
+    egoPassiveId: 'ego_match_flame_passive',
+    egoPassiveDesc: '残り火: 憤怒スキルか火傷を与えるスキルの使用時、相手の火傷の威力か回数が6以上ならマッチ威力+1。マッチ勝利時、相手に火傷(憤怒の共鳴数×2)を与える（最大8）。',
+    corrosionSanityCost: 20,
+    corrosion: {
+      basePower: 26, coinPower: -12, coinCount: 1, attackType: 'slash', skillType: 'attack', indiscriminate: true,
+      resourceCost: { wrath: 5, sloth: 1, gluttony: 1 },
+      effect: '侵蝕: 敵味方識別不可。破壊不能コイン。攻撃前: 相手の火傷6ごとに最終威力+1（最大6）、火傷1ごとに与ダメージ+1.5%（最大45%）。マッチ敗北時: 基礎威力-12。的中時: 火傷4を与える。破損せず的中時: さらに火傷6を与える。攻撃終了時: 燃え盛るを得る（1幕1回）。',
+      coins: [{ unbreakable: true, onHit: { statuses: [{ id: 'burn', power: 4, target: 'opponent' }, { id: 'burn', power: 6, target: 'opponent', requireUncracked: true }] } }]
+    }
+  },
+  // 一生シチュー（Lifetime Stew）: 原作 TETH / 色欲。解析V（Threadspin Tier V）の数値を移植。処理: js/teth_egos.js
+  {
+    id: 'ego_lifetime_stew', name: '一生シチュー', sinner: 'Don Quixote', risk: 'TETH',
+    sin: 'lust', sinRes: { wrath:1, lust:0.5, sloth:2, gluttony:1, gloom:2, pride:1, envy:1 },
+    attackType: 'blunt', skillType: 'attack', cost: 0, basePower: 21, coinPower: 4, coinCount: 1, sanityCost: 20,
+    resourceCost: { lust: 5 },
+    effect: '相手の火傷と出血の威力4ごとに最終威力+1（最大3）。攻撃前: 色欲威力増加1を得る（この幕と次の幕）。色欲資源1につき与ダメージ+6%（最大120%）。的中時: 火傷3・出血3を与える。',
+    coins: [{ onHit: { statuses: [{ id: 'burn', power: 3, target: 'opponent' }, { id: 'bleed', power: 3, target: 'opponent' }] } }],
+    egoPassiveId: 'ego_lifetime_stew_passive',
+    egoPassiveDesc: '貪る釜: 幕開始時、色欲以外の罪悪資源1つをランダムに色欲資源へ変換する（色欲資源が上限なら代わりに色欲威力増加1を得る）。色欲の基本スキルの与ダメージ+色欲資源1につき1%（最大10%）。',
+    corrosionSanityCost: 20,
+    corrosion: {
+      basePower: 22, coinPower: 5, coinCount: 1, attackType: 'blunt', skillType: 'attack', indiscriminate: true,
+      resourceCost: { lust: 5 },
+      effect: '侵蝕: 敵味方識別不可。破壊不能コイン。相手の火傷と出血の威力4ごとに最終威力+1（最大3）。攻撃前: 色欲威力増加1・色欲ダメージ増加1を得る（この幕と次の幕）。色欲資源1につき与ダメージ+5%（最大100%）。色欲資源を(色欲の共鳴数×2)消費し（最大8）、1につき与ダメージ+20%。的中時: 火傷4・出血4を与える。',
+      coins: [{ unbreakable: true, onHit: { statuses: [{ id: 'burn', power: 4, target: 'opponent' }, { id: 'bleed', power: 4, target: 'opponent' }] } }]
+    }
   }
 ];
 

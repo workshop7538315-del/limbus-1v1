@@ -471,6 +471,9 @@ async function executeDonScissorsUnbreakableLoss(player, skill, defender, slot) 
   const count = skill.coinCount || 0;
   const multiplier = skill.isCorrosion ? 1 : 3;
   log('[E.G.O] '+playerLabel(player)+'の「'+skill.name+'」は破壊不能コインでマッチ敗北後も攻撃。与ダメージ補正×'+multiplier+'。');
+  slot._coinCracked = true; // 「破損せず的中時」の効果は発動しない
+  tethEgoClashLose(player, skill);
+  applyEgoBeforeAttack(player, skill);
   for (let i=0;i<count;i++) {
     const beforeHp=gameState[defender].hp;
     const coin=flipCoin(player, skill, i);
@@ -483,6 +486,7 @@ async function executeDonScissorsUnbreakableLoss(player, skill, defender, slot) 
     await animateHit({attacker:playerLabel(player),defender:playerLabel(defender),damage,effects:'破壊不能コイン / On Hit',left:{...animSideFromSkill(player,skill,damage,[],count-i-1),resultText:damage+'ダメージ'},right:{...animSideFromSkill(defender,skill,gameState[defender].hp,[],0),resultText:'残り'+gameState[defender].hp}});
     if(gameState[defender].hp<=0) break;
   }
+  applyEgoAttackEnd(player, skill, defender);
 }
 
 // 「このスキルが終わるまでダメージで混乱しない」（skill.noStaggerDuringSkill）。終了後に閾値を判定する。
@@ -791,7 +795,7 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
     skillDamageMult += Math.min(0.25, ((a.maxHp - a.hp) / a.maxHp) * 100 * 0.005);
   }
   if (options.finalCoinBonus) skillDamageMult += options.finalCoinBonus;
-  if (attacker) skillDamageMult += getExecBonus(attacker, options.skill, 'damageBonus');
+  if (attacker) skillDamageMult += getExecBonus(attacker, options.skill, 'damageBonus') + getTethEgoDamageBonus(attacker, options.skill);
   const grudgeBonus = attacker ? getGrudgeFinisherBonus(attacker, options.skill, options.coinIndex) : 0;
   skillDamageMult += grudgeBonus;
   if (attacker) skillDamageMult += getChargeDamageBonus(attacker, options.skill) + getStriderDamageBonus(attacker) + getSpeedRuptureDamageBonus(attacker, target, options.skill);
