@@ -25,7 +25,7 @@ const STATUS_DEFINITIONS = {
   echoes_of_manor: { name: '邸宅の木霊', category: 'debuff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '沈潜の威力か回数を得るたび50%で沈潜回数+1。パニックタイプが「邸宅の木霊」になる。幕終了時に1減少。付与時は値を上書き。' },
   // 四本目のマッチの火・一生シチュー（teth_egos.js）
   burn: { name: '火傷', category: 'debuff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0, desc: '幕終了時、威力分の固定ダメージを受け、回数-1。' },
-  blazing: { name: '燃え盛る', category: 'buff', maxPower: 0, maxCount: 2, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '次の幕の終わりまで: 速度+1。その幕で最初に使う基本攻撃スキルの最終威力+2。そのスキルの的中ごとに最大HPの2%を失う（最大10%、混乱しない・HP1未満にならない）。' }
+  blazing: { name: '燃え上がる', category: 'buff', maxPower: 0, maxCount: 2, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '次の幕の終わりまで: 速度+1。その幕で最初に使う基本攻撃スキルの最終威力+2。そのスキルの的中ごとに最大HPの2%を失う（最大10%、混乱しない・HP1未満にならない）。' }
 };
 
 const BASIC_STATUS_IDS = [
@@ -692,7 +692,7 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     applyBygoneDaysHit(player, resolvedTarget, effectSource.special === 'ego_bygone_days_corrosion_hit');
   }
   applyInterloperReception(player, resolvedTarget);
-  tethEgoOnHit(player, card); // 燃え盛る（teth_egos.js）
+  tethEgoOnHit(player, card); // 燃え上がる（teth_egos.js）
   if (effectSource?.special === 'blood_festival') {
     const bleed = getStatus(resolvedTarget, 'bleed');
     if (bleed?.power >= 3) { drawCard(player); log(`[的中] ${playerLabel(player)}の「${card.name}」: 出血威力3以上のため追加で1枚ドロー`); }
@@ -835,7 +835,7 @@ function processEgoTurnStart(player) {
     p.pendingEgoPassives = [];
     log('[E.G.Oパッシブ] '+playerLabel(player)+'のE.G.Oパッシブが発動。');
   }
-  tethEgoTurnStart(player); // 貪る釜（teth_egos.js）
+  tethEgoTurnStart(player); // 暴食のるつぼ（teth_egos.js）
   if (p.activeEgoPassives?.includes('ego_don_scissors_passive')) {
     p.egoPassiveOffenseBonus = Math.min(3, Math.floor((p.cumulativeDamageTaken || 0) / 20));
     if (p.egoPassiveOffenseBonus > 0) log('[E.G.Oパッシブ] '+playerLabel(player)+'の攻撃レベル+'+p.egoPassiveOffenseBonus+'（累積被ダメージ/20）');
@@ -849,7 +849,7 @@ function restoreLight(player, amount, reason) {
   log(`[光] ${playerLabel(player)}の光 ${before}→${p.light}（${reason}）`);
 }
 function applySkillClashWinEffects(player, card, target) {
-  tethEgoClashWin(player, card, target); // 残り火（teth_egos.js）
+  tethEgoClashWin(player, card, target); // 火の粉（teth_egos.js）
   const source = card?.onClashWin;
   if (!source) return;
   if (source.light) restoreLight(player, source.light, `「${card.name}」マッチ勝利`);

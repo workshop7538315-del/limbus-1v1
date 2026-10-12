@@ -50,20 +50,20 @@ function prepareTethEgo(player, skill, bonus) {
     const add = Math.min(3, Math.floor(total / 4));
     if (add > 0) { bonus.finalPower += add; log(`[一生シチュー] 火傷+出血の威力${total} → 最終威力+${add}`); }
   }
-  // 残り火（四本目のマッチの火パッシブ）: 憤怒スキルか火傷を与えるスキルの使用時、相手の火傷の威力か回数が6以上ならマッチ威力+1
+  // 火の粉（四本目のマッチの火パッシブ）: 憤怒スキルか火傷を与えるスキルの使用時、相手の火傷の威力か回数が6以上ならマッチ威力+1
   if (hasEgoPassive(player, 'ego_match_flame_passive') && (skill?.sin === 'wrath' || skillInflictsBurn(skill))) {
     const b = getStatus(enemy, 'burn');
     if (b && ((b.power || 0) >= 6 || (b.count || 0) >= 6)) {
       bonus.clashPower = (bonus.clashPower || 0) + 1;
-      log(`[残り火] ${playerLabel(player)}「${skill.name}」: 相手の火傷6以上でマッチ威力+1`);
+      log(`[火の粉] ${playerLabel(player)}「${skill.name}」: 相手の火傷6以上でマッチ威力+1`);
     }
   }
-  // 燃え盛る: この幕で最初に使う基本攻撃スキル（E.G.O以外）の最終威力+2
+  // 燃え上がる: この幕で最初に使う基本攻撃スキル（E.G.O以外）の最終威力+2
   if (getStatus(player, 'blazing')?.count > 0 && !skill?.isEgo && skill?.skillType === 'attack' && p.blazingFirstRound !== gameState.round) {
     p.blazingFirstRound = gameState.round;
     bonus.finalPower += 2;
     bonus.blazing = true; bonus.blazingSelfDamage = 0;
-    log(`[燃え盛る] ${playerLabel(player)}「${skill.name}」: 最終威力+2（的中ごとに最大HPの2%を失う）`);
+    log(`[燃え上がる] ${playerLabel(player)}「${skill.name}」: 最終威力+2（的中ごとに最大HPの2%を失う）`);
   }
 }
 
@@ -115,7 +115,7 @@ function tethEgoAttackEnd(attacker, skill) {
   p.blazingGainRound = gameState.round;
   const s = ensureStatus(attacker, 'blazing');
   s.count = 2; // この幕の終了時に1、次の幕の終了時に0（次の幕の終わりまで）
-  log(`[四本目のマッチの火・侵蝕] ${playerLabel(attacker)}は燃え盛るを得る（次の幕の終わりまで）`);
+  log(`[四本目のマッチの火・侵蝕] ${playerLabel(attacker)}は燃え上がるを得る（次の幕の終わりまで）`);
 }
 
 // 侵蝕のマッチ敗北: 基礎威力-12（executeDonScissorsUnbreakableLoss から）
@@ -128,18 +128,18 @@ function tethEgoClashLose(player, skill) {
 }
 
 // ===== マッチ勝利（applySkillClashWinEffects から）=====
-// 残り火: マッチ勝利時、相手に火傷（憤怒の共鳴数×2、最大8）
+// 火の粉: マッチ勝利時、相手に火傷（憤怒の共鳴数×2、最大8）
 function tethEgoClashWin(player, skill, target) {
   if (!hasEgoPassive(player, 'ego_match_flame_passive')) return;
   if (skill?.sin !== 'wrath' && !skillInflictsBurn(skill)) return;
   const n = Math.min(8, getResonanceValue(player, 'wrath') * 2);
   if (n <= 0) return;
   const r = changeStatusPower(target, 'burn', n);
-  log(`[残り火] ${playerLabel(player)}: マッチ勝利で${playerLabel(target)}に火傷${n}（${r.before}→${r.after}）`);
+  log(`[火の粉] ${playerLabel(player)}: マッチ勝利で${playerLabel(target)}に火傷${n}（${r.before}→${r.after}）`);
 }
 
 // ===== 的中時（triggerOnHit から）=====
-// 燃え盛る: 対象スキルの的中ごとに最大HPの2%を失う（スキルにつき最大10%）。混乱せず、HP1未満にならない。
+// 燃え上がる: 対象スキルの的中ごとに最大HPの2%を失う（スキルにつき最大10%）。混乱せず、HP1未満にならない。
 function tethEgoOnHit(player, skill) {
   const bonus = gameState[player]?.execBonus;
   if (!bonus?.blazing || bonus.skill !== skill) return;
@@ -150,27 +150,27 @@ function tethEgoOnHit(player, skill) {
   bonus.blazingSelfDamage = (bonus.blazingSelfDamage || 0) + loss;
   const before = p.hp;
   p.hp = Math.max(1, p.hp - loss);
-  log(`[燃え盛る] ${playerLabel(player)}のHP ${before}→${p.hp}`);
+  log(`[燃え上がる] ${playerLabel(player)}のHP ${before}→${p.hp}`);
 }
 
 // ===== 幕開始時（processEgoTurnStart から）=====
-// 貪る釜（一生シチューパッシブ）: 色欲以外の資源1つをランダムに色欲へ変換。色欲が上限なら代わりに色欲威力増加1。
+// 暴食のるつぼ（一生シチューパッシブ）: 色欲以外の資源1つをランダムに色欲へ変換。色欲が上限なら代わりに色欲威力増加1。
 function tethEgoTurnStart(player) {
   if (!hasEgoPassive(player, 'ego_lifetime_stew_passive')) return;
   const r = gameState[player].egoResources;
   if ((r.lust || 0) >= MAX_EGO_RESOURCE) {
     addCombatStatus(player, 'lust_power_up', 1, 1);
-    log(`[貪る釜] ${playerLabel(player)}: 色欲資源が上限のため色欲威力増加1`);
+    log(`[暴食のるつぼ] ${playerLabel(player)}: 色欲資源が上限のため色欲威力増加1`);
     return;
   }
   const pool = SIN_TYPES.filter(s => s !== 'lust' && (r[s] || 0) > 0);
   if (!pool.length) return;
   const sin = pool[Math.floor(Math.random() * pool.length)];
   r[sin]--; r.lust = (r.lust || 0) + 1;
-  log(`[貪る釜] ${playerLabel(player)}: ${getSinLabel(sin)}資源1を色欲に変換（色欲${r.lust}）`);
+  log(`[暴食のるつぼ] ${playerLabel(player)}: ${getSinLabel(sin)}資源1を色欲に変換（色欲${r.lust}）`);
 }
 
-// 貪る釜: 色欲の基本スキル（E.G.O以外）の与ダメージ+色欲資源1につき1%（最大10%）（applyDamage から）
+// 暴食のるつぼ: 色欲の基本スキル（E.G.O以外）の与ダメージ+色欲資源1につき1%（最大10%）（applyDamage から）
 function getTethEgoDamageBonus(attacker, skill) {
   if (!hasEgoPassive(attacker, 'ego_lifetime_stew_passive') || skill?.isEgo || skill?.sin !== 'lust') return 0;
   return Math.min(0.10, (gameState[attacker].egoResources?.lust || 0) * 0.01);
