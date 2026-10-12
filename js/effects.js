@@ -139,11 +139,16 @@ function normalizeStatus(statusId, status) {
   }
   if (statusId === 'poise' && status.count <= 0) status.power = 0;
 }
+// 威力と回数を両方持つ状態異常。原作では、威力だけを付与されて回数が0なら回数1、
+// 回数だけを付与されて威力が0なら威力1になる。以前はこの補完がなく、
+// 「出血威力2」等の威力のみ付与するカードが回数0のまま一度も発動しない不具合があった。
+const POTENCY_COUNT_STATUS_IDS = new Set(['bleed', 'sinking', 'tremor', 'rupture']);
 function changeStatusCount(player, statusId, delta) {
   const status = ensureStatus(player, statusId);
   if (!status) return null;
   const before = status.count;
   status.count = clampStatusValue(status.count + delta, STATUS_DEFINITIONS[statusId].maxCount);
+  if (delta > 0 && POTENCY_COUNT_STATUS_IDS.has(statusId) && status.power <= 0) status.power = 1;
   normalizeStatus(statusId, status);
   return { status, before, after: status.count };
 }
@@ -152,6 +157,7 @@ function changeStatusPower(player, statusId, delta) {
   if (!status) return null;
   const before = status.power;
   status.power = clampStatusValue(status.power + delta, STATUS_DEFINITIONS[statusId].maxPower);
+  if (delta > 0 && POTENCY_COUNT_STATUS_IDS.has(statusId) && status.count <= 0) status.count = 1;
   normalizeStatus(statusId, status);
   return { status, before, after: status.power };
 }
