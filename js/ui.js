@@ -80,7 +80,7 @@ function formatCardNameWithTooltip(card){ const t=getCardLogTooltipHtml(card); r
 function skillDetailHtml(card){
   if(!card) return '';
   const coins=(card.coins||[]).map((c,i)=>{ const t=getSkillHitEffectTexts(card,c); return `<span class="coin-chip">● ${i+1}${t.length?`<small>${t.join('<br>')}</small>`:''}</span>`; }).join(' ');
-  const legacy=(card.legacyDice||[]).map(d=>`<span class="dice-tag counter_clash">${getSkillDisplayLabel({skillType:'counter_clash',legacyDice:[d]})} ${d.min}～${d.max}</span>`).join(' ');
+  const legacy=(card.legacyDice||[]).filter(d=>!d.useCoins).map(d=>`<span class="dice-tag counter_clash">${getSkillDisplayLabel({skillType:'counter_clash',legacyDice:[d]})} ${d.min}～${d.max}</span>`).join(' ');
   const legacyCounter=(card.counterDice||[]).map(d=>`<span class="dice-tag counter">${getSkillDisplayLabel({skillType:'counter',attackType:d.attackType||'blunt'})} ${d.min}～${d.max}</span>`).join(' ');
   return `<div class="skill-line"><strong>${getSkillDisplayLabel(card)}</strong> <span class="sin-badge sin-${card.sin}">${getSinLabel(card.sin)}</span></div>${card.coinCount?`<div class="skill-power-line">${getSkillPowerText(card)}</div><div class="card-dice-list">${coins}</div>`:''}${legacy?`<div class="card-dice-list">${legacy}</div>`:''}${legacyCounter?`<div class="card-dice-list">${legacyCounter}</div>`:''}`;
 }

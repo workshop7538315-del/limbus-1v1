@@ -741,7 +741,8 @@ function resolveLegacyClashableCounter(slotA, slotB) {
   const attackSkill = attackSlot.card;
   const attackCoin = flipCoin(attacker, attackSkill, 0);
   const rAttack = attackCoin.power;
-  let rCounter = rollLegacyCounter(counterOwner, counter);
+  // useCoins: コイン方式（基礎威力＋表ならコイン威力）。それ以外は旧ダイス方式
+  let rCounter = counter.useCoins ? flipCoin(counterOwner, counterSlot.card, 0).power : rollLegacyCounter(counterOwner, counter);
   // 部分黒獣化: 対象より速ければ速度差2ごとに威力+1（最大 speedBonusPer2Max）
   if (counter.speedBonusPer2Max) {
     const diff = (counterSlot.speed || 0) - (attackSlot.speed || 0);
