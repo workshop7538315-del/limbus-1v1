@@ -628,7 +628,7 @@ const EGO_DATABASE = [
     effect: '相手の火傷と出血の合計4につき最終威力+1（最大3）。攻撃前: 保有している色欲資源6つにつき、次の幕に色欲威力増加1を得る（1対1では自分のみ）。色欲資源1つにつき与ダメージ+6%（最大120%）。的中時: 火傷回数+3・出血回数+3。',
     coins: [{ onHit: { statuses: [{ id: 'burn', count: 3, target: 'opponent' }, { id: 'bleed', count: 3, target: 'opponent' }] } }],
     egoPassiveId: 'ego_lifetime_stew_passive',
-    egoPassiveDesc: '暴食のるつぼ: 幕開始時、色欲以外の罪悪資源1つをランダムに色欲資源へ変換する（色欲資源が上限（原作は20以上、このゲームは10）なら発動せず、代わりに色欲威力増加1を得る）。色欲属性基本攻撃スキルの攻撃開始前、色欲資源1つにつき与ダメージ+1%（最大10%）。',
+    egoPassiveDesc: '暴食のるつぼ: 幕開始時、色欲以外の罪悪資源1つをランダムに色欲資源へ変換する（色欲資源が20以上なら発動せず、代わりに色欲威力増加1を得る）。色欲属性基本攻撃スキルの攻撃開始前、色欲資源1つにつき与ダメージ+1%（最大10%）。',
     corrosionSanityCost: 20,
     corrosion: {
       basePower: 22, coinPower: 5, coinCount: 1, attackType: 'blunt', skillType: 'attack', indiscriminate: true,

@@ -4,8 +4,7 @@
 // 1対1向けの調整（原作との違い）:
 //   - 「全ての対象の火傷」→ 相手1人の火傷威力。「主対象」→ 相手。
 //   - 「配置順で味方に〇〇を付与（最大5人）」→ 使用者本人のみ（この幕と次の幕）。
-//   - 罪悪資源の上限はこのゲームでは10（原作は実質20以上）。資源量に比例する効果は上限10で頭打ちになる。
-//     一生シチューのパッシブ「20以上で変換しない」は「上限（10）なら変換しない」に置き換え。
+//   - 罪悪資源の上限は99（state.js MAX_EGO_RESOURCE）。資源量に比例する効果は原作どおりの最大値まで伸びる。
 //   - 「共鳴数」は、このゲームの共鳴（同じ罪悪のスキルが2つ以上で発生）が発生しているときのその罪悪のスキル数（最大2）。
 //   - 攻撃レベル（Offense Level +3）・攻撃の重さ（Atk Weight）・オーバークロックは省略。
 //   - 破壊不能コインの「マッチ敗北後はコイン威力が1に固定」は、既存のE.G.Oと同じく省略。
@@ -158,13 +157,13 @@ function tethEgoOnHit(player, skill) {
 }
 
 // ===== 幕開始時（processEgoTurnStart から）=====
-// 暴食のるつぼ（一生シチューパッシブ）: 色欲以外の資源1つをランダムに色欲へ変換。色欲が上限なら代わりに色欲威力増加1。
+// 暴食のるつぼ（一生シチューパッシブ）: 色欲以外の資源1つをランダムに色欲へ変換。色欲が20以上なら代わりに色欲威力増加1。
 function tethEgoTurnStart(player) {
   if (!hasEgoPassive(player, 'ego_lifetime_stew_passive')) return;
   const r = gameState[player].egoResources;
-  if ((r.lust || 0) >= MAX_EGO_RESOURCE) {
+  if ((r.lust || 0) >= 20) {
     addCombatStatus(player, 'lust_power_up', 1, 1);
-    log(`[暴食のるつぼ] ${playerLabel(player)}: 色欲資源が上限のため色欲威力増加1`);
+    log(`[暴食のるつぼ] ${playerLabel(player)}: 色欲資源20以上のため色欲威力増加1`);
     return;
   }
   const pool = SIN_TYPES.filter(s => s !== 'lust' && (r[s] || 0) > 0);

@@ -17,7 +17,7 @@ const deckAccordionOpen = { p1: true, p2: true };
 
 const ATTACK_TYPES = ['slash', 'pierce', 'blunt'];
 const SIN_TYPES = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'];
-const MAX_EGO_RESOURCE = 10;
+const MAX_EGO_RESOURCE = 99; // 罪悪資源の上限（2026-10-12 に10→99。原作LCBは実質上限なし。一生シチュー等の資源比例効果のため）
 const gameState = {
   p1: {
     core: null,
