@@ -239,7 +239,7 @@ const CORE_PAGES = [
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
     passiveName: '黒獣化[卯]',
     panicType: 'パニック',
-    passiveDesc: '黒獣化[卯]: 疾走【卯】1につき与ダメージ+5%（最大15%）。疾走【卯】は幕終了時に次の幕の迅速5を得て1減少する。',
+    passiveDesc: '黒獣化[卯]: 脚力【卯】1につき与ダメージ+5%（最大15%）。脚力【卯】は幕終了時に次の幕の迅速5を得て1減少する。',
     striderDamagePer: 0.05, striderDamageMax: 0.15
   }
 ];
@@ -465,13 +465,13 @@ const CARD_DATABASE = [
     { onHit: { status: { id: 'rupture', count: 1, target: 'opponent' }, speedDamageBonus: { speed: 10, bonus: 0.3 }, draw: 1 } }
   ], { speedFasterCoinPower: { diff: 3, bonus: 1 }, targetRuptureCoinPower: [{ min: 4, bonus: 1 }], unopposedRuptureCount: 1 }),
   // [S3: 刻呪殺剣（Cursewrit Butcherblade）]
-  skill('card_52', '刻呪殺剣', 3, 'attack', 'slash', 'gluttony', 5, 2, 3, '攻撃開始時: 疾走【卯】3を得る。対象より速ければ速度差2ごとにコイン威力+1（最大+2）、与ダメージ+(速度差×対象の破裂威力)%（最大50%）。対象の破裂威力が15以上ならコイン威力+1。一方攻撃なら対象に破裂回数+2。1枚目的中時: 破裂1・死儀【迅速】を与える。2枚目的中時: 破裂1を与える。3枚目的中時: 破裂1を与え、自分の速度が10以上ならこのコインを1回再使用（再使用時は死儀【迅速】も与える）。', [
+  skill('card_52', '刻呪殺剣', 3, 'attack', 'slash', 'gluttony', 5, 2, 3, '攻撃開始時: 脚力【卯】3を得る。対象より速ければ速度差2ごとにコイン威力+1（最大+2）、与ダメージ+(速度差×対象の破裂威力)%（最大50%）。対象の破裂威力が15以上ならコイン威力+1。一方攻撃なら対象に破裂回数+2。1枚目的中時: 破裂1・呪殺【迅速】を与える。2枚目的中時: 破裂1を与える。3枚目的中時: 破裂1を与え、自分の速度が10以上ならこのコインを1回再使用（再使用時は呪殺【迅速】も与える）。', [
     { onHit: { status: { id: 'rupture', power: 1, target: 'opponent' }, special: 'deathrite' } },
     { onHit: { status: { id: 'rupture', power: 1, target: 'opponent' } } },
     { onHit: { status: { id: 'rupture', power: 1, target: 'opponent' }, reuseAtSpeed: 10, special: 'deathrite_on_reuse' } }
   ], { onExecute: { strider: 3 }, speedDiffCoinPowerPer2: 2, speedRuptureDamage: { max: 0.5 }, targetRuptureCoinPower: [{ min: 15, bonus: 1 }], unopposedRuptureCount: 2 }),
   // [防御: 部分黒獣化（Partial Heishou Mutation）] マッチ可能反撃
-  skill('card_53', '部分黒獣化', 2, 'counter_clash', 'slash', 'gluttony', 0, 0, 0, '使用時: 疾走【卯】3を得る。マッチ可能反撃として待機し、攻撃してきた相手とマッチする（斬撃7～13）。対象より速ければ速度差2ごとに威力+1（最大+2）。的中時: 破裂回数+1を与える。', [], {
+  skill('card_53', '部分黒獣化', 2, 'counter_clash', 'slash', 'gluttony', 0, 0, 0, '使用時: 脚力【卯】3を得る。マッチ可能反撃として待機し、攻撃してきた相手とマッチする（斬撃7～13）。対象より速ければ速度差2ごとに威力+1（最大+2）。的中時: 破裂回数+1を与える。', [], {
     legacyDice: [{ type: 'counter_clash', attackType: 'slash', min: 7, max: 13, speedBonusPer2Max: 2 }],
     onUse: { statuses: [{ id: 'strider_mao', count: 3 }] },
     onHit: { status: { id: 'rupture', count: 1, target: 'opponent' } }

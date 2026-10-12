@@ -15,8 +15,8 @@ const STATUS_DEFINITIONS = {
   uninvited: { name: '招聘されざる者', category: 'debuff', maxPower: 0, maxCount: 2, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '自分の沈潜威力1につき被ダメージ+0.5%（最大10%）。幕終了時に1減少。（最大2）' },
   curse: { name: '呪い', category: 'debuff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕終了時、次の幕に攻撃威力減少1・防御威力減少1・攻撃レベル減少2・防御レベル減少2のうちランダムに1つを受ける。回数-1。' },
   // 黒獣-卯（rupture.js）
-  strider_mao: { name: '疾走【卯】', category: 'buff', maxPower: 0, maxCount: 3, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕終了時、次の幕に迅速5を得て1減少。（最大3）' },
-  deathrite_haste: { name: '死儀【迅速】', category: 'debuff', maxPower: 0, maxCount: 3, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '速度10以上の相手の攻撃で破裂が発動するたび1減少し破裂回数+1。0になると破裂威力分の暴食ダメージを受けて消える。付与中は再付与されない。' },
+  strider_mao: { name: '脚力【卯】', category: 'buff', maxPower: 0, maxCount: 3, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕終了時、次の幕に迅速5を得て1減少。（最大3）' },
+  deathrite_haste: { name: '呪殺【迅速】', category: 'debuff', maxPower: 0, maxCount: 3, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '速度10以上の相手の攻撃で破裂が発動するたび1減少し破裂回数+1。0になると破裂威力分の暴食ダメージを受けて消える。付与中は再付与されない。' },
   echoes_of_manor: { name: '邸宅の木霊', category: 'debuff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '沈潜の威力か回数を得るたび50%で沈潜回数+1。パニックタイプが「邸宅の木霊」になる。幕終了時に1減少。付与時は値を上書き。' }
 };
 
@@ -878,8 +878,8 @@ function getSkillHitEffectTexts(card, coin) {
   if (source.reuseAtSpeed) texts.push(`【的中】自分の速度が${source.reuseAtSpeed}以上ならこのコインを1回再使用`);
   if (source.speedDamageBonus) texts.push(`【的中】自分の速度が${source.speedDamageBonus.speed}以上なら与ダメージ+${Math.round(source.speedDamageBonus.bonus*100)}%`);
   if (source.selfHasteNext) texts.push(`【的中】次の幕に迅速${source.selfHasteNext}を得る（1幕2回まで）`);
-  if (source.special === 'deathrite') texts.push('【的中】死儀【迅速】を与える');
-  if (source.special === 'deathrite_on_reuse') texts.push('【再使用時の的中】死儀【迅速】を与える');
+  if (source.special === 'deathrite') texts.push('【的中】呪殺【迅速】を与える');
+  if (source.special === 'deathrite_on_reuse') texts.push('【再使用時の的中】呪殺【迅速】を与える');
   if (source.special === 'claim_bones_last') texts.push('【的中】出血3・次の幕に麻痺5を与える');
   if (source.special === 'blood_festival') texts.push('【的中】相手の出血威力が3以上なら、追加で1枚引く');
   if (source.special === 'blood_feast') texts.push('【的中】相手の出血威力が3以上なら、この幕のダメージ+5');
