@@ -100,6 +100,11 @@ function processPanicTurnStart(player) {
   applyPanicStatuses(player, pd.statuses, 'パニック');
   if (pd.noAction) { p.panicNoAction = true; log(`[パニック] ${playerLabel(player)}はこの幕、行動しません。`); }
   if (pd.indiscriminate) p.panicIndiscriminate = true;
+  for (let i = 0; i < (pd.discardRandom || 0) && p.hand.length; i++) {
+    const card = p.hand.splice(Math.floor(Math.random() * p.hand.length), 1)[0];
+    p.discard.push(card);
+    log(`[パニック] ${playerLabel(player)}は手札の「${card.name}」を失いました。`);
+  }
   if (pd.duration) log(`[パニック] ${playerLabel(player)}: ${p.panicTurns}/${pd.duration}幕目`);
   return false;
 }

@@ -260,8 +260,10 @@ function getSkillCombatLevel(player, skill) {
 function getDamageOutputMultiplier(player, attackType, sin) {
   let bonus = getActiveStatusPower(player,'damage_up') - getActiveStatusPower(player,'damage_down');
   if (sin === 'envy' && gameState[player]?.activeEgoPassives?.includes('ego_don_scissors_passive')) {
-    bonus += 1.10;
-    bonus += Math.min(0.07, getResonanceCount(player, 'envy') * 0.01);
+    // 嫉妬スキルの与ダメージ+10%、嫉妬共鳴が発生していればさらに+5%（bonus は10%単位）。
+    // 旧実装の 1.10 と共鳴数×0.01 は、実質 +11% と +0.1%/共鳴 になっていたため修正。
+    bonus += 1.0;
+    if (hasResonance(player, 'envy')) bonus += 0.5;
   }
   if (attackType) bonus += getActiveStatusPower(player,attackType+'_damage_up') - getActiveStatusPower(player,attackType+'_damage_down');
   if (sin) bonus += getActiveStatusPower(player,sin+'_damage_up') - getActiveStatusPower(player,sin+'_damage_down');

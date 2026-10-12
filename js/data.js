@@ -32,6 +32,7 @@ const SIN_LABELS = {
 //   headsDamageBonus 表のコインで的中したとき与ダメージ +10%×値
 //   duration      パニックが続く幕数（未指定なら1幕で精神力0に回復）
 //   onExpire      duration 経過時の結果: 'flee'（逃走）/ 'death'（死亡）→ いずれも敗北扱い
+//   discardRandom 幕開始時に手札をランダムに捨てる枚数
 const PANIC_TYPE_DEFS = {
   'パニック': {
     en: 'Panic',
@@ -51,7 +52,8 @@ const PANIC_TYPE_DEFS = {
   '徘徊': {
     en: 'Wandering',
     lowMorale: { desc: 'なし（原作は味方へ精神力2ダメージ。1対1では味方がいないため省略）。' },
-    panic: { desc: '3幕後に逃走（敗北）。（原作の味方への精神力ダメージは省略）', duration: 3, onExpire: 'flee' }
+    // このゲーム独自の効果（原作の徘徊は「味方へ精神力ダメージ・3幕後に逃走」）。2026-10-12 指示により変更。
+    panic: { desc: '幕開始時、手札をランダムに1枚失う。（このゲーム独自の効果）', discardRandom: 1 }
   },
   '自殺': {
     en: 'Suicidal',
