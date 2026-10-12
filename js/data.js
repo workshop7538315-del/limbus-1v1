@@ -350,15 +350,13 @@ const CARD_DATABASE = [
   // 元スキル（LCB）を [ ] に記載。呼吸は自分に付与（target 省略 = 自分）。
   // [Draw of the Sword] 剣契殺手ドンキホーテ/師範ムルソー S1
   // LoR版: コスト0・使用時光1回復・斬撃3～6。数値はLCB 剣契師範ムルソー S1（斬撃 3 +4 ×2）
-  skill('card_27', '抜剣', 1, 'attack', 'slash', 'pride', 3, 4, 2, '使用時: 光1回復。呼吸威力2・呼吸回数1を得る。各コイン的中時: 呼吸威力1を得る。自分の呼吸威力5以上でコイン威力+1。', [
+  skill('card_27', '抜剣', 0, 'attack', 'slash', 'pride', 3, 4, 2, '使用時: 光1回復。呼吸威力2・呼吸回数1を得る。各コイン的中時: 呼吸威力1を得る。自分の呼吸威力5以上でコイン威力+1。', [
     { onHit: { status: { id: 'breath', power: 1 } } },
     { onHit: { status: { id: 'breath', power: 1 } } }
   ], { onUse: { light: 1, statuses: [{ id: 'breath', power: 2, count: 1 }] }, breathCoinBonus: { min: 5, bonus: 1 } }),
   // [Striker's Stance] 剣契殺手イサン S1
-  skill('card_28', '撃勢', 1, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力2を得る。各コイン的中時: 呼吸威力1を得る。', [
-    { onHit: { status: { id: 'breath', power: 1 } } },
-    { onHit: { status: { id: 'breath', power: 1 } } },
-    { onHit: { status: { id: 'breath', power: 1 } } }
+  skill('card_28', '撃勢', 1, 'attack', 'slash', 'pride', 5, 6, 1, '使用時: 呼吸威力2を得る。的中時: 呼吸威力3を得て、1枚引く。', [
+    { onHit: { status: { id: 'breath', power: 3 }, draw: 1 } }
   ], { onUse: { statuses: [{ id: 'breath', power: 2 }] } }),
   // [Heel Turn] 剣契殺手イサン S2
   skill('card_29', 'ひんねじる', 1, 'attack', 'slash', 'wrath', 5, 1, 2, 'マッチ勝利時: 呼吸威力2・呼吸回数1を得る。', [{}, {}], {
