@@ -266,7 +266,9 @@ function confirmCurrentSlotAction() {
   if (currentSlot && currentSlot.owner === 'p1') {
     if (selectedHandCard) {
       const p2HasDice = gameState.p2.slots.length > 0 && !gameState.p2.isStaggered;
-      if (p2HasDice && !selectedTargetSlot) { alert('マッチ対象の速度ダイスをクリックしてください。'); return; }
+      // 反撃・マッチ可能反撃は対象を指定しない（以前は対象未指定の警告で確定できなかった）
+      const needsTarget = !['counter', 'counter_clash'].includes(selectedHandCard.skillType);
+      if (p2HasDice && needsTarget && !selectedTargetSlot) { alert('マッチ対象の速度ダイスをクリックしてください。'); return; }
       if (playCardToSlot('p1', currentSlot, selectedHandCard, selectedTargetSlot) === false) return;
     }
     selectedHandCard = null; selectedTargetSlot = null;

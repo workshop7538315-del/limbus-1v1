@@ -206,7 +206,7 @@ function updatePlanningPrompt(){
   const slot=getCurrentPlanningSlot(),info=document.getElementById('planning-info'),btn=document.getElementById('action-btn'); if(!slot||slot.owner!=='p1')return;
   const speedText=`P1速度ダイス${slot.id+1} [速度:${slot.speed}]`, hasP2=gameState.p2.slots.length>0&&!gameState.p2.isStaggered;
   if(!selectedHandCard){info.innerText=`${speedText} のバトルページを選択してください。手札のページをクリックするか、パスできます。`;btn.innerText='この速度ダイスをパス (ページ指定なし)';btn.disabled=false;return;}
-  if(selectedHandCard.skillType==='counter'){info.innerText=`${speedText}: 「${selectedHandCard.name}」→ 反撃待機。確定してください。`;btn.innerText='この反撃を確定';btn.disabled=false;return;}
+  if(['counter','counter_clash'].includes(selectedHandCard.skillType)){info.innerText=`${speedText}: 「${selectedHandCard.name}」→ 反撃待機（攻撃してきた相手と戦う）。確定してください。`;btn.innerText='この反撃を確定';btn.disabled=false;return;}
   if(!hasP2){info.innerText=`${speedText}: 「${selectedHandCard.name}」→ 一方攻撃。確定してください。`;btn.innerText='この行動を確定 (一方攻撃)';btn.disabled=false;return;}
   if(!selectedTargetSlot){info.innerText=`${speedText}: 「${selectedHandCard.name}」を選択中。P2の速度ダイスをクリックしてください。`;btn.innerText='マッチ対象未選択';btn.disabled=true;return;}
   info.innerText=`${speedText}: 「${selectedHandCard.name}」→ ${slotLabel(selectedTargetSlot)} にマッチ。`;btn.innerText='この行動を確定';btn.disabled=false;
@@ -295,7 +295,7 @@ function renderHand(){
   renderEgoCards(handDiv);
   gameState.p1.hand.forEach(card=>{ const cardEl=document.createElement('div'),selected=selectedHandCard===card; cardEl.className='card'+(selected?' selected':'');
     cardEl.innerHTML=`<strong>${card.name}</strong><br><small>コスト: ${card.cost} / ${getSinLabel(card.sin)} / 表率: ${getHeadsChance('p1')}%</small><div class="skill-power-line">${getSkillPowerText(card)}</div>${card.effect?`<div class="card-effect">${kw(card.effect)}</div>`:''}<hr>${skillDetailHtml(card)}`;
-    cardEl.onclick=()=>{ if(!card.isEgo && gameState.p1.light<card.cost)return alert('光が不足しています！'); selectedHandCard=selected?null:card; if(!selectedHandCard)selectedTargetSlot=null; else if(selectedHandCard.skillType==='counter')selectedTargetSlot=null; else if(gameState.p2.slots.length===1)selectedTargetSlot=gameState.p2.slots[0]; else if(selectedTargetSlot&&!gameState.p2.slots.includes(selectedTargetSlot))selectedTargetSlot=null; renderHand();updatePlanningPrompt();updateUI();}; handDiv.appendChild(cardEl); });
+    cardEl.onclick=()=>{ if(!card.isEgo && gameState.p1.light<card.cost)return alert('光が不足しています！'); selectedHandCard=selected?null:card; if(!selectedHandCard)selectedTargetSlot=null; else if(['counter','counter_clash'].includes(selectedHandCard.skillType))selectedTargetSlot=null; else if(gameState.p2.slots.length===1)selectedTargetSlot=gameState.p2.slots[0]; else if(selectedTargetSlot&&!gameState.p2.slots.includes(selectedTargetSlot))selectedTargetSlot=null; renderHand();updatePlanningPrompt();updateUI();}; handDiv.appendChild(cardEl); });
 }
 function renderStatusEffects(player){
   const buff=document.getElementById(`${player}-buff-box`),debuff=document.getElementById(`${player}-debuff-box`);
@@ -328,7 +328,7 @@ function updateUI(){
     if(s.isStaggered){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot">混乱中 (行動不能)</div>';return;}
     if(s.skipThisTurn){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot">過充電の反動 (行動不能)</div>';return;}
         if(s.panicNoAction){slotsDiv.innerHTML+='<div class="speed-slot staggered-slot panic-slot">パニック (行動不能)</div>';return;}
-    const cur=getCurrentPlanningSlot(),targeting=isP1Planning()&&selectedHandCard&&p==='p2';
+    const cur=getCurrentPlanningSlot(),targeting=isP1Planning()&&selectedHandCard&&p==='p2'&&!['counter','counter_clash'].includes(selectedHandCard.skillType);
     s.slots.forEach((slot,idx)=>{ const active=cur&&cur.owner===p&&cur.id===slot.id,target=selectedTargetSlot===slot; const targetDesc=slot.targetSlot?`<br><small>→ ${slotLabel(slot.targetSlot)}</small>`:(slot.card?'<br><small>→ 一方攻撃</small>':''); const cardDesc=slot.card?`<br><small style="color:#2ecc71" class="tooltip-target">${slot.card.name}<span class="tooltip-text"><div class="card-effect">${slot.card.effect||''}</div>${skillDetailHtml(slot.card)}</span></small>`:''; const el=document.createElement('div');el.className='speed-slot';if(active)el.classList.add('active-slot');if(targeting)el.classList.add('targetable');if(target)el.classList.add('targeting');el.innerHTML=`速度ダイス${idx+1}<br><strong>速度: ${slot.speed}</strong>${cardDesc}${targetDesc}`;if(targeting)el.onclick=()=>selectTargetSlot(slot);slotsDiv.appendChild(el);});
   });
 }
