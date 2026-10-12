@@ -25,6 +25,7 @@ const STATUS_DEFINITIONS = {
   echoes_of_manor: { name: '邸宅の木霊', category: 'debuff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '沈潜の威力か回数を得るたび50%で沈潜回数+1。パニックタイプが「邸宅の木霊」になる。幕終了時に1減少。付与時は値を上書き。' },
   // 四本目のマッチの火・一生シチュー（teth_egos.js）
   burn: { name: '火傷', category: 'debuff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0, desc: '幕終了時、威力分の固定ダメージを受け、回数-1。' },
+  violent_flame: { name: '猛炎', category: 'buff', maxPower: 0, maxCount: 1, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: 'この幕、バトルページで与える火傷+1（威力を与える効果は威力、回数だけの効果は回数）。' },
   blazing: { name: '燃え上がる', category: 'buff', maxPower: 0, maxCount: 2, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '次の幕の終わりまで: 速度+1。その幕で最初に使う基本攻撃スキルの最終威力+2。そのスキルの的中ごとに最大HPの2%を失う（最大10%、混乱しない・HP1未満にならない）。' }
 };
 
@@ -386,6 +387,9 @@ function processStatusTurnEnd(player) {
       else log(`[状態減衰] ${playerLabel(player)}の「${status.name}」: ${status.count}`);
     } else if (statusId === 'burn' && status.count > 0) {
       processBurnTurnEnd(player, status);
+    } else if (statusId === 'violent_flame' && status.count > 0) {
+      delete statuses[statusId];
+      log(`[状態減衰] ${playerLabel(player)}の「${status.name}」が終了`);
     } else if (statusId === 'blazing' && status.count > 0) {
       status.count -= 1;
       if (status.count <= 0) { delete statuses[statusId]; log(`[状態減衰] ${playerLabel(player)}の「${status.name}」が終了`); }
@@ -492,6 +496,7 @@ function formatStatusEffectText(effect) {
 
 function applyOnUseEffects(player, card) {
   if (!card?.onUse) return;
+  applyLiuOnUse(player, card); // 一点刺突・猛炎（liu.js）
   if (card.onUse.light) {
     const p = gameState[player];
     const before = p.light;
@@ -608,6 +613,7 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     if (effect.requireUncracked && slot?._coinCracked) return; // 「破損せず的中時」（破壊不能コインのマッチ敗北後の攻撃では発動しない）
     if (effect.requireCharge && getCharge(player) < effect.requireCharge) return; // 充電N以上のときだけ
     if (effect.maxCharge != null && getCharge(player) > effect.maxCharge) return; // 充電N以下のときだけ
+    effect = adjustLiuBurnEffect(player, effect, card); // 猛炎・天を裂く烈火（liu.js）
     const gb = getOwnStatusGainBonus(player); // 恨の宿った鞘（追慕パッシブ最大効果）
     if (gb) effect = { ...effect, power: effect.power ? effect.power + gb : effect.power, count: effect.count ? effect.count + gb : effect.count };
     // 「相手に与える」効果は実際に的中した対象へ（敵味方識別不可で自分を攻撃した場合は自分）
@@ -693,6 +699,7 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
   }
   applyInterloperReception(player, resolvedTarget);
   tethEgoOnHit(player, card); // 燃え上がる（teth_egos.js）
+  if (effectSource?.special) applyLiuHitSpecial(player, card, resolvedTarget, effectSource.special); // リウ協会（liu.js）
   if (effectSource?.special === 'blood_festival') {
     const bleed = getStatus(resolvedTarget, 'bleed');
     if (bleed?.power >= 3) { drawCard(player); log(`[的中] ${playerLabel(player)}の「${card.name}」: 出血威力3以上のため追加で1枚ドロー`); }
@@ -801,6 +808,7 @@ function onEgoPassiveHit(target, attacker) {
 // コアページの戦闘開始時パッシブ（W社職員(槍)「急速充電」）
 function processCoreCombatStart(player) {
   const core = gameState[player]?.core;
+  processLiuCombatStart(player); // 熱き情熱（liu.js）
   if (core?.combatStartCharge) {
     const n = hasResonance(player, 'gloom') ? core.combatStartCharge.gloomResonance : core.combatStartCharge.base;
     gainCharge(player, n, '急速充電');

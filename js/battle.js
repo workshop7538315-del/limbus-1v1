@@ -88,6 +88,7 @@ function startNewRound() {
     player.usedEgosThisTurn = [];
     applyPendingStatuses(p);
     processDrinkTurnStart(p); // 追慕酒・怨恨（blade_lineage.js）
+    processLiuTurnStart(p); // 一点刺突のドロー・天を裂く烈火（liu.js）
     if (player.isStaggered && player.staggerSkipDone) {
       player.isStaggered = false; player.staggerSkipDone = false;
       log(`[復帰] ${playerLabel(p)}が混乱状態から回復しました！`);
@@ -795,7 +796,7 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
     skillDamageMult += Math.min(0.25, ((a.maxHp - a.hp) / a.maxHp) * 100 * 0.005);
   }
   if (options.finalCoinBonus) skillDamageMult += options.finalCoinBonus;
-  if (attacker) skillDamageMult += getExecBonus(attacker, options.skill, 'damageBonus') + getTethEgoDamageBonus(attacker, options.skill);
+  if (attacker) skillDamageMult += getExecBonus(attacker, options.skill, 'damageBonus') + getTethEgoDamageBonus(attacker, options.skill) + getLiuDamageBonus(attacker, target);
   const grudgeBonus = attacker ? getGrudgeFinisherBonus(attacker, options.skill, options.coinIndex) : 0;
   skillDamageMult += grudgeBonus;
   if (attacker) skillDamageMult += getChargeDamageBonus(attacker, options.skill) + getStriderDamageBonus(attacker) + getSpeedRuptureDamageBonus(attacker, target, options.skill);

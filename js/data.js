@@ -256,6 +256,24 @@ const CORE_PAGES = [
     ],
     panicType: 'パニック',
     striderDamagePer: 0.05, striderDamageMax: 0.15
+  },
+  // ===== リウ協会（火傷）=====
+  // 参考: LCB「リウ協会南部4課 部長 ロージャ」（limbuscompany.wiki.gg）、LoR「リウ協会南部1課」（libraryofruina.wiki.gg）。
+  // HPはLCB（257）をこのゲームの規模に縮小。処理: js/liu.js
+  {
+    id: 'core_12', name: 'リウ協会南部4課部長のページ',
+    level: 1, hp: 80, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
+    res: { slash: 1.5, pierce: 0.5, blunt: 1.0 },
+    passiveList: [
+      { name: '熱き情熱', desc: '相手の火傷威力6ごとに与ダメージ+10%（最大30%）。戦闘開始時、相手の火傷威力が6以上なら憤怒ダメージ増加1・攻撃威力増加1を得る。' },
+      { name: '天を裂く烈火', desc: '幕開始時、手札のページをランダムに2枚選ぶ。その幕、選ばれたページで与える火傷は2倍になる。' }
+    ],
+    panicType: 'パニック',
+    // LCB ロージャ「Burning Passion」: 対象の火傷6ごとに与ダメージ+10%（最大30%）。戦闘開始時、全ての敵の火傷6以上なら
+    //   憤怒共鳴の高い味方に憤怒ダメージ増加1（リウ協会なら攻撃威力増加1も）→ 1対1では本人に両方。
+    // LoR 春・シャオ「Furious Fire Rending the Skies」: 幕開始時、手札のランダムなページ2枚の火傷付与が2倍。
+    burnPassion: true,
+    furiousFire: 2
   }
 ];
 
@@ -495,7 +513,48 @@ const CARD_DATABASE = [
     legacyDice: [{ type: 'counter_clash', attackType: 'slash', useCoins: true, speedBonusPer2Max: 2 }],
     onUse: { statuses: [{ id: 'strider_mao', count: 3 }] },
     onHit: { status: { id: 'rupture', count: 1, target: 'opponent' } }
-  })
+  }),
+  // ===== リウ協会（火傷）: LCB リウ協会南部4課 部長 ロージャのスキル（基礎・コイン威力はLCBのまま）=====
+  // [S1: Flaming Fists]
+  skill('card_54', '炎拳', 1, 'attack', 'blunt', 'pride', 3, 4, 2, '相手の火傷威力3ごとにコイン威力+1（最大+2）。的中時: 火傷1を与える。', [
+    { onHit: { status: { id: 'burn', power: 1, target: 'opponent' } } },
+    { onHit: { status: { id: 'burn', power: 1, target: 'opponent' } } }
+  ], { burnCoinPowerPer: { per: 3, max: 2 } }),
+  // [S2: Fiery Knifehand-Combust]（他の2体への火傷は相手への追加付与に置き換え）
+  skill('card_55', '焔手刀-燃焼', 2, 'attack', 'pierce', 'wrath', 4, 4, 3, '相手の火傷威力6ごとにコイン威力+1（最大+2）。1・2枚目的中時: 火傷回数+1。3枚目が表で的中時: 火傷回数+1。3枚目的中時: 相手の火傷回数が6以上なら火傷3を与える。', [
+    { onHit: { status: { id: 'burn', count: 1, target: 'opponent' } } },
+    { onHit: { status: { id: 'burn', count: 1, target: 'opponent' } } },
+    { onHit: { status: { id: 'burn', count: 1, target: 'opponent', requireHeads: true }, special: 'liu_combust' } }
+  ], { burnCoinPowerPer: { per: 6, max: 2 } }),
+  // [S3: Pinpoint Blitz]（4枚目の固定ダメージ上限は 30 → 10 に縮小）
+  skill('card_56', 'ピンポイント電撃戦', 3, 'attack', 'pierce', 'lust', 4, 3, 4, '相手の火傷威力が6以上ならコイン威力+1。相手の火傷回数が6以上なら与ダメージ+30%。1・2枚目的中時: 火傷1。3枚目的中時: 火傷2。4枚目的中時: 相手の火傷威力分（最大10）の憤怒の固定ダメージを与え、相手の火傷回数-2。', [
+    { onHit: { status: { id: 'burn', power: 1, target: 'opponent' } } },
+    { onHit: { status: { id: 'burn', power: 1, target: 'opponent' } } },
+    { onHit: { status: { id: 'burn', power: 2, target: 'opponent' } } },
+    { onHit: { special: 'liu_blitz_finish' } }
+  ], { burnCoinPowerAt: { min: 6, bonus: 1 }, burnCountDamageAt: { min: 6, bonus: 0.3 } }),
+  // [防御: Counter] マッチ可能反撃（コイン方式）
+  skill('card_57', '迎撃', 2, 'counter_clash', 'blunt', 'wrath', 9, 7, 1, 'マッチ可能反撃として待機し、攻撃してきた相手とマッチする。的中時: 火傷1を与える。', [{}], {
+    legacyDice: [{ type: 'counter_clash', attackType: 'blunt', useCoins: true }],
+    onHit: { status: { id: 'burn', power: 1, target: 'opponent' } }
+  }),
+  // ----- LoR「リウ協会南部1課」のページ（効果はLoR、ダイスはこのゲーム向けに設定）-----
+  // [LoR: Single-Point Stab(0)] 貫通3-9・的中で火傷1。使用時: 次の幕の開始時、デッキの同名ページを全て引く
+  skill('card_58', '一点刺突', 0, 'attack', 'pierce', 'gluttony', 3, 6, 1, '使用時: 次の幕の開始時、デッキにある「一点刺突」を全て引く。的中時: 火傷1を与える。', [
+    { onHit: { status: { id: 'burn', power: 1, target: 'opponent' } } }
+  ], { onUse: { special: 'liu_draw_copies' } }),
+  // [LoR: Frontal Assault(0)] 貫通2-7・貫通1-2。使用時: 光1回復
+  skill('card_59', '正面突撃', 0, 'attack', 'pierce', 'sloth', 2, 2, 2, '使用時: 光1回復。', [{}, {}], { onUse: { light: 1 } }),
+  // [LoR: Violent Flame(1)] 斬撃3-8（的中で火傷1）・貫通3-7。戦闘開始時: この幕、バトルページで与える火傷+1
+  skill('card_60', '猛炎', 1, 'attack', 'slash', 'wrath', 3, 4, 2, '使用時: 猛炎を得る（この幕、バトルページで与える火傷+1）。1枚目的中時: 火傷1を与える。', [
+    { onHit: { status: { id: 'burn', power: 1, target: 'opponent' } } },
+    {}
+  ], { onUse: { special: 'liu_violent_flame' } }),
+  // [LoR: Fervid Emotions(4)] 斬撃7-11・打撃6-11（各的中で火傷1を2回）。光の最大値が3のためコスト3、反撃ダイスと感情レベルの効果は省略
+  skill('card_61', '熱烈な感情', 3, 'attack', 'slash', 'lust', 6, 4, 2, '的中時: 火傷2を与える。', [
+    { onHit: { status: { id: 'burn', power: 2, target: 'opponent' } } },
+    { onHit: { status: { id: 'burn', power: 2, target: 'opponent' } } }
+  ])
 ];
 
 const EGO_DATABASE = [

@@ -777,3 +777,5 @@
 .passive-list .passive-line > span{display:block}
 .passive-title{font-size:11px;color:#aaa}
 #p1-passive-box .passive-line,#p2-passive-box .passive-line{font-size:11px}
+/* リウ協会「天を裂く烈火」で選ばれた手札 */
+.furious-fire-tag{display:inline-block;margin-left:4px;padding:0 4px;border-radius:3px;background:#c0392b;color:#fff;font-size:10px;vertical-align:middle}
