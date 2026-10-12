@@ -1,7 +1,7 @@
 // data.js — コアページ・バトルページ（Skill）・表示ヘルパー
 
 
-// 罪悪属性は現段階ではスキル情報としてのみ使用。罪悪耐性・資源・共鳴は未実装。
+// 罪悪属性: スキル情報・E.G.O資源の生成・共鳴判定・E.G.O使用時の罪悪耐性に使用している。
 // 割り当て方針: 出血=色欲、沈潜=憂鬱を固定し、それ以外はページの性質から仮設定。
 // 迅速な斬撃=憤怒 / 防御体勢=怠惰 / 強烈な一撃=憤怒 / 身のこなし=嫉妬 / 牽制突き=嫉妬
 // 深呼吸=怠惰 / 戦略的思考=傲慢 / 反撃姿勢=傲慢 / 身構える=傲慢 / 堅牢な盾=怠惰
@@ -58,12 +58,11 @@ const CORE_PAGES = [
     res: { slash: 1.0, pierce: 0.5, blunt: 0.5 },
     passiveName: '重装 & 態勢再整頓',
     panicType: '憤怒',
-    passiveDesc: '速度ダイス数:1。幕の開始時、混乱耐性を3回復する。',
+    // 旧仕様「混乱耐性を3回復」はHP閾値方式では存在しないため、
+    // 「次の混乱閾値を3下げる（混乱しにくくなる）」に置き換えた簡略化。
+    passiveDesc: '速度ダイス数:1。幕の開始時、次の混乱閾値を3下げる（混乱しにくくなる）。',
     onTurnStart: (p) => {
-      if (!gameState[p].isStaggered) {
-        gameState[p].stagger = Math.min(gameState[p].maxStagger, gameState[p].stagger + 3);
-        log(`[パッシブ] ${playerLabel(p)}の混乱耐性が3回復！`);
-      }
+      if (!gameState[p].isStaggered) adjustNextStaggerThreshold(p, -3, '態勢再整頓');
     }
   },
   {
@@ -155,7 +154,8 @@ const CARD_DATABASE = [
   skill('card_1', '迅速な斬撃', 1, 'attack', 'slash', 'wrath', 4, 2, 2, '', [{}, {}]),
   skill('card_2', '防御体勢', 1, 'defense', null, 'sloth', 4, 2, 2, '防御スキルとして使用する。', [{}, {}]),
   skill('card_3', '強烈な一撃', 2, 'attack', 'blunt', 'wrath', 6, 3, 2, '', [{}, {}]),
-  skill('card_4', '身のこなしかわし', 0, 'evade', null, 'envy', 4, 2, 2, '回避成功時、混乱耐性を回復する。', [{}, {}]),
+  // card_4: 旧「回避成功時に混乱耐性回復」はHP閾値方式では無効（recoverStagger は何もしない）ため説明から削除。
+  skill('card_4', '身のこなしかわし', 0, 'evade', null, 'envy', 4, 2, 2, '回避スキルとして使用する。', [{}, {}]),
   skill('card_5', '牽制突き', 0, 'attack', 'pierce', 'envy', 3, 2, 2, '', [{}, {}]),
   skill('card_6', '深呼吸', 0, 'defense', null, 'sloth', 3, 1, 1, '使用時: 光1回復。', [{ }], { onUse: { light: 1 } }),
   skill('card_7', '戦略的思考', 1, 'attack', 'slash', 'pride', 4, 3, 1, '的中時: 1ドロー。', [{ onHit: { draw: 1 } }]),
@@ -184,7 +184,7 @@ const CARD_DATABASE = [
     { onHit: { status: { id: 'bleed', power: 2, target: 'opponent' }, special: 'blood_feast' } },
     { onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } }
   ]),
-  skill('card_18', '昏がり', 0, 'evade', null, 'gloom', 3, 2, 1, '使用時: 光1回復。マッチ勝利時: 沈潜回数2。相手の混乱耐性が半分以下なら1枚引く。', [{}], { onUse: { light: 1 }, onClashWin: { status: { id: 'sinking', count: 2, target: 'opponent' }, special: 'dusk_draw_if_stagger_half' } }),
+  skill('card_18', '昏がり', 0, 'evade', null, 'gloom', 3, 2, 1, '使用時: 光1回復。マッチ勝利時: 沈潜回数2。相手のHPが半分以下なら1枚引く。', [{}], { onUse: { light: 1 }, onClashWin: { status: { id: 'sinking', count: 2, target: 'opponent' }, special: 'dusk_draw_if_stagger_half' } }),
   skill('card_19', '水底へ', 1, 'attack', 'pierce', 'gloom', 3, 2, 1, '的中時: 沈潜威力2。', [{ onHit: { status: { id: 'sinking', power: 2, target: 'opponent' } } }]),
   skill('card_20', '濡れた手紙', 1, 'attack', 'pierce', 'gloom', 2, 2, 2, '的中時: 沈潜威力2。', [{ onHit: { status: { id: 'sinking', power: 2, target: 'opponent' } } }, { onHit: { status: { id: 'sinking', power: 2, target: 'opponent' } } }]),
   skill('card_21', '深く沈める', 2, 'attack', 'pierce', 'pride', 4, 2, 2, '的中時: 1枚目は沈潜威力3/回数2、2枚目は威力2/回数1。', [

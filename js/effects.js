@@ -448,13 +448,15 @@ function applyOnUseEffects(player, card) {
 function addTremor(player, potency = 1, count = 1) { return addCombatStatus(player, 'tremor', potency, count); }
 function addRupture(player, potency = 1, count = 1) { return addCombatStatus(player, 'rupture', potency, count); }
 function triggerTremorBurst(player, multiplier = 1) {
+  // 旧実装は存在しない p.stagger を加算していたため、HP閾値方式の共通処理に置き換え。
+  // 上昇量は従来どおり「振動威力×倍率」のHP値（原作の正確な換算式は未確認）。
   const p = gameState[player], s = getStatus(player, 'tremor');
   if (!s || s.count <= 0 || s.power <= 0) return 0;
   const stagger = Math.floor(s.power * multiplier);
-  p.stagger = Math.min(p.maxStagger ?? Infinity, (p.stagger ?? 0) + stagger);
   s.count = Math.max(0, s.count - 1);
   if (s.count <= 0) delete p.statuses.tremor;
   log(`[振動爆発] ${playerLabel(player)} 混乱閾値+${stagger}`);
+  adjustNextStaggerThreshold(player, stagger, '振動爆発');
   return stagger;
 }
 function triggerRupture(player) {
@@ -614,8 +616,11 @@ function applySkillClashWinEffects(player, card, target) {
     log(`[マッチ勝利] ${playerLabel(player)}の「${card.name}」: ${playerLabel(targetPlayer)}に${formatStatusEffectText(effect)}`);
   }
   if (source.special === 'dusk_draw_if_stagger_half') {
-    if (gameState[target].stagger <= gameState[target].maxStagger / 2) {
-      drawCard(player); log(`[マッチ勝利] ${playerLabel(player)}の「${card.name}」: 相手の混乱耐性が半分以下のため1枚ドロー`);
+    // 旧条件「相手の混乱耐性が半分以下」は参照先(stagger/maxStagger)が消えて常に不成立だった。
+    // HP閾値方式に合わせ「相手のHPが最大HPの半分以下」に置き換えた簡略化。
+    const t = gameState[target];
+    if (t.maxHp > 0 && t.hp <= t.maxHp / 2) {
+      drawCard(player); log(`[マッチ勝利] ${playerLabel(player)}の「${card.name}」: 相手のHPが半分以下のため1枚ドロー`);
     }
   }
   if (source.special === 'rain_consume_sinking_if_3') {

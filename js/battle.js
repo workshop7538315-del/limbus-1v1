@@ -742,11 +742,27 @@ function checkStaggerThresholds(target) {
   const triggered = p.triggeredStaggerThresholds || 0;
   if (crossed <= triggered) return;
   p.triggeredStaggerThresholds = crossed;
+  p.staggerThresholdBonus = 0; // 補正は「次の閾値」に対するものなので、発動したらリセット
   p.staggerLevel = Math.min(2, crossed - 1);
   p.isStaggered = true;
   p.staggerSkipDone = false;
   log(`⚡⚡ [混乱] ${playerLabel(target)}が混乱状態になりました！ (混乱Lv${p.staggerLevel + 1}) ⚡⚡`);
   updateResDisplay(target);
+}
+// 次の混乱閾値（HP）を delta だけ上下させる共通処理。
+// 正の値: 閾値が上がり混乱しやすくなる（振動爆発など）。
+// 負の値: 閾値が下がり混乱しにくくなる（旧「混乱耐性回復」系パッシブの置き換え）。
+// staggerThresholdBonus に加算し、閾値が発動した時点で 0 に戻る。
+function adjustNextStaggerThreshold(player, delta, reason = '') {
+  const p = gameState[player];
+  if (!p || !delta || p.isStaggered || getNextStaggerThreshold(player) === null) return;
+  const before = getNextStaggerThreshold(player);
+  const base = p.staggerThresholds?.[p.triggeredStaggerThresholds || 0] ?? 0;
+  // 閾値が0以下になると「閾値なし」扱いになるため、最低HP1で止める
+  p.staggerThresholdBonus = Math.max(1 - base, (p.staggerThresholdBonus || 0) + delta);
+  const after = getNextStaggerThreshold(player);
+  log(`[混乱閾値] ${playerLabel(player)}の次の混乱閾値 HP${before}→${after ?? 'なし'}${reason ? `（${reason}）` : ''}`);
+  checkStaggerThresholds(player);
 }
 function applyStaggerOnly(target, amount) {
   // Compatibility helper for old effects: in LCB, stagger damage is HP-threshold based.
