@@ -92,6 +92,11 @@ function toggleEgoLoadout(player, egoId) {
   loadout[ego.risk] = loadout[ego.risk] === egoId ? null : egoId;
   renderBuilder();
 }
+// E.G.O編成: リスクレベルごとに1行。各行は「リスク名 + 装備中の名前」の見出しと、
+// 折り返し可能なE.G.Oカードの並びで構成する（スマホでは1列、PCでは複数列）。
+// 「詳細を見る」の開閉状態は egoLoadoutDetailOpen に保持し、選択で再描画しても閉じないようにする。
+const egoLoadoutDetailOpen = {};
+function egoPowerRange(base, coin) { return coin >= 0 ? `${base}～${base + coin}` : `${base + coin}～${base}`; }
 function renderEgoLoadout(player) {
   const el = document.getElementById(`${player}-ego-loadout`);
   if (!el) return;
@@ -100,15 +105,28 @@ function renderEgoLoadout(player) {
     const equippedId = loadout[risk];
     const available = EGO_DATABASE.filter(e => e.risk === risk);
     const equipped = equippedId ? EGO_DATABASE.find(e => e.id === equippedId) : null;
-    const options = available.length ? available.map(ego => {
+    const status = !available.length ? '<span class="ego-empty">未実装</span>'
+      : equipped ? `<span class="ego-equipped-mark">装備: ${getEgoDisplayName(equipped)}</span>` : '<span class="ego-none">未装備</span>';
+    const options = available.map(ego => {
       const selected = ego.id === equippedId;
+      const key = `${player}:${ego.id}`;
       const res = Object.entries(ego.sinRes || {}).map(([sin,v]) => `${getSinLabel(sin)}×${v}`).join(' ');
       const cost = Object.entries(ego.resourceCost || {}).map(([sin,n]) => `${getSinLabel(sin)}×${n}`).join(' ');
-      const power = ego.coinPower >= 0 ? `${ego.basePower}～${ego.basePower + ego.coinPower}` : `${ego.basePower + ego.coinPower}～${ego.basePower}`;
-      const corrosionPower = ego.corrosion ? (ego.corrosion.coinPower >= 0 ? `${ego.corrosion.basePower}～${ego.corrosion.basePower + ego.corrosion.coinPower}` : `${ego.corrosion.basePower + ego.corrosion.coinPower}～${ego.corrosion.basePower}`) : '';
-      return `<div class="ego-loadout-option ${selected?'selected':''} sin-${ego.sin}" role="button" tabindex="0" onclick="toggleEgoLoadout('${player}','${ego.id}')"><strong>${getEgoDisplayName(ego)}</strong><small>${ego.sinner} / ${getSinLabel(ego.sin)}</small><small>資源: ${cost}</small><details class="ego-loadout-details" onclick="event.stopPropagation()"><summary>詳細を見る</summary><div class="ego-loadout-detail-content"><div><b>リスク:</b> ${ego.risk}</div><div><b>覚醒:</b> 威力 ${power} / ${ego.coinCount||0}コイン / ${getAttackTypeLabel(ego.attackType)} / 精神-${ego.sanityCost??0}</div><div><b>資源:</b> ${cost}</div><div><b>罪悪耐性:</b> ${res||'未設定'}</div><div><b>効果:</b> ${ego.effect||'追加効果なし'}</div>${ego.egoPassiveDesc ? `<div><b>E.G.Oパッシブ:</b> ${ego.egoPassiveDesc}（使用した次の幕から有効）</div>` : ''}${ego.corrosion ? `<div><b>侵蝕:</b> 威力 ${corrosionPower} / ${ego.corrosion.coinCount||0}コイン<br>${ego.corrosion.effect||'追加効果なし'}</div>` : ''}</div></details></div>`;
-    }).join('') : '<div class="ego-empty">未実装</div>';
-    return `<div class="ego-risk-slot"><div class="ego-risk-label">${risk}</div><div class="ego-risk-content">${equipped ? `<span class="ego-equipped-mark">装備: ${equipped.name}</span>` : '<span class="ego-none">未装備</span>'}${options}</div></div>`;
+      const corrosion = ego.corrosion ? `<div class="ego-ld-row"><b>侵蝕</b><span>威力 ${egoPowerRange(ego.corrosion.basePower, ego.corrosion.coinPower)} / ${ego.corrosion.coinCount||0}コイン / ${getAttackTypeLabel(ego.corrosion.attackType)}<br>${ego.corrosion.effect||'追加効果なし'}</span></div>` : '';
+      const passive = ego.egoPassiveDesc ? `<div class="ego-ld-row"><b>パッシブ</b><span>${ego.egoPassiveDesc}（使用した次の幕から有効）</span></div>` : '';
+      return `<div class="ego-loadout-option ${selected?'selected':''} sin-${ego.sin}" role="button" tabindex="0" aria-pressed="${selected}" onclick="toggleEgoLoadout('${player}','${ego.id}')">
+        <div class="ego-lo-head"><strong>${getEgoDisplayName(ego)}</strong>${selected?'<span class="ego-lo-badge">装備中</span>':''}</div>
+        <small>${ego.sinner} / ${getSinLabel(ego.sin)} / 資源 ${cost}</small>
+        <details class="ego-loadout-details" ${egoLoadoutDetailOpen[key]?'open':''} onclick="event.stopPropagation()" ontoggle="egoLoadoutDetailOpen['${key}']=this.open"><summary>詳細を見る</summary>
+          <div class="ego-loadout-detail-content">
+            <div class="ego-ld-row"><b>覚醒</b><span>威力 ${egoPowerRange(ego.basePower, ego.coinPower)} / ${ego.coinCount||0}コイン / ${getAttackTypeLabel(ego.attackType)} / 精神-${ego.sanityCost??0}</span></div>
+            <div class="ego-ld-row"><b>効果</b><span>${ego.effect||'追加効果なし'}</span></div>
+            ${passive}${corrosion}
+            <div class="ego-ld-row"><b>罪悪耐性</b><span>${res||'未設定'}</span></div>
+          </div>
+        </details></div>`;
+    }).join('');
+    return `<div class="ego-risk-slot${available.length?'':' is-empty'}"><div class="ego-risk-head"><span class="ego-risk-label">${risk}</span>${status}</div>${options?`<div class="ego-risk-content">${options}</div>`:''}</div>`;
   }).join('');
 }
 function renderBuilder(){
@@ -239,6 +257,8 @@ function renderEgoCards(handDiv) {
 
     cardEl.innerHTML = `
       <strong>E.G.O: ${getEgoDisplayName(ego)}</strong>
+      <div class="ego-card-cost">資源 ${costs} / 精神-${ego.sanityCost ?? 0}</div>
+      ${!canUse && !gameState.p1.usedEgosThisTurn?.includes(ego.id) ? '<div class="ego-used-label">資源不足</div>' : ''}
       <details class="ego-card-details" onclick="event.stopPropagation()">
         <summary>詳細を見る</summary>
         <div class="ego-detail-content">
