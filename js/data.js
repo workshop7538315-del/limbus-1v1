@@ -162,6 +162,32 @@ const CORE_PAGES = [
         }
       }
     ]
+  },
+  // ===== 剣契（Blade Lineage）=====
+  // 参考: LCB 剣契殺手イサン / 剣契殺手ドンキホーテ / 剣契師範ムルソー（limbuscompany.wiki.gg）。
+  // 呼吸 = LCBの Poise（クリティカル率 威力×5%、クリティカル1.2倍）。数値はこのゲームのHP規模に合わせて縮小。
+  {
+    id: 'core_7', name: '剣契の殺手のページ',
+    level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
+    res: { slash: 0.5, pierce: 1.5, blunt: 1.0 },
+    passiveName: '呼吸を整える',
+    panicType: 'パニック',
+    // LCB 剣契殺手イサン「Poised」: マッチ勝利時に呼吸1、呼吸5ごとにコイン威力+1（最大+3）
+    passiveDesc: 'マッチ勝利時、呼吸威力1を得る。自分の呼吸威力5ごとに、全スキルのコイン威力+1（最大+3）。',
+    clashWinBreath: 1,
+    breathCoinPowerPer5: 3
+  },
+  {
+    id: 'core_8', name: '剣契の師範のページ',
+    level: 1, hp: 90, stagger: 45, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
+    res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
+    passiveName: '故郷の剣術',
+    panicType: 'パニック',
+    // LCB 剣契師範ムルソー「Swordplay of the Homeland」: 1遭遇に1回、致死ダメージを無効化しその幕はHP1未満にならない。
+    // 呼吸5以上でのコイン威力・クリティカル強化は「呼吸威力5以上で攻撃スキルのコイン威力+1」に簡略化。
+    passiveDesc: '1試合に1回、致死ダメージを受けてもHP1で耐え、その幕はHPが1未満にならない。自分の呼吸威力が5以上のとき、攻撃スキルのコイン威力+1。',
+    lethalGuardOnce: true,
+    breathCoinThreshold: { min: 5, bonus: 1 }
   }
 ];
 
@@ -177,12 +203,15 @@ function skill(id, name, cost, type, attackType, sin, basePower, coinPower, coin
     const onHit = coin?.onHit;
     if (onHit?.draw) tags.add('draw');
     if (onHit?.status?.id) tags.add(onHit.status.id);
+    (onHit?.statuses || []).forEach(st => st?.id && tags.add(st.id));
+    if (onHit?.special === 'claim_bones_last') { tags.add('bleed'); tags.add('paralyze'); }
     if (onHit?.special === 'blood_festival' || onHit?.special === 'blood_feast') tags.add('bleed');
     if (onHit?.special === 'sunken_memory_reuse' || onHit?.special === 'abyss_draw_if_5' || onHit?.special === 'underwater_consume_sinking') tags.add('sinking');
   });
   if (effect?.includes('光')) tags.add('light');
   if (effect?.includes('ドロー') || effect?.includes('引く')) tags.add('draw');
   if (extra?.onUse?.status?.id) tags.add(extra.onUse.status.id);
+  (extra?.onUse?.statuses || []).forEach(st => st?.id && tags.add(st.id));
   if (extra?.onUse?.special === 'bloodletting_light') tags.add('bleed');
   if (extra?.onClashWin?.status?.id) tags.add(extra.onClashWin.status.id);
   if (extra?.onClashWin?.special === 'rain_consume_sinking_if_3' || extra?.sinkingPowerPer4) tags.add('sinking');
@@ -256,7 +285,60 @@ const CARD_DATABASE = [
   ]),
   skill('card_26', '水面下', 2, 'attack', 'pierce', 'pride', 10, 5, 1, '的中時: 相手の沈潜回数を最大3消費し、解除した沈潜威力×回数だけこのコインの威力を増加。', [
     { onHit: { special: 'underwater_consume_sinking' } }
-  ])
+  ]),
+  // ===== 剣契（Blade Lineage）=====
+  // 元スキル（LCB）を [ ] に記載。呼吸は自分に付与（target 省略 = 自分）。
+  // [Draw of the Sword] 剣契殺手ドンキホーテ/師範ムルソー S1
+  skill('card_27', '抜刀', 1, 'attack', 'pierce', 'pride', 3, 2, 2, '使用時: 呼吸威力2・呼吸回数1を得る。各コイン的中時: 呼吸威力1を得る。自分の呼吸威力5以上でコイン威力+1。', [
+    { onHit: { status: { id: 'breath', power: 1 } } },
+    { onHit: { status: { id: 'breath', power: 1 } } }
+  ], { onUse: { statuses: [{ id: 'breath', power: 2, count: 1 }] }, breathCoinBonus: { min: 5, bonus: 1 } }),
+  // [Striker's Stance] 剣契殺手イサン S1
+  skill('card_28', '構え', 1, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力2を得る。各コイン的中時: 呼吸威力1を得る。', [
+    { onHit: { status: { id: 'breath', power: 1 } } },
+    { onHit: { status: { id: 'breath', power: 1 } } },
+    { onHit: { status: { id: 'breath', power: 1 } } }
+  ], { onUse: { statuses: [{ id: 'breath', power: 2 }] } }),
+  // [Heel Turn] 剣契殺手イサン S2
+  skill('card_29', '踵返し', 1, 'attack', 'slash', 'wrath', 5, 1, 2, 'マッチ勝利時: 呼吸威力2・呼吸回数1を得る。', [{}, {}], {
+    onClashWin: { status: { id: 'breath', power: 2, count: 1 } }
+  }),
+  // [Flank Thrust] 剣契殺手イサン S3
+  skill('card_30', '脇腹突き', 2, 'attack', 'slash', 'envy', 6, 3, 1, '表で的中時: 呼吸威力2を得る。クリティカル時ダメージ+70%。', [
+    { onHit: { status: { id: 'breath', power: 2, requireHeads: true }, critDamageBonus: 0.7 } }
+  ]),
+  // [Acupuncture] 剣契師範ムルソー S2
+  skill('card_31', '鍼', 2, 'attack', 'slash', 'pride', 3, 2, 3, '使用時: 呼吸威力3を得る。マッチ勝利時: 斬撃威力増加1（この幕と次の幕）。1枚目的中時: 呼吸威力3を得る。3枚目: クリティカル時ダメージ+60%。自分の呼吸威力7以上でコイン威力+1。', [
+    { onHit: { status: { id: 'breath', power: 3 } } },
+    {},
+    { onHit: { critDamageBonus: 0.6 } }
+  ], { onUse: { statuses: [{ id: 'breath', power: 3 }] }, onClashWin: { special: 'slash_power_up_2turns' }, breathCoinBonus: { min: 7, bonus: 1 } }),
+  // [Blade Arc] 剣契殺手ドンキホーテ S2
+  skill('card_32', '剣弧', 1, 'attack', 'slash', 'envy', 4, 2, 2, '使用時: 呼吸威力2を得る。1枚目的中時: 呼吸威力2を得る。2枚目的中時: 呼吸回数2を得る。自分の呼吸威力7以上でコイン威力+1。', [
+    { onHit: { status: { id: 'breath', power: 2 } } },
+    { onHit: { status: { id: 'breath', count: 2 } } }
+  ], { onUse: { statuses: [{ id: 'breath', power: 2 }] }, breathCoinBonus: { min: 7, bonus: 1 } }),
+  // [Fare Thee Well!] 剣契殺手ドンキホーテ S3（味方への付与は自分に置き換え）
+  skill('card_33', 'さらば！', 3, 'attack', 'slash', 'sloth', 4, 2, 3, '使用時: 呼吸威力5を得る。1・2枚目が表で的中するたび、最後のコインの与ダメージ+10%。3枚目: クリティカル時ダメージ+30%、的中時に呼吸回数2を得る。自分の呼吸威力10以上でコイン威力+1。', [
+    { onHit: { finalCoinBonusOnHeads: 0.1 } },
+    { onHit: { finalCoinBonusOnHeads: 0.1 } },
+    { onHit: { status: { id: 'breath', count: 2 }, critDamageBonus: 0.3 } }
+  ], { onUse: { statuses: [{ id: 'breath', power: 5 }] }, breathCoinBonus: { min: 10, bonus: 1 } }),
+  // [Overthrow] 剣契師範ムルソー 防御スキル（反撃）
+  skill('card_34', '打ち崩し', 1, 'counter', 'slash', 'envy', 5, 2, 1, '使用時: 斬撃威力増加1（この幕と次の幕）。攻撃を受けたとき反撃。的中時: 呼吸威力2を得る。失ったHP1%につき与ダメージ+0.5%（最大25%）。', [
+    { onHit: { status: { id: 'breath', power: 2 } } }
+  ], { onUse: { special: 'slash_power_up_2turns' }, missingHpDamage: true }),
+  // [Yield My Flesh] 剣契師範ムルソー S3（LoRから続く技。挑発値は省略）
+  skill('card_35', '肉を断ち', 2, 'attack', 'slash', 'wrath', 4, 4, 1, 'このスキルが終わるまでダメージで混乱しない。マッチ勝利時: 呼吸威力5を得る。マッチ敗北時: 攻撃を受けた後「骨を断つ」を使用。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+3%（最大75%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。', [{}], {
+    onClashWin: { status: { id: 'breath', power: 5 } },
+    onClashLoseFollowUp: 'card_36',
+    noStaggerDuringSkill: true, critDamageBonus: 0.3, critPerBreath: { per: 0.03, max: 0.75 }, missingHpDamage: true
+  }),
+  // [To Claim Their Bones] 剣契師範ムルソー 防御スキル2。「肉を断ち」のマッチ敗北時にのみ使用（デッキには入らない）。
+  // 原作の「単一対象なら与ダメージ+100%」は1対1では常に発動し強すぎるため省略。
+  skill('card_36', '骨を断つ', 0, 'attack', 'slash', 'pride', 4, 2, 4, '「肉を断ち」のマッチ敗北時にのみ使用。このスキルが終わるまで混乱しない。クリティカル時ダメージ+30%、さらに自分の呼吸威力1につき+2%（最大50%）。失ったHP1%につき与ダメージ+0.5%（最大25%）。4枚目的中時: 出血3・次の幕に麻痺5を与える。', [
+    {}, {}, {}, { onHit: { special: 'claim_bones_last' } }
+  ], { hidden: true, noStaggerDuringSkill: true, critDamageBonus: 0.3, critPerBreath: { per: 0.02, max: 0.5 }, missingHpDamage: true })
 ];
 
 const EGO_DATABASE = [

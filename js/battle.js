@@ -43,6 +43,7 @@ function setupCharacter(p, core, egoIds = {}) {
   state.sinkingThinkingFirstPageAvailable = true; state.sinkingThinkingHitCount = 0;
   state.defenseStock = []; state.counterSkills = [];
   resetPanicState(p);
+  state.lethalGuardUsed = false; state.lethalGuardRound = null; state.staggerImmune = false;
 
   document.getElementById(`${p}-title`).innerText = `${playerLabel(p)} (${core.name})`;
   document.getElementById(`${p}-passive-box`).innerHTML = `パッシブ: <span class="tooltip-target">${core.passiveName}<span class="tooltip-text">${core.passiveDesc}</span></span>`;
@@ -470,7 +471,39 @@ async function executeDonScissorsUnbreakableLoss(player, skill, defender, slot) 
   }
 }
 
+// 「このスキルが終わるまでダメージで混乱しない」（skill.noStaggerDuringSkill）。終了後に閾値を判定する。
+async function withStaggerImmunity(player, skill, fn) {
+  if (!skill?.noStaggerDuringSkill) return fn();
+  const p = gameState[player];
+  const before = p.staggerImmune;
+  p.staggerImmune = true;
+  try { return await fn(); } finally { p.staggerImmune = before; if (!before) checkStaggerThresholds(player); }
+}
+// コアページの「マッチ勝利時」パッシブ（core.clashWinBreath: 呼吸威力+X）
+function applyCoreClashWinPassive(player) {
+  const core = gameState[player]?.core;
+  if (core?.clashWinBreath) {
+    const r = changeStatusPower(player, 'breath', core.clashWinBreath);
+    log(`[パッシブ] ${core.passiveName}: ${playerLabel(player)}の呼吸威力 ${r.before}→${r.after}`);
+  }
+}
+// コアページ「故郷の剣術」: 1試合に1回、致死ダメージを受けたその幕はHP1未満にならない。
+function applyLethalGuard(player, hpDamage) {
+  const p = gameState[player];
+  if (!p.core?.lethalGuardOnce) return hpDamage;
+  if (p.lethalGuardRound === gameState.round) return Math.min(hpDamage, Math.max(0, p.hp - 1));
+  if (!p.lethalGuardUsed && hpDamage >= p.hp) {
+    p.lethalGuardUsed = true; p.lethalGuardRound = gameState.round;
+    log(`[パッシブ] ${p.core.passiveName}: ${playerLabel(player)}は致死ダメージを耐えた！（この幕はHP1未満にならない）`);
+    return Math.max(0, p.hp - 1);
+  }
+  return hpDamage;
+}
+
 async function resolveClash(slotA, slotB) {
+  return withStaggerImmunity(slotA.owner, slotA.card, () => withStaggerImmunity(slotB.owner, slotB.card, () => resolveClashInner(slotA, slotB)));
+}
+async function resolveClashInner(slotA, slotB) {
   const pA = slotA.owner, pB = slotB.owner, skillA = slotA.card, skillB = slotB.card;
   if (hasClashableCounter(skillA) || hasClashableCounter(skillB)) {
     return resolveLegacyClashableCounter(slotA, slotB);
@@ -515,6 +548,7 @@ async function resolveClash(slotA, slotB) {
   // 標準的なプレイアブル側の精神変動として、マッチ決着時に勝者へ1回だけ加算。
   // ここでは特殊な敵固有の「マッチ敗北で精神減少」はまだ共通システム化しない。
   if (clashWinner) {
+    applyCoreClashWinPassive(clashWinner);
     const gain = getClashSanityGain(clashCount);
     log(`[精神変動] マッチ${clashCount}回: 勝者+${gain}`);
     changeSanity(clashWinner, gain, `マッチ勝利(${clashCount}回)`);
@@ -530,6 +564,18 @@ async function resolveClash(slotA, slotB) {
     applyDonScissorsClashWin(pB, skillB);
     applySkillClashWinEffects(pB, skillB, pA);
     await executeWinningSkillCoins(pB, skillB, pA, remB, slotB, true);
+  }
+  // マッチ敗北後の追撃（肉を断ち → 骨を断つ）。敗者が生きていれば勝者へ一方攻撃。
+  for (const [loserSlot, loser, winner, rem] of [[slotA, pA, pB, remA], [slotB, pB, pA, remB]]) {
+    const followId = loserSlot.card?.onClashLoseFollowUp;
+    if (rem <= 0 && followId && gameState[loser].hp > 0 && gameState[winner].hp > 0) {
+      const follow = CARD_DATABASE.find(c => c.id === followId);
+      if (follow) {
+        log(`[追撃] ${playerLabel(loser)}の「${loserSlot.card.name}」: マッチ敗北後、「${follow.name}」を使用！`);
+        const fslot = { ...loserSlot, card: follow, _finalCoinBonus: 0 };
+        await withStaggerImmunity(loser, follow, () => executeWinningSkillCoins(loser, follow, winner, follow.coinCount, fslot, false));
+      }
+    }
   }
   if (remA <= 0 && skillA) { applyDonScissorsClashLose(pA, skillA); if (skillA.isCorrosion) slotA._donCorrosionLoss = true; if (skillA.isUnbreakable || skillA.coins?.some(c => c?.unbreakable)) await executeDonScissorsUnbreakableLoss(pA, skillA, pB, slotA); }
   if (remB <= 0 && skillB) { applyDonScissorsClashLose(pB, skillB); if (skillB.isCorrosion) slotB._donCorrosionLoss = true; if (skillB.isUnbreakable || skillB.coins?.some(c => c?.unbreakable)) await executeDonScissorsUnbreakableLoss(pB, skillB, pA, slotB); }
@@ -564,6 +610,9 @@ async function executeWinningSkillCoins(attacker, skill, defender, coinCount, sl
 }
 
 async function resolveOneSided(slot) {
+  return withStaggerImmunity(slot.owner, slot.card, () => resolveOneSidedInner(slot));
+}
+async function resolveOneSidedInner(slot) {
   const attacker = slot.owner, defender = slot.targetSlot ? slot.targetSlot.owner : opponentOf(attacker);
   log(`[一方攻撃] ${playerLabel(attacker)}速度(${slot.speed}) [${slot.card.name}] → ${slot.targetSlot ? slotLabel(slot.targetSlot) : `${playerLabel(defender)}本体`}`);
   if (slot.card.skillType === 'counter_clash') { log(`[マッチ可能反撃] 「${slot.card.name}」は相手からマッチされた場合のみ使用。`); return; }
@@ -637,7 +686,8 @@ function executeAttackDamage(attacker, skill, defender, amount, coinIndex, slot,
   // 一方、防御成功でダメージが0ならこの関数自体を通らないため、デバフは発生しない。
   // 特殊なダメージ補正で0ダメージの攻撃についても、明示的な攻撃コインとしてはOn Hitを発火させる。
   if (amount > 0) {
-    applyDamage(defender, skill.attackType, amount, attacker, { isEgo: !!skill.isEgo, sin: skill.sin, skill, headsHit: !!coin?.heads });
+    const isLastCoin = Number.isInteger(coinIndex) && coinIndex === (skill.coinCount || 1) - 1;
+    applyDamage(defender, skill.attackType, amount, attacker, { isEgo: !!skill.isEgo, sin: skill.sin, skill, headsHit: !!coin?.heads, coinIndex, finalCoinBonus: isLastCoin ? (slot?._finalCoinBonus || 0) : 0 });
     if (gameState[defender].hp < 0) gameState[defender].hp = 0;
   }
   if (amount > 0) triggerOnHit(attacker, skill, defender, coin, slot);
@@ -681,7 +731,7 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   if (attacker && isAttackType(attackType)) triggerSinkingOnAttackReceived(target);
   const feast = attacker ? getStatus(attacker, 'blood_feast') : null;
   if (feast?.count > 0 && feast.power > 0 && amount > 0) { amount += feast.power; log(`[血宴強化] ${playerLabel(attacker)}のダメージ +${feast.power}`); }
-  const critical = tryBreathCritical(attacker, amount); amount = critical.amount;
+  const critical = tryBreathCritical(attacker, amount, options); amount = critical.amount;
   const sin = options.sin || null;
   const resistance = getResistanceWithDown(target, attackType, sin);
   const sinResistance = options.isEgo ? (p.sinRes?.[sin] ?? 1.0) : 1.0;
@@ -689,7 +739,14 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   const mult = staggerMultiplier;
   // 表のコインで的中した場合の補正（士気低下: 邸宅の木霊）
   const headsBonus = (attacker && options.headsHit) ? getPanicHeadsDamageBonus(attacker) : 0;
-  const outputMult = attacker ? getDamageOutputMultiplier(attacker, attackType, sin) * (1 + 0.1 * headsBonus) * getEgoPassiveDamageMultiplier(attacker, target, attackType, sin) : 1;
+  // スキル固有の与ダメージ補正: 失ったHP1%につき+0.5%（最大25%）、表で的中した分の最後のコイン補正
+  let skillDamageMult = 1;
+  if (attacker && options.skill?.missingHpDamage) {
+    const a = gameState[attacker];
+    skillDamageMult += Math.min(0.25, ((a.maxHp - a.hp) / a.maxHp) * 100 * 0.005);
+  }
+  if (options.finalCoinBonus) skillDamageMult += options.finalCoinBonus;
+  const outputMult = attacker ? getDamageOutputMultiplier(attacker, attackType, sin) * (1 + 0.1 * headsBonus) * getEgoPassiveDamageMultiplier(attacker, target, attackType, sin) * skillDamageMult : 1;
   const takenMult = getDamageTakenMultiplier(target, attackType, sin);
   const offLevel = attacker ? Math.max(1, getOffenseLevel(attacker, options.skill)) : 1;
   const defLevel = Math.max(1, getDefenseLevel(target, options.defenseSkill || null));
@@ -699,24 +756,38 @@ function applyDamage(target, attackType, amount, attacker, options = {}) {
   const shieldBefore = p.shield || 0;
   const shieldDamage = Math.min(shieldBefore, finalDmg);
   p.shield = Math.max(0, shieldBefore - shieldDamage);
-  const hpDamage = Math.max(0, finalDmg - shieldDamage);
+  let hpDamage = Math.max(0, finalDmg - shieldDamage);
+  hpDamage = applyLethalGuard(target, hpDamage);
   p.hp = Math.max(0, p.hp - hpDamage);
   if (finalDmg > 0 && attacker) p.cumulativeDamageTaken = (p.cumulativeDamageTaken || 0) + finalDmg;
   log(`[ダメージ補正] ${playerLabel(target)}: ${amount} → ${finalDmg}（${p.isStaggered ? `混乱中補正 ×${staggerMultiplier.toFixed(1)}` : `耐性(${attackType}) ×${resistance}`}${options.isEgo ? ` / 罪悪耐性(${getSinLabel(sin)}) ×${sinResistance}` : ''} / Lv差 ${levelDiff}→×${levelMult.toFixed(3)} / 与ダメ×${outputMult.toFixed(2)} / 被ダメ×${takenMult.toFixed(2)} / バリア吸収${shieldDamage}）`);
   emitHook('onDamage', { target, diceType: attackType, amount: finalDmg, attacker });
   if (finalDmg > 0) onEgoPassiveHit(target, attacker);
-  if (!p.isStaggered && hpDamage > 0) checkStaggerThresholds(target);
+  if (!p.isStaggered && hpDamage > 0 && !p.staggerImmune) checkStaggerThresholds(target);
 
   if (!options.suppressCounter && p.hp > 0 && !p.isStaggered && finalDmg > 0) triggerNormalCounter(target, attacker, finalDmg);
 }
-function tryBreathCritical(attacker, amount) {
+// 呼吸 = LCBのPoise。クリティカル確率 = 威力×5%（20以上で100%）、クリティカル時ダメージ1.2倍。
+// クリティカル発動で回数-1、幕終了時に回数-1（processStatusTurnEnd）。
+// 追加のクリティカルダメージ（加算）:
+//   skill.critDamageBonus / coins[i].onHit.critDamageBonus … +X（0.3 = +30%）
+//   skill.critPerBreath = { per: 0.03, max: 0.75 } … 自分の呼吸威力1につき+per（最大max）
+function getCritDamageBonus(attacker, skill, coinIndex) {
+  let bonus = skill?.critDamageBonus || 0;
+  if (Number.isInteger(coinIndex)) bonus += skill?.coins?.[coinIndex]?.onHit?.critDamageBonus || 0;
+  const potency = getStatus(attacker, 'breath')?.power || 0;
+  if (skill?.critPerBreath) bonus += Math.min(skill.critPerBreath.max, potency * skill.critPerBreath.per);
+  return bonus;
+}
+function tryBreathCritical(attacker, amount, options = {}) {
   if (!attacker || amount <= 0) return { amount, critical: false };
   const status = getStatus(attacker, 'breath');
   if (!status || status.count <= 0 || status.power <= 0) return { amount, critical: false };
-  const chance = Math.min(99, Math.max(0, status.power));
+  const chance = Math.min(100, Math.max(0, status.power * 5));
   if (Math.random() * 100 >= chance) return { amount, critical: false };
-  const criticalAmount = Math.floor(amount * 1.5); consumeStatusCount(attacker, 'breath');
-  log(`[クリティカル] ${playerLabel(attacker)}の「呼吸」が発動！ ${amount} → ${criticalAmount}`);
+  const mult = 1.2 + getCritDamageBonus(attacker, options.skill, options.coinIndex);
+  const criticalAmount = Math.floor(amount * mult); consumeStatusCount(attacker, 'breath');
+  log(`[クリティカル] ${playerLabel(attacker)}の「呼吸」が発動！ ${amount} → ${criticalAmount}（×${mult.toFixed(2)}）`);
   return { amount: criticalAmount, critical: true };
 }
 function triggerNormalCounter(target, attacker, damage) {

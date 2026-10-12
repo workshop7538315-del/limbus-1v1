@@ -140,6 +140,7 @@ function renderBuilder(){
   document.getElementById('editor-hint').innerText=`追加先: ${activeDeckEditor==='p1'?'P1':'P2'} デッキ（右側のデッキ見出しをクリックして切替）`;
 
   CARD_DATABASE.filter(c=>{
+    if(c.hidden) return false; // 追撃専用など、デッキに入れないページ
     if(currentFilter==='all') return true;
     if(currentFilter.startsWith('sin:')) return c.sin===currentFilter.slice(4);
     return c.tags?.includes(currentFilter);

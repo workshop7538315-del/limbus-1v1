@@ -75,6 +75,7 @@ Object.entries(BASIC_STATUS_DEFS).forEach(([id,[name,desc,category]])=>{
   STATUS_DEFINITIONS[id]={ name, category, maxPower:99, maxCount:99, defaultPower:0, defaultCount:0, desc };
 });
 const VALUE_FROM_COUNT_STATUS_IDS = new Set([
+  'paralyze', // 麻痺: 回数=0にするコインの枚数（flipCoin が1枚ごとに1消費）
   'haste','bind','attack_power_up','attack_power_down','defense_power_up','defense_power_down',
   'clash_power_up','clash_power_down','power_up','power_down','base_power_up',
   'offense_level_up','offense_level_down','defense_level_up','defense_level_down',
@@ -137,31 +138,29 @@ function normalizeStatus(statusId, status) {
   if (!def || !status) return;
   status.power = clampStatusValue(status.power, def.maxPower);
   status.count = clampStatusValue(status.count, def.maxCount);
-  if (statusId === 'breath') {
-    if (status.count > 0) status.power = Math.max(1, status.power);
-    else status.power = 0;
-  }
+  // 呼吸は回数0で消える（威力も0）。回数だけ付与した場合の威力1補完は changeStatusCount の autoFill が担当。
+  if (statusId === 'breath' && status.count <= 0) status.power = 0;
   if (statusId === 'poise' && status.count <= 0) status.power = 0;
 }
 // 威力と回数を両方持つ状態異常。原作では、威力だけを付与されて回数が0なら回数1、
-// 回数だけを付与されて威力が0なら威力1になる。以前はこの補完がなく、
+// 回数だけを付与されて威力が0なら威力1になる（威力と回数を同時に付与する効果では補完しない）。以前はこの補完がなく、
 // 「出血威力2」等の威力のみ付与するカードが回数0のまま一度も発動しない不具合があった。
-const POTENCY_COUNT_STATUS_IDS = new Set(['bleed', 'sinking', 'tremor', 'rupture']);
-function changeStatusCount(player, statusId, delta) {
+const POTENCY_COUNT_STATUS_IDS = new Set(['bleed', 'sinking', 'tremor', 'rupture', 'breath']);
+function changeStatusCount(player, statusId, delta, autoFill = true) {
   const status = ensureStatus(player, statusId);
   if (!status) return null;
   const before = status.count;
   status.count = clampStatusValue(status.count + delta, STATUS_DEFINITIONS[statusId].maxCount);
-  if (delta > 0 && POTENCY_COUNT_STATUS_IDS.has(statusId) && status.power <= 0) status.power = 1;
+  if (autoFill && delta > 0 && POTENCY_COUNT_STATUS_IDS.has(statusId) && status.power <= 0) status.power = 1;
   normalizeStatus(statusId, status);
   return { status, before, after: status.count };
 }
-function changeStatusPower(player, statusId, delta) {
+function changeStatusPower(player, statusId, delta, autoFill = true) {
   const status = ensureStatus(player, statusId);
   if (!status) return null;
   const before = status.power;
   status.power = clampStatusValue(status.power + delta, STATUS_DEFINITIONS[statusId].maxPower);
-  if (delta > 0 && POTENCY_COUNT_STATUS_IDS.has(statusId) && status.count <= 0) status.count = 1;
+  if (autoFill && delta > 0 && POTENCY_COUNT_STATUS_IDS.has(statusId) && status.count <= 0) status.count = 1;
   normalizeStatus(statusId, status);
   return { status, before, after: status.power };
 }
@@ -244,7 +243,23 @@ function getEffectiveCoinPower(player, skill, coinPower) {
   const id=positive ? 'plus_coin_boost' : 'minus_coin_boost';
   const down=positive ? 'plus_coin_drop' : 'minus_coin_drop';
   cp += getActiveStatusPower(player,id) - getActiveStatusPower(player,down);
+  cp += getBreathCoinPowerBonus(player, skill);
   return cp;
+}
+// 呼吸（LCBのPoise）威力に応じたコイン威力ボーナス。
+//   skill.breathCoinBonus = { min: 5, bonus: 1 } … 自分の呼吸威力が min 以上ならコイン威力+bonus
+//   core.breathCoinPowerPer5 = N               … 呼吸威力5ごとにコイン威力+1（最大N）
+function getBreathCoinPowerBonus(player, skill) {
+  const breath = getStatus(player, 'breath');
+  const potency = (breath && breath.count > 0) ? (breath.power || 0) : 0;
+  if (potency <= 0) return 0;
+  let bonus = 0;
+  const sb = skill?.breathCoinBonus;
+  if (sb && potency >= sb.min) bonus += sb.bonus;
+  const core = gameState[player]?.core;
+  if (core?.breathCoinPowerPer5) bonus += Math.min(core.breathCoinPowerPer5, Math.floor(potency / 5));
+  if (core?.breathCoinThreshold && potency >= core.breathCoinThreshold.min && (skill?.skillType === 'attack' || skill?.skillType === 'counter')) bonus += core.breathCoinThreshold.bonus;
+  return bonus;
 }
 function getOffenseLevel(player, skill) {
   const base=gameState[player]?.core?.offenseLevel || 0;
@@ -389,7 +404,7 @@ function triggerBleedOnAttackRoll(player) {
   normalizeStatus('bleed', status);
   const p = gameState[player];
   const beforeHp = p.hp;
-  p.hp = Math.max(0, p.hp - damage);
+  p.hp = Math.max(0, p.hp - applyLethalGuard(player, damage));
   log(`[状態ダメージ] ${playerLabel(player)}の「出血」: HP ${beforeHp}→${p.hp}（-${damage}） / 残り回数: ${status.count}`);
   emitHook('onDamage', { target: player, diceType: 'bleed', amount: damage, attacker: null });
   if (status.count <= 0) delete gameState[player].statuses.bleed;
@@ -463,6 +478,16 @@ function applyOnUseEffects(player, card) {
       log(`[使用時] ${playerLabel(player)}の「${card.name}」: ${playerLabel(target)}の${STATUS_DEFINITIONS[effect.id]?.name || effect.id}威力 ${r.before}→${r.after}`);
     }
   }
+  (card.onUse.statuses || []).forEach(effect => {
+    const target = getHitStatusTarget(player, effect);
+    if (effect.count) changeStatusCount(target, effect.id, effect.count, !effect.power);
+    if (effect.power) changeStatusPower(target, effect.id, effect.power, !effect.count);
+    log(`[使用時] ${playerLabel(player)}の「${card.name}」: ${formatStatusEffectText(effect)}`);
+  });
+  if (card.onUse.special === 'slash_power_up_2turns') {
+    addCombatStatus(player, 'slash_power_up', 1, 1); addStatusNextTurn(player, 'slash_power_up', 1, 1);
+    log(`[使用時] ${playerLabel(player)}の「${card.name}」: 斬撃威力増加1（この幕と次の幕）`);
+  }
   if (card.onUse.special === 'bloodletting_light') {
     const target = opponentOf(player);
     const bleed = getStatus(target, 'bleed');
@@ -522,6 +547,7 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
 
   const applyStatusEffect = (effect) => {
     if (!effect) return;
+    if (effect.requireHeads && !coin?.heads) return; // 「表で的中時」の効果
     const statusTarget = getHitStatusTarget(player, effect);
     let bonus = 0;
     if (effect.id === 'bleed' && effect.target === 'opponent') {
@@ -539,20 +565,29 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     }
     if (effect.id === 'sinking' && effect.target === 'opponent') bonus += ctx.sinkingCountBonus || 0;
 
-    if (effect.power) {
-      const amount = effect.power + (effect.id === 'bleed' && effect.target === 'opponent' ? (ctx.bleedBonus || 0) : 0);
-      const r = changeStatusPower(statusTarget, effect.id, amount);
-      log(`[的中] ${playerLabel(player)}の「${card.name}」: ${playerLabel(statusTarget)}の${STATUS_DEFINITIONS[effect.id]?.name || effect.id}威力 ${r.before}→${r.after}${ctx.bleedBonus ? `（血の掟+${ctx.bleedBonus}）` : ''}`);
-    }
+    // 回数→威力の順（呼吸は回数0だと威力が0に正規化されるため）
     if (effect.count) {
       const amount = effect.count + bonus;
-      const r = changeStatusCount(statusTarget, effect.id, amount);
+      const r = changeStatusCount(statusTarget, effect.id, amount, !effect.power);
       log(`[的中] ${playerLabel(player)}の「${card.name}」: ${playerLabel(statusTarget)}の${STATUS_DEFINITIONS[effect.id]?.name || effect.id}回数 ${r.before}→${r.after}`);
+    }
+    if (effect.power) {
+      const amount = effect.power + (effect.id === 'bleed' && effect.target === 'opponent' ? (ctx.bleedBonus || 0) : 0);
+      const r = changeStatusPower(statusTarget, effect.id, amount, !effect.count);
+      log(`[的中] ${playerLabel(player)}の「${card.name}」: ${playerLabel(statusTarget)}の${STATUS_DEFINITIONS[effect.id]?.name || effect.id}威力 ${r.before}→${r.after}${ctx.bleedBonus ? `（血の掟+${ctx.bleedBonus}）` : ''}`);
     }
     if (effect.id === 'sinking' && (effect.power || effect.count)) rollEchoesSinkingBonus(statusTarget);
   };
 
   if (effectSource?.status) applyStatusEffect(effectSource.status);
+  (effectSource?.statuses || []).forEach(applyStatusEffect); // 1コインに複数の状態効果
+  // 表で的中: 最後のコインの与ダメージ+X（さらば！）
+  if (effectSource?.finalCoinBonusOnHeads && coin?.heads && slot) slot._finalCoinBonus = (slot._finalCoinBonus || 0) + effectSource.finalCoinBonusOnHeads;
+  if (effectSource?.special === 'claim_bones_last') {
+    changeStatusPower(resolvedTarget, 'bleed', 3);
+    addStatusNextTurn(resolvedTarget, 'paralyze', 5, 1);
+    log(`[的中] ${playerLabel(player)}の「${card.name}」: ${playerLabel(resolvedTarget)}に出血3、次の幕に麻痺5。`);
+  }
 
   if (ctx.sinkingCountBonus) {
     const r = changeStatusCount(resolvedTarget, 'sinking', ctx.sinkingCountBonus);
@@ -736,8 +771,9 @@ function applySkillClashWinEffects(player, card, target) {
     const effect = source.status;
     const targetPlayer = getHitStatusTarget(player, effect);
     if (effect.id === 'sinking' && effect.target === 'opponent') markSinkingTarget(player, targetPlayer);
-    if (effect.power) changeStatusPower(targetPlayer, effect.id, effect.power);
-    if (effect.count) changeStatusCount(targetPlayer, effect.id, effect.count);
+    // 回数→威力の順（呼吸は回数0だと威力が0に正規化されるため）
+    if (effect.count) changeStatusCount(targetPlayer, effect.id, effect.count, !effect.power);
+    if (effect.power) changeStatusPower(targetPlayer, effect.id, effect.power, !effect.count);
     if (effect.id === 'sinking') rollEchoesSinkingBonus(targetPlayer);
     log(`[マッチ勝利] ${playerLabel(player)}の「${card.name}」: ${playerLabel(targetPlayer)}に${formatStatusEffectText(effect)}`);
   }
@@ -749,6 +785,10 @@ function applySkillClashWinEffects(player, card, target) {
       drawCard(player); log(`[マッチ勝利] ${playerLabel(player)}の「${card.name}」: 相手のHPが半分以下のため1枚ドロー`);
     }
   }
+  if (source.special === 'slash_power_up_2turns') {
+    addCombatStatus(player, 'slash_power_up', 1, 1); addStatusNextTurn(player, 'slash_power_up', 1, 1);
+    log(`[マッチ勝利] ${playerLabel(player)}の「${card.name}」: 斬撃威力増加1（この幕と次の幕）`);
+  }
   if (source.special === 'rain_consume_sinking_if_3') {
     const sinking = getStatus(target, 'sinking');
     if (sinking?.count >= 3) { consumeSinkingCount(target, 1); log(`[マッチ勝利] ${playerLabel(player)}の「${card.name}」: 沈潜回数を1消費`); }
@@ -757,7 +797,7 @@ function applySkillClashWinEffects(player, card, target) {
 
 function getStatusTooltip(status) {
   if (!status) return '';
-  if (status.id === 'breath') return `クリティカル確率: ${status.power}%<br>残り回数: ${status.count}<br>クリティカル時、ダメージ1.5倍。幕終了時またはクリティカル発動時に回数-1。最大値: 威力99 / 回数99。`;
+  if (status.id === 'breath') return `クリティカル確率: ${Math.min(100, status.power * 5)}%（威力×5%）<br>残り回数: ${status.count}<br>クリティカル時、ダメージ1.2倍（スキルの効果で増加）。幕終了時またはクリティカル発動時に回数-1。最大値: 威力99 / 回数99。`;
   if (status.id === 'bleed') return `攻撃コインを振るたび、威力分のダメージを受ける。発動時に回数-1。最大値: 威力99 / 回数99。`;
   if (status.id === 'tremor') return `振動${status.power} / Count${status.count}。振動爆発時、振動威力分だけ混乱閾値を上昇。幕終了時Count-1。`;
   if (status.id === 'rupture') return `破裂${status.power} / Count${status.count}。攻撃を受けたとき固定ダメージ${status.power}を与え、Count-1。`;
@@ -775,7 +815,10 @@ function getSkillHitEffectTexts(card, coin) {
   const source = coin?.onHit || card?.onHit || null;
   if (!source) return [];
   const texts = [];
-  if (source.status) { const t = formatStatusEffectText(source.status); if (t) texts.push(`【的中】${t}`); }
+  [source.status, ...(source.statuses || [])].filter(Boolean).forEach(st => { const t = formatStatusEffectText(st); if (t) texts.push(`${st.requireHeads ? '【表で的中】' : '【的中】'}${t}`); });
+  if (source.finalCoinBonusOnHeads) texts.push(`【表で的中】最後のコインの与ダメージ+${Math.round(source.finalCoinBonusOnHeads * 100)}%`);
+  if (source.critDamageBonus) texts.push(`【クリティカル】ダメージ+${Math.round(source.critDamageBonus * 100)}%`);
+  if (source.special === 'claim_bones_last') texts.push('【的中】出血3・次の幕に麻痺5を与える');
   if (source.special === 'blood_festival') texts.push('【的中】相手の出血威力が3以上なら、追加で1枚引く');
   if (source.special === 'blood_feast') texts.push('【的中】相手の出血威力が3以上なら、この幕のダメージ+5');
   if (source.special === 'sunken_memory_reuse') texts.push('【的中】相手の沈潜威力が4以上なら、このコインを最大3回まで再使用');
