@@ -576,6 +576,18 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
   }
 }
 
+// E.G.Oパッシブは使用（または侵蝕）した幕ではなく、次の幕から有効にする。
+// ここで pendingEgoPassives に積み、processEgoTurnStart で activeEgoPassives へ移す。
+// すでに有効なパッシブは重複して積まない。
+function queueEgoPassive(player, passiveId) {
+  const p = gameState[player];
+  if (!passiveId || !p) return;
+  if (!p.pendingEgoPassives) p.pendingEgoPassives = [];
+  if (p.activeEgoPassives?.includes(passiveId) || p.pendingEgoPassives.includes(passiveId)) return;
+  p.pendingEgoPassives.push(passiveId);
+  log('[E.G.Oパッシブ] '+playerLabel(player)+'のE.G.Oパッシブは次の幕から有効になります。');
+}
+
 function processEgoTurnStart(player) {
   const p = gameState[player];
   if (p.pendingEgoPassives?.length) {

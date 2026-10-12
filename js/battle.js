@@ -34,7 +34,7 @@ function setupCharacter(p, core, egoIds = {}) {
   state.equippedEgos = EGO_RISK_LEVELS.map(risk => egoIds[risk]).filter(Boolean).map(id => EGO_DATABASE.find(e => e.id === id)).filter(Boolean);
   state.usedEgosThisTurn = [];
   state.pendingStatuses = {};
-  state.activeEgoPassives = [];
+  state.activeEgoPassives = []; state.pendingEgoPassives = [];
   const initialZayin = state.equippedEgos.find(e => e.risk === 'ZAYIN');
   state.sinRes = { ...(initialZayin?.sinRes || { wrath:1, lust:1, sloth:1, gluttony:1, gloom:1, pride:1, envy:1 }) };
   state.hand = []; state.discard = []; state.slots = []; state.statuses = {};
@@ -156,7 +156,7 @@ function applyEgoCorrosionAtTurnStart(player) {
   p.isCorroded = true;
   p.corrosionEgoId = ego.id;
   p.usedEgosThisTurn.push(ego.id);
-  p.activeEgoPassives = [...new Set([...(p.activeEgoPassives || []), ego.egoPassiveId].filter(Boolean))];
+  queueEgoPassive(player, ego.egoPassiveId);
   p.sinRes = { ...(ego.sinRes || p.sinRes) };
   log('[E.G.O侵蝕] '+playerLabel(player)+'が「'+ego.name+'」に侵蝕。制御不能でランダム対象を攻撃します。');
   updateResDisplay(player);
@@ -200,7 +200,7 @@ function playCardToSlot(player, slot, card, targetSlot) {
       targetSlot = getRandomCorrosionTarget(player);
       log(`[E.G.O侵蝕] ${playerLabel(player)}の「${card.name}」が精神力低下により侵蝕スキル化。対象をランダム再抽選。`);
     }
-    gameState[player].activeEgoPassives = [...new Set([...(gameState[player].activeEgoPassives || []), card.egoId, card.egoPassiveId].filter(Boolean))];
+    queueEgoPassive(player, card.egoPassiveId);
     gameState[player].sinRes = { ...(card.sinRes || gameState[player].sinRes) };
     updateResDisplay(player);
     log(`[E.G.O] ${playerLabel(player)}の罪悪耐性が「${card.name}」に切り替わりました。`);
