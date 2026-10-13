@@ -274,6 +274,20 @@ const CORE_PAGES = [
     // LoR 春・シャオ「Furious Fire Rending the Skies」: 幕開始時、手札のランダムなページ2枚の火傷付与が2倍。
     burnPassion: true,
     furiousFire: 2
+  },
+  // ===== 20区ユロージヴィ（振動）=====
+  // 参考: LCB「20区ユロージヴィ ホンル」（District 20 Yurodivy Hong Lu、limbuscompany.wiki.gg、同期4）。
+  // HPはLCB（214）をこのゲームの規模に縮小。混乱閾値はLCBの最初の閾値（70%）。サポートパッシブは採用しない。処理: js/tremor.js
+  {
+    id: 'core_13', name: '20区ユロージヴィ',
+    level: 1, hp: 75, stagger: 52, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
+    res: { slash: 1.0, pierce: 0.5, blunt: 1.5 },
+    passiveList: [
+      { name: '振動溶接変形杖（無許可発明品）', desc: '幕終了時、この幕に自分が起こした振動爆発の回数だけ、次の幕に与ダメージ増加を得る（最大10＝+100%）。自分が振動爆発を起こすと、さらに相手の次の混乱閾値を振動威力分上げる（1幕3回）。' }
+    ],
+    panicType: 'パニック',
+    // LCB「Vibroweld Morph-combat Cane (Unauthorized Invention)」（怠惰6保有が条件だが、1対1では常時有効）
+    vibroweld: true
   }
 ];
 
@@ -554,7 +568,29 @@ const CARD_DATABASE = [
   skill('card_61', '熱烈な感情', 3, 'attack', 'slash', 'lust', 6, 4, 2, '的中時: 火傷2を与える。', [
     { onHit: { status: { id: 'burn', power: 2, target: 'opponent' } } },
     { onHit: { status: { id: 'burn', power: 2, target: 'opponent' } } }
-  ])
+  ]),
+  // ===== 20区ユロージヴィ（振動）: LCB 20区ユロージヴィ ホンルのスキル（同期4。基礎・コイン威力はLCBのまま）=====
+  // 自分に貯める「振動」は回数で数える（tremor.js の冒頭を参照）
+  // [S1: Deduction Start]
+  skill('card_62', '推理開始', 1, 'attack', 'blunt', 'gloom', 3, 4, 2, '使用時: 自分と相手の振動回数+2（相手への付与は1対1向けの追加）。自分の振動回数が6以上ならコイン威力+1。1枚目的中時: 振動2を与える。2枚目的中時: 自分と相手の振動回数+2。', [
+    { onHit: { status: { id: 'tremor', power: 2, target: 'opponent' } } },
+    { onHit: { statuses: [{ id: 'tremor', count: 2 }, { id: 'tremor', count: 2, target: 'opponent' }] } }
+  ], { onUse: { statuses: [{ id: 'tremor', count: 2 }, { id: 'tremor', count: 2, target: 'opponent' }] }, selfTremorCoinPowerAt: { min: 6, bonus: 1 } }),
+  // [S2: Morph Cane Technique]
+  skill('card_63', '変形杖術', 2, 'attack', 'pierce', 'sloth', 4, 4, 3, '使用時: 自分と相手の振動回数+3（相手への付与は1対1向けの追加）。相手の振動が6以上ならマッチ威力+1。自分の振動回数が5以上ならコイン威力+1。1枚目的中時: 自分と相手の振動回数+3。2枚目的中時: 振動3を与える。3枚目的中時: 相手の振動が6以上なら振動爆発。', [
+    { onHit: { statuses: [{ id: 'tremor', count: 3 }, { id: 'tremor', count: 3, target: 'opponent' }] } },
+    { onHit: { status: { id: 'tremor', power: 3, target: 'opponent' } } },
+    { onHit: { special: 'yuro_burst_if6' } }
+  ], { onUse: { statuses: [{ id: 'tremor', count: 3 }, { id: 'tremor', count: 3, target: 'opponent' }] }, targetTremorClashAt: { min: 6, bonus: 1 }, selfTremorCoinPowerAt: { min: 5, bonus: 1 } }),
+  // [S3: You're the Culprit!]
+  skill('card_64', 'お前が犯人だ！', 3, 'attack', 'pierce', 'gluttony', 3, 3, 4, '相手の振動が6以上ならマッチ威力+1。相手の振動6ごとにマッチ威力+1（最大+2）。攻撃開始時: 自分の振動回数が15未満なら10消費してコイン威力+2、15以上なら15消費してコイン威力+3。1枚目的中時: 振動を消費していれば、相手の振動を振動 - 残響にする（振幅もつれ）。2枚目的中時: 振動爆発。3枚目的中時: 振動を10以上消費していれば振動爆発。4枚目的中時: 振動爆発。消費した振動が15未満なら自分にも振動爆発。', [
+    { onHit: { special: 'yuro_entangle' } },
+    { onHit: { special: 'yuro_burst' } },
+    { onHit: { special: 'yuro_burst_if_consumed10' } },
+    { onHit: { special: 'yuro_burst_then_self' } }
+  ], { targetTremorClashAt: { min: 6, bonus: 1 }, targetTremorClashPer: { per: 6, max: 2 }, culpritConsume: true }),
+  // [防御: Wait?!]（バリア上限 13 → 5）
+  skill('card_65', '待って?!', 1, 'defense', null, 'sloth', 10, 4, 1, '使用時: 相手の振動回数×2のバリアを得る（最大5）。', [{}], { onUse: { special: 'yuro_wait_shield' } })
 ];
 
 const EGO_DATABASE = [
@@ -658,6 +694,26 @@ const EGO_DATABASE = [
         { unbreakable: true, onHit: { status: { id: 'bleed', count: 2, target: 'opponent' } } }
       ],
       bladesinger: 'corrosion'
+    }
+  },
+  // 低い鳴き声（Cavernous Wailing）: 原作 TETH / 怠惰（ホンル）。解析IV（ページ上の最高段階）の数値を移植。処理: js/tremor.js
+  {
+    id: 'ego_cavernous_wailing', name: '低い鳴き声', sinner: 'Hong Lu', risk: 'TETH',
+    sin: 'sloth', sinRes: { wrath:1, lust:2, sloth:0.5, gluttony:1, gloom:1, pride:1, envy:2 },
+    attackType: 'blunt', skillType: 'attack', cost: 0, basePower: 18, coinPower: 8, coinCount: 1, sanityCost: 20,
+    resourceCost: { sloth: 3, gloom: 3, pride: 2 },
+    effect: '相手に振動があれば与ダメージ+(5+(相手の振動威力+回数)÷2)%（最大30%）。共鳴が発生していれば代わりに+(7.5+(振動威力+回数)÷1.5)%（最大40%）。的中時: 振動3・振動回数+3を与え、相手の振動を振動 - 残響にして振動爆発。',
+    coins: [{ onHit: { statuses: [{ id: 'tremor', power: 3, count: 3, target: 'opponent' }], special: 'cavernous_convert_burst' } }],
+    tremorDamage: { base: 5, div: 2, max: 0.30, resBase: 7.5, resDiv: 1.5, resMax: 0.40 },
+    egoPassiveId: 'ego_cavernous_wailing_passive',
+    egoPassiveDesc: '陰鬱: 相手に振動爆発を起こすスキルを使ったとき、相手に攻撃レベル減少1、次の幕に防御レベル減少2を与える（1幕3回、E.G.Oを含む）。',
+    corrosionSanityCost: 20,
+    corrosion: {
+      basePower: 26, coinPower: -8, coinCount: 1, attackType: 'blunt', skillType: 'attack', indiscriminate: true,
+      resourceCost: { sloth: 3, gloom: 3, pride: 2 },
+      effect: '侵蝕: 敵味方識別不可。相手に振動があれば与ダメージ+(5+(振動威力+回数)÷2)%（最大40%）。共鳴が発生していれば代わりに+(7.5+(振動威力+回数)÷1.5)%（最大50%）。的中時: 振動6・振動回数+6を与え、相手の振動を振動 - 残響にして振動爆発を2回。',
+      coins: [{ onHit: { statuses: [{ id: 'tremor', power: 6, count: 6, target: 'opponent' }], special: 'cavernous_convert_burst2' } }],
+      tremorDamage: { base: 5, div: 2, max: 0.40, resBase: 7.5, resDiv: 1.5, resMax: 0.50 }
     }
   },
   // 四本目のマッチの火（4th Match Flame）: 原作 TETH / 憤怒。解析V（Threadspin Tier V）の数値を移植。処理: js/teth_egos.js

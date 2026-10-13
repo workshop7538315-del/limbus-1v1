@@ -387,6 +387,11 @@ function processStatusTurnEnd(player) {
       else log(`[状態減衰] ${playerLabel(player)}の「${status.name}」: ${status.count}`);
     } else if (statusId === 'burn' && status.count > 0) {
       processBurnTurnEnd(player, status);
+    } else if (statusId === 'tremor' && status.count > 0) {
+      // 振動: 幕終了時に回数-1（説明文どおり。以前は減っていなかった）
+      status.count -= 1;
+      if (status.count <= 0) delete statuses[statusId];
+      else log(`[状態減衰] ${playerLabel(player)}の「${status.name}」: 回数 ${status.count}`);
     } else if (statusId === 'violent_flame' && status.count > 0) {
       delete statuses[statusId];
       log(`[状態減衰] ${playerLabel(player)}の「${status.name}」が終了`);
@@ -497,6 +502,7 @@ function formatStatusEffectText(effect) {
 function applyOnUseEffects(player, card) {
   if (!card?.onUse) return;
   applyLiuOnUse(player, card); // 一点刺突・猛炎（liu.js）
+  applyTremorOnUse(player, card); // 待って?!（tremor.js）
   if (card.onUse.light) {
     const p = gameState[player];
     const before = p.light;
@@ -712,7 +718,8 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
       log(`[的中] ${playerLabel(player)}の「${card.name}」: この幕のダメージ+5`);
     }
   }
-  if (effectSource?.special === 'tremor_burst') triggerTremorBurst(resolvedTarget, effectSource.multiplier || 1);
+  if (effectSource?.special === 'tremor_burst') tremorBurstBy(player, resolvedTarget, effectSource.multiplier || 1, card);
+  if (effectSource?.special) applyTremorHitSpecial(player, card, resolvedTarget, effectSource.special); // ユロージヴィ・低い鳴き声（tremor.js）
   if (effectSource?.special === 'rupture_trigger' && triggerRupture(resolvedTarget) > 0) onRuptureTriggered(resolvedTarget, slot?.speed || 0);
   if (effectSource?.special === 'deathrite' || (effectSource?.special === 'deathrite_on_reuse' && slot?._reusedCoins?.[coin?.index])) applyDeathrite(resolvedTarget);
   if (effectSource?.selfHasteNext) gainSelfHasteNext(player, effectSource.selfHasteNext);
@@ -894,7 +901,7 @@ function getStatusTooltip(status) {
   if (!status) return '';
   if (status.id === 'breath') return `クリティカル確率: ${Math.min(100, status.power * 5)}%（威力×5%）<br>残り回数: ${status.count}<br>クリティカル時、ダメージ1.2倍（スキルの効果で増加）。幕終了時またはクリティカル発動時に回数-1。最大値: 威力99 / 回数99。`;
   if (status.id === 'bleed') return `攻撃コインを振るたび、威力分のダメージを受ける。発動時に回数-1。最大値: 威力99 / 回数99。`;
-  if (status.id === 'tremor') return `振動${status.power} / Count${status.count}。振動爆発時、振動威力分だけ混乱閾値を上昇。幕終了時Count-1。`;
+  if (status.id === 'tremor') return `振動${status.power} / 回数${status.count}。振動爆発を受けたとき、振動威力分だけ次の混乱閾値（HP）が上がり、回数-1。幕終了時に回数-1。${status.variant === 'reverb' ? '<br>【残響】振動爆発のたび、振動威力分の怠惰の固定ダメージを受ける。' : ''}`;
   if (status.id === 'rupture') return `破裂${status.power} / Count${status.count}。攻撃を受けたとき固定ダメージ${status.power}を与え、Count-1。`;
   if (status.id === 'sinking') return `沈潜X / 回数Y。攻撃を受けたとき精神をX減少し、回数を1減少。最大値: 威力99 / 回数99。`;
   if (status.id === 'charge') return `充電 ${status.count}。スキルで消費して効果を強化するリソース。幕終了時に1減少。`;

@@ -151,6 +151,7 @@ function getCorrosionCard(ego) {
     beforeAttack: ego.corrosion.beforeAttack || null,
     bladesinger: ego.corrosion.bladesinger || null,
     attackEnd: ego.corrosion.attackEnd || null,
+    tremorDamage: ego.corrosion.tremorDamage || null,
     indiscriminate: true
   };
 }
@@ -409,6 +410,7 @@ async function executeFullTurn() {
       log('[E.G.O侵蝕終了] '+playerLabel(p)+'の精神力が0に戻りました。');
     }
     processPanicTurnEnd(p);
+    processTremorTurnEnd(p); // 振動溶接変形杖（tremor.js）
   });
   ['p1', 'p2'].forEach(p => emitHook('onTurnEnd', { player: p }));
   updateUI();
