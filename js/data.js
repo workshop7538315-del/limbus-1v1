@@ -1,8 +1,8 @@
-// data.js — コアページ・バトルページ（Skill）・表示ヘルパー
+// data.js — 人格・スキル（Skill）・表示ヘルパー
 
 
 // 罪悪属性: スキル情報・E.G.O資源の生成・共鳴判定・E.G.O使用時の罪悪耐性に使用している。
-// 割り当て方針: 出血=色欲、沈潜=憂鬱を固定し、それ以外はページの性質から仮設定。
+// 割り当て方針: 出血=色欲、沈潜=憂鬱を固定し、それ以外はスキルの性質から仮設定。
 // 迅速な斬撃=憤怒 / 防御体勢=怠惰 / 強烈な一撃=憤怒 / 身のこなし=嫉妬 / 牽制突き=嫉妬
 // 深呼吸=怠惰 / 戦略的思考=傲慢 / 反撃姿勢=傲慢 / 身構える=傲慢 / 堅牢な盾=怠惰
 // ルミーズ=暴食 / 黒雲会は色欲を軸に憤怒・傲慢へ分散
@@ -85,7 +85,7 @@ function getResText(val) {
 
 const CORE_PAGES = [
   {
-    id: 'core_1', name: '見習い司書のページ',
+    id: 'core_1', name: '見習い司書',
     level: 1, hp: 80, stagger: 40, maxLight: 4, speedDiceCount: 2, speedMin: 2, speedMax: 6,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.0 },
     passiveList: [
@@ -95,7 +95,7 @@ const CORE_PAGES = [
     panicType: 'パニック',
   },
   {
-    id: 'core_2', name: '裏路地の暗殺者のページ',
+    id: 'core_2', name: '裏路地の暗殺者',
     level: 1, hp: 70, stagger: 35, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
     passiveList: [
@@ -106,7 +106,7 @@ const CORE_PAGES = [
     slashBonus: 1
   },
   {
-    id: 'core_3', name: '盾持ち兵士のページ',
+    id: 'core_3', name: '盾持ち兵士',
     level: 1, hp: 100, stagger: 50, maxLight: 3, speedDiceCount: 1, speedMin: 1, speedMax: 3,
     res: { slash: 1.0, pierce: 0.5, blunt: 0.5 },
     passiveList: [
@@ -121,10 +121,10 @@ const CORE_PAGES = [
     }
   },
   {
-    id: 'core_4', name: '黒雲会の組員のページ',
+    id: 'core_4', name: '黒雲会の組員',
     level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 2, speedMax: 6,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.5 },
-    passiveList: [{ name: '血の掟', desc: '自分がバトルページによって出血を付与するとき出血威力+1。幕の最初のページは的中時、最初の1回に出血回数2、以降は1。' }],
+    passiveList: [{ name: '血の掟', desc: '自分がスキルによって出血を付与するとき出血威力+1。幕の最初のスキルは的中時、最初の1回に出血回数2、以降は1。' }],
     panicType: '狂人',
     passives: [
       {
@@ -145,10 +145,10 @@ const CORE_PAGES = [
     powerAlwaysZero: true
   },
   {
-    id: 'core_6', name: '雨天事務所フィクサーのページ',
+    id: 'core_6', name: '雨天事務所フィクサー',
     level: 1, hp: 75, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.5 },
-    passiveList: [{ name: '沈む思考', desc: 'その幕の最初のバトルページのみ、最初の的中時に沈潜回数2、2回目以降の的中時は1。' }],
+    passiveList: [{ name: '沈む思考', desc: 'その幕の最初のスキルのみ、最初の的中時に沈潜回数2、2回目以降の的中時は1。' }],
     panicType: '徘徊',
     passives: [
       {
@@ -170,7 +170,7 @@ const CORE_PAGES = [
   // 参考: LCB 剣契殺手イサン / 剣契殺手ドンキホーテ / 剣契師範ムルソー（limbuscompany.wiki.gg）。
   // 呼吸 = LCBの Poise（クリティカル率 威力×5%、クリティカル1.2倍）。数値はこのゲームのHP規模に合わせて縮小。
   {
-    id: 'core_7', name: '剣契の殺手のページ',
+    id: 'core_7', name: '剣契の殺手',
     level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 0.5, pierce: 1.5, blunt: 1.0 },
     passiveList: [
@@ -189,7 +189,7 @@ const CORE_PAGES = [
     breathCoinPowerPer5: 3
   },
   {
-    id: 'core_8', name: 'キムサッガのページ',
+    id: 'core_8', name: 'キムサッガ',
     level: 1, hp: 100, stagger: 50, maxLight: 4, speedDiceCount: 2, speedMin: 3, speedMax: 6,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
     // 2026-10-12: LCB 剣契師範ムルソー（HP259）に合わせて上方修正。黒獣-卯と同格の想定。
@@ -218,7 +218,7 @@ const CORE_PAGES = [
   //       LoR「WARP整理班」。充電の上限はLoRの仕様（通常10、W社のスーツで20）に合わせた。
   // 1対1では「敵撃破時」の効果が決着と同時になるため、マッチ勝利時などに置き換えている。サポートパッシブは採用しない。
   {
-    id: 'core_9', name: 'W社3級整理要員(刀)のページ',
+    id: 'core_9', name: 'W社3級整理要員(刀)',
     level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
     passiveList: [
@@ -231,7 +231,7 @@ const CORE_PAGES = [
     clashWinCharge: { amount: 3, perRound: 2, name: '次元屈折刃 - Type: Blade Mk7' }
   },
   {
-    id: 'core_10', name: 'W社3級整理要員(双剣)のページ',
+    id: 'core_10', name: 'W社3級整理要員(双剣)',
     level: 1, hp: 80, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
     res: { slash: 1.0, pierce: 0.5, blunt: 1.5 },
     passiveList: [
@@ -245,10 +245,10 @@ const CORE_PAGES = [
   },
   // ===== 黒獣-卯（破裂）=====
   // 参考: LCB「黒獣-卯 ウーティス」（Heishou Pack - Mao Branch Outis、limbuscompany.wiki.gg）。
-  // 速度差と破裂で火力を伸ばす人格。既存のコアページより一段強い想定（HP・速度・数値を高めに設定）。
+  // 速度差と破裂で火力を伸ばす人格。既存の人格より一段強い想定（HP・速度・数値を高めに設定）。
   // サポートパッシブは採用しない。処理: js/rupture.js
   {
-    id: 'core_11', name: '黒獣-卯のページ',
+    id: 'core_11', name: '黒獣-卯',
     level: 1, hp: 95, stagger: 47, maxLight: 4, speedDiceCount: 2, speedMin: 4, speedMax: 7,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
     passiveList: [
@@ -261,12 +261,12 @@ const CORE_PAGES = [
   // 参考: LCB「リウ協会南部4課 部長 ロージャ」（limbuscompany.wiki.gg）、LoR「リウ協会南部1課」（libraryofruina.wiki.gg）。
   // HPはLCB（257）をこのゲームの規模に縮小。処理: js/liu.js
   {
-    id: 'core_12', name: 'リウ協会南部4課部長のページ',
+    id: 'core_12', name: 'リウ協会南部4課部長',
     level: 1, hp: 80, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 1.5, pierce: 0.5, blunt: 1.0 },
     passiveList: [
       { name: '熱き情熱', desc: '相手の火傷威力6ごとに与ダメージ+10%（最大30%）。戦闘開始時、相手の火傷威力が6以上なら憤怒ダメージ増加1・攻撃威力増加1を得る。' },
-      { name: '天を裂く烈火', desc: '幕開始時、手札のページをランダムに2枚選ぶ。その幕、選ばれたページで与える火傷は2倍になる。' }
+      { name: '天を裂く烈火', desc: '幕開始時、手札のスキルをランダムに2枚選ぶ。その幕、選ばれたスキルで与える火傷は2倍になる。' }
     ],
     panicType: 'パニック',
     // LCB ロージャ「Burning Passion」: 対象の火傷6ごとに与ダメージ+10%（最大30%）。戦闘開始時、全ての敵の火傷6以上なら
@@ -277,7 +277,7 @@ const CORE_PAGES = [
   }
 ];
 
-// コアページのパッシブ一覧（passiveList: [{ name, desc }]）。表示は1行に1つずつ。
+// 人格のパッシブ一覧（passiveList: [{ name, desc }]）。表示は1行に1つずつ。
 function getCorePassiveList(core) {
   if (core?.passiveList?.length) return core.passiveList;
   return core?.passiveName ? [{ name: core.passiveName, desc: core.passiveDesc || '' }] : [];
@@ -487,7 +487,7 @@ const CARD_DATABASE = [
   // [LoR: 次元の狭間(2)] 充電を6回復
   skill('card_47', '次元の狭間', 2, 'attack', 'pierce', 'gluttony', 4, 2, 2, '使用時: 充電+6。', [{}, {}], { onUse: { statuses: [{ id: 'charge', count: 6 }] } }),
   // [LoR: 波動(3)] 強めのページ。充電を3消費し威力3増加
-  skill('card_48', '波動', 3, 'attack', 'blunt', 'gloom', 5, 2, 2, '攻撃開始時: 充電3を消費し、このページの最終威力+3。', [{}, {}], { chargeConsume: { amount: 3, finalPower: 3 } }),
+  skill('card_48', '波動', 3, 'attack', 'blunt', 'gloom', 5, 2, 2, '攻撃開始時: 充電3を消費し、このスキルの最終威力+3。', [{}, {}], { chargeConsume: { amount: 3, finalPower: 3 } }),
   // [LoR: 遡行(1)] 充電を4回復
   skill('card_49', '遡行', 1, 'evade', null, 'sloth', 4, 2, 1, '使用時: 充電+4。', [{}], { onUse: { statuses: [{ id: 'charge', count: 4 }] } }),
   // ===== 黒獣-卯（破裂）: LCB 黒獣-卯 ウーティスのスキル =====
@@ -539,14 +539,14 @@ const CARD_DATABASE = [
     onHit: { status: { id: 'burn', power: 1, target: 'opponent' } }
   }),
   // ----- LoR「リウ協会南部1課」のページ（効果はLoR、ダイスはこのゲーム向けに設定）-----
-  // [LoR: Single-Point Stab(0)] 貫通3-9・的中で火傷1。使用時: 次の幕の開始時、デッキの同名ページを全て引く
+  // [LoR: Single-Point Stab(0)] 貫通3-9・的中で火傷1。使用時: 次の幕の開始時、デッキの同名スキルを全て引く
   skill('card_58', '一点刺突', 0, 'attack', 'pierce', 'gluttony', 3, 6, 1, '使用時: 次の幕の開始時、デッキにある「一点刺突」を全て引く。的中時: 火傷1を与える。', [
     { onHit: { status: { id: 'burn', power: 1, target: 'opponent' } } }
   ], { onUse: { special: 'liu_draw_copies' } }),
   // [LoR: Frontal Assault(0)] 貫通2-7・貫通1-2。使用時: 光1回復
   skill('card_59', '正面突撃', 0, 'attack', 'pierce', 'sloth', 2, 2, 2, '使用時: 光1回復。', [{}, {}], { onUse: { light: 1 } }),
   // [LoR: Violent Flame(1)] 斬撃3-8（的中で火傷1）・貫通3-7。戦闘開始時: この幕、バトルページで与える火傷+1
-  skill('card_60', '猛炎', 1, 'attack', 'slash', 'wrath', 3, 4, 2, '使用時: 猛炎を得る（この幕、バトルページで与える火傷+1）。1枚目的中時: 火傷1を与える。', [
+  skill('card_60', '猛炎', 1, 'attack', 'slash', 'wrath', 3, 4, 2, '使用時: 猛炎を得る（この幕、スキルで与える火傷+1）。1枚目的中時: 火傷1を与える。', [
     { onHit: { status: { id: 'burn', power: 1, target: 'opponent' } } },
     {}
   ], { onUse: { special: 'liu_violent_flame' } }),
@@ -636,7 +636,7 @@ const EGO_DATABASE = [
     attackType: 'slash', skillType: 'attack', cost: 0, basePower: 12, coinPower: 4, coinCount: 2, sanityCost: 20,
     resourceCost: { pride: 4, wrath: 1, envy: 1 },
     firstUseCost: { coreId: 'core_8', cost: { pride: 3 } },
-    effect: '攻撃前: 自分の呼吸威力4ごとにマッチ威力+1・与ダメージ+10%（最大5）。追慕酒があれば与ダメージ+100%（キムサッガのページなら+200%）。1枚目的中時: 出血4を与え、呼吸回数4を得る。2枚目的中時: 出血回数2を与え、呼吸回数4を得る。攻撃終了時: 追慕酒4を得る。キムサッガのページでの初回使用は資源が傲慢3のみ。',
+    effect: '攻撃前: 自分の呼吸威力4ごとにマッチ威力+1・与ダメージ+10%（最大5）。追慕酒があれば与ダメージ+100%（人格がキムサッガなら+200%）。1枚目的中時: 出血4を与え、呼吸回数4を得る。2枚目的中時: 出血回数2を与え、呼吸回数4を得る。攻撃終了時: 追慕酒4を得る。人格がキムサッガのときの初回使用は資源が傲慢3のみ。',
     coins: [
       { onHit: { statuses: [{ id: 'bleed', power: 4, target: 'opponent' }, { id: 'breath', count: 4 }] } },
       { onHit: { statuses: [{ id: 'bleed', count: 2, target: 'opponent' }, { id: 'breath', count: 4 }] } }
@@ -645,7 +645,7 @@ const EGO_DATABASE = [
     attackEnd: 'ego_bladesinger',
     egoPassiveId: 'ego_bladesinger_passive',
     egoPassiveAlwaysFor: 'core_8',
-    egoPassiveDesc: '剣先にしたたる酒滴: 幕開始時に追慕酒があれば怨恨を得る（その幕 速度+2、与えたダメージの10%回復）。キムサッガのページなら追加で恨の宿った鞘を得る。キムサッガのページなら装備しているだけで常に有効（それ以外は使用した次の幕から）。',
+    egoPassiveDesc: '剣先にしたたる酒滴: 幕開始時に追慕酒があれば怨恨を得る（その幕 速度+2、与えたダメージの10%回復）。人格がキムサッガなら追加で恨の宿った鞘を得る。人格がキムサッガなら装備しているだけで常に有効（それ以外は使用した次の幕から）。',
     corrosionSanityCost: 25,
     corrosion: {
       basePower: 13, coinPower: -2, coinCount: 4, attackType: 'slash', skillType: 'attack', indiscriminate: true,

@@ -46,7 +46,7 @@ function toggleP1Core(id) { if (selectedP1CoreIds.includes(id)) { if (selectedP1
 function toggleP2Core(id) { if (selectedP2CoreIds.includes(id)) { if (selectedP2CoreIds.length>1) selectedP2CoreIds=selectedP2CoreIds.filter(i=>i!==id); } else selectedP2CoreIds.push(id); renderBuilder(); }
 function addBatchCards(cardId, amount, event) {
   event.stopPropagation(); const targetDeck = decks[activeDeckEditor], currentCount = targetDeck.filter(id=>id===cardId).length, card=CARD_DATABASE.find(c=>c.id===cardId), label=activeDeckEditor==='p1'?'P1':'P2';
-  let added=0; for(let i=0;i<amount;i++){ if(targetDeck.length>=9){ alert(`${label}のデッキは最大9枚までです。`); break; } if(currentCount+added>=3){ alert(`${label}の同名ページ「${card.name}」は最大3枚までです。`); break; } targetDeck.push(cardId); added++; } renderBuilder();
+  let added=0; for(let i=0;i<amount;i++){ if(targetDeck.length>=9){ alert(`${label}のデッキは最大9枚までです。`); break; } if(currentCount+added>=3){ alert(`${label}の同名スキル「${card.name}」は最大3枚までです。`); break; } targetDeck.push(cardId); added++; } renderBuilder();
 }
 function removeCardFromDeck(player, cardId, event) { event.stopPropagation(); const deck=decks[player], i=deck.lastIndexOf(cardId); if(i!==-1) deck.splice(i,1); renderBuilder(); }
 function renderDeckList(player) {
@@ -140,7 +140,7 @@ function renderBuilder(){
   document.getElementById('editor-hint').innerText=`追加先: ${activeDeckEditor==='p1'?'P1':'P2'} デッキ（右側のデッキ見出しをクリックして切替）`;
 
   CARD_DATABASE.filter(c=>{
-    if(c.hidden) return false; // 追撃専用など、デッキに入れないページ
+    if(c.hidden) return false; // 追撃専用など、デッキに入れないスキル
     if(currentFilter==='all') return true;
     if(currentFilter.startsWith('sin:')) return c.sin===currentFilter.slice(4);
     return c.tags?.includes(currentFilter);
@@ -205,7 +205,7 @@ function updateResDisplay(p){
 function updatePlanningPrompt(){
   const slot=getCurrentPlanningSlot(),info=document.getElementById('planning-info'),btn=document.getElementById('action-btn'); if(!slot||slot.owner!=='p1')return;
   const speedText=`P1速度ダイス${slot.id+1} [速度:${slot.speed}]`, hasP2=gameState.p2.slots.length>0&&!gameState.p2.isStaggered;
-  if(!selectedHandCard){info.innerText=`${speedText} のバトルページを選択してください。手札のページをクリックするか、パスできます。`;btn.innerText='この速度ダイスをパス (ページ指定なし)';btn.disabled=false;return;}
+  if(!selectedHandCard){info.innerText=`${speedText} のスキルを選択してください。手札のスキルをクリックするか、パスできます。`;btn.innerText='この速度ダイスをパス (ページ指定なし)';btn.disabled=false;return;}
   if(['counter','counter_clash'].includes(selectedHandCard.skillType)){info.innerText=`${speedText}: 「${selectedHandCard.name}」→ 反撃待機（攻撃してきた相手と戦う）。確定してください。`;btn.innerText='この反撃を確定';btn.disabled=false;return;}
   if(!hasP2){info.innerText=`${speedText}: 「${selectedHandCard.name}」→ 一方攻撃。確定してください。`;btn.innerText='この行動を確定 (一方攻撃)';btn.disabled=false;return;}
   if(!selectedTargetSlot){info.innerText=`${speedText}: 「${selectedHandCard.name}」を選択中。P2の速度ダイスをクリックしてください。`;btn.innerText='マッチ対象未選択';btn.disabled=true;return;}

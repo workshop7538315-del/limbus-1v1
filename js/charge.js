@@ -101,7 +101,7 @@ function prepareSkillExecution(player, skill, slot = null, targetSlot = null, un
     addCombatStatus(player, 'power_up', cp.powerUp, 1);
     log(`[充電] 「${skill.name}」: この幕、威力増加${cp.powerUp}を得る`);
   }
-  // core.firstSkillPowerUp: その幕で最初に使う攻撃スキルの最終威力+N（現在このフィールドを持つコアページはない）
+  // core.firstSkillPowerUp: その幕で最初に使う攻撃スキルの最終威力+N（現在このフィールドを持つ人格はない）
   if (p.core?.firstSkillPowerUp && p.firstSkillPowerUpRound !== gameState.round && skill.skillType === 'attack') {
     p.firstSkillPowerUpRound = gameState.round;
     bonus.finalPower += p.core.firstSkillPowerUp;

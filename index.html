@@ -25,14 +25,14 @@
     <h2>デッキ構築 & 敵設定</h2>
     
     <div class="core-select-container">
-      <!-- P1 コアページ選択 -->
+      <!-- P1 人格選択 -->
       <div class="core-select-area">
-        <div style="font-weight:bold; font-size:12px; color:#e74c3c; margin-bottom: 4px;">P1 コアページ選択 (複数可・ランダム):</div>
+        <div style="font-weight:bold; font-size:12px; color:#e74c3c; margin-bottom: 4px;">P1 人格選択 (複数可・ランダム):</div>
         <div class="core-grid" id="p1-core-page-list"></div>
       </div>
-      <!-- P2 コアページ選択 -->
+      <!-- P2 人格選択 -->
       <div class="core-select-area">
-        <div style="font-weight:bold; font-size:12px; color:#3498db; margin-bottom: 4px;">P2 (敵) コアページ選択 (複数可・ランダム):</div>
+        <div style="font-weight:bold; font-size:12px; color:#3498db; margin-bottom: 4px;">P2 (敵) 人格選択 (複数可・ランダム):</div>
         <div class="core-grid" id="p2-core-page-list"></div>
       </div>
     </div>
@@ -52,7 +52,7 @@
 
     <!-- 絞り込みフィルター -->
     <div class="filter-header" onclick="toggleFilter()">
-      <span>🔍 バトルページ絞り込み検索（クリックで開閉）</span>
+      <span>🔍 スキル絞り込み検索（クリックで開閉）</span>
       <span id="filter-arrow">▼</span>
     </div>
     <div class="filter-panel" id="filter-panel">
@@ -101,7 +101,7 @@
 
     <div class="deck-builder-grid">
       <div class="pool-container">
-        <h3>バトルページ一覧</h3>
+        <h3>スキル一覧</h3>
         <p class="editor-hint" id="editor-hint">追加先: P1 デッキ（右側のデッキ見出しをクリックして切替）</p>
         <div class="card-pool" id="card-pool-list"></div>
       </div>
@@ -176,7 +176,7 @@
     </div>
 
     <div class="planning-bar" id="planning-info">指示待機中...</div>
-    <p class="target-hint">操作: 手札のバトルページをクリック → 相手の速度ダイスをクリックしてマッチ対象を指定 → 「行動確定」。ページを選ばずにパスもできます。</p>
+    <p class="target-hint">操作: 手札のスキルをクリック → 相手の速度ダイスをクリックしてマッチ対象を指定 → 「行動確定」。スキルを選ばずにパスもできます。</p>
 
 
     <div id="battle-animation" class="battle-animation hidden" aria-live="polite">
@@ -202,7 +202,7 @@
     <div id="log">--- 戦闘開始 ---</div>
 
     <div>
-      <h4>P1の手札（バトルページ選択後、P2の速度ダイスをクリックしてマッチ対象を指定）:</h4>
+      <h4>P1の手札（スキル選択後、P2の速度ダイスをクリックしてマッチ対象を指定）:</h4>
       <div class="cards-container" id="p1-hand"></div>
     </div>
 

@@ -15,7 +15,7 @@ const STATUS_DEFINITIONS = {
   uninvited: { name: '招聘されざる者', category: 'debuff', maxPower: 0, maxCount: 2, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '自分の沈潜威力1につき被ダメージ+0.5%（最大10%）。幕終了時に1減少。（最大2）' },
   curse: { name: '呪い', category: 'debuff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕終了時、次の幕に攻撃威力減少1・防御威力減少1・攻撃レベル減少2・防御レベル減少2のうちランダムに1つを受ける。回数-1。' },
   // 着影揮刀（blade_lineage.js）
-  drink_fallen: { name: '追慕酒', category: 'buff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕開始時に呼吸威力+1/スタック（キムサッガのページは+2）。クリティカルダメージ+3%/スタック（最大15%）。呼吸を得るスキルのマッチ威力+1。致死ダメージで全消費し1スタックにつき最大HPの25%で復帰。幕終了時に1減少。' },
+  drink_fallen: { name: '追慕酒', category: 'buff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '幕開始時に呼吸威力+1/スタック（キムサッガは+2）。クリティカルダメージ+3%/スタック（最大15%）。呼吸を得るスキルのマッチ威力+1。致死ダメージで全消費し1スタックにつき最大HPの25%で復帰。幕終了時に1減少。' },
   resentful_scabbard: { name: '恨の宿った鞘', category: 'buff', maxPower: 0, maxCount: 1, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '体力ダメージを受けると結ばれゆくしこりを得る。自分のスキルで得る/与える状態の威力・回数+2。「肉斬」使用中は体力が10未満に下がらず（1幕1回）マッチ威力-(呼吸威力÷2)。「骨断」使用時に呼吸4を得る。' },
   growing_resentment: { name: '結ばれゆくしこり', category: 'buff', maxPower: 0, maxCount: 999, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '「骨断」の最終威力+(数値÷100)（最大6）。「肉斬」「骨断」の最後のコイン的中時、与ダメージ+(数値÷10)%して消滅。' },
   resentment: { name: '怨恨', category: 'buff', maxPower: 0, maxCount: 1, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: 'この幕、与えたダメージの10%を回復。' },
@@ -25,7 +25,7 @@ const STATUS_DEFINITIONS = {
   echoes_of_manor: { name: '邸宅の木霊', category: 'debuff', maxPower: 0, maxCount: 99, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '沈潜の威力か回数を得るたび50%で沈潜回数+1。パニックタイプが「邸宅の木霊」になる。幕終了時に1減少。付与時は値を上書き。' },
   // 四本目のマッチの火・一生シチュー（teth_egos.js）
   burn: { name: '火傷', category: 'debuff', maxPower: 99, maxCount: 99, defaultPower: 0, defaultCount: 0, desc: '幕終了時、威力分の固定ダメージを受け、回数-1。' },
-  violent_flame: { name: '猛炎', category: 'buff', maxPower: 0, maxCount: 1, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: 'この幕、バトルページで与える火傷+1（威力を与える効果は威力、回数だけの効果は回数）。' },
+  violent_flame: { name: '猛炎', category: 'buff', maxPower: 0, maxCount: 1, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: 'この幕、スキルで与える火傷+1（威力を与える効果は威力、回数だけの効果は回数）。' },
   blazing: { name: '燃え上がる', category: 'buff', maxPower: 0, maxCount: 2, defaultPower: 0, defaultCount: 0, valueFromCount: true, desc: '次の幕の終わりまで: 速度+1。その幕で最初に使う基本攻撃スキルの最終威力+2。そのスキルの的中ごとに最大HPの2%を失う（最大10%、混乱しない・HP1未満にならない）。' }
 };
 
@@ -627,7 +627,7 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
         if (effect.count == null) {
           const extraCount = hitCount === 0 ? 2 : 1;
           const r = changeStatusCount(statusTarget, 'bleed', extraCount);
-          log(`[的中] ${playerLabel(player)}の「${card.name}」: ${playerLabel(statusTarget)}に出血回数${extraCount}（血の掟: 最初のページ） ${r.before}→${r.after}`);
+          log(`[的中] ${playerLabel(player)}の「${card.name}」: ${playerLabel(statusTarget)}に出血回数${extraCount}（血の掟: 最初のスキル） ${r.before}→${r.after}`);
         }
         gameState[player].bloodPactFirstPageHitCount = hitCount + 1;
       }
@@ -805,7 +805,7 @@ function onEgoPassiveHit(target, attacker) {
   log(`[E.G.Oパッシブ] 沈黙: ${playerLabel(target)}は次の幕に束縛3を得る。`);
 }
 // 判断拒否: 戦闘開始時、相手のスキル2つ以上に指定されていれば保護3
-// コアページの戦闘開始時パッシブ（W社職員(槍)「急速充電」）
+// 人格の戦闘開始時パッシブ（W社職員(槍)「急速充電」）
 function processCoreCombatStart(player) {
   const core = gameState[player]?.core;
   processLiuCombatStart(player); // 熱き情熱（liu.js）

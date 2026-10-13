@@ -5,6 +5,9 @@
 このファイルは「説明」と「実装」の対応を記録するためのもの。
 機能を追加・変更したら、該当する行を更新すること。
 
+> **用語（2026-10-14〜）:** 画面・説明文ではLCBに合わせて「人格」（旧: コアページ）、「スキル」（旧: バトルページ）と呼ぶ。
+> コード上の識別子（`CORE_PAGES`、`core_*`、`CARD_DATABASE`、`card_*` など）は互換のため旧名のまま。原作LoRの資料に言及するコメントでは「ページ」を残している。
+
 ## 1. 実装済み（コードで動作を確認済み）
 
 | 機能 | 主な場所 | 備考 |
@@ -22,7 +25,7 @@
 | パニックタイプ変更 | panic.js `setPanicTypeOverride` | 邸宅の木霊で使用 |
 | E.G.O「過ぎし日」 | data.js `ego_bygone_days`、effects.js `applyBygoneDaysHit` ほか | 招聘されざる者・呪い・邸宅の木霊・パッシブ含む |
 | 呼吸（=LCBのPoise） | battle.js `tryBreathCritical` / `getCritDamageBonus`、effects.js `getBreathCoinPowerBonus` | クリティカル率 威力×5%、1.2倍＋スキルの追加倍率。回数0で消える |
-| 剣契（コアページ core_7/core_8、card_27〜37） | data.js（LCB人格スキル＋LoRの剣契ページ・キーページ） | 肉斬→骨断の追撃（`onClashLoseFollowUp`）、混乱無効（`noStaggerDuringSkill`）、致死耐え（`lethalGuardOnce`） |
+| 剣契（人格 core_7/core_8、card_27〜37） | data.js（LCB人格スキル＋LoRの剣契ページ・キーページ） | 肉斬→骨断の追撃（`onClashLoseFollowUp`）、混乱無効（`noStaggerDuringSkill`）、致死耐え（`lethalGuardOnce`） |
 | 充電（リソース） | js/charge.js | 上限は core.chargeCap（通常10、W社20）、幕終了時-1。実行時（On Use）処理 `prepareSkillExecution` |
 | W社3級整理要員(刀)/(双剣)（core_9/core_10、card_38〜44・46〜49） | data.js | LCB 良秀・ドンキホーテのスキル＋LoR WARP整理班のページ |
 | 黒獣-卯（core_11、card_50〜53） | data.js、js/rupture.js | 速度差・破裂・脚力【卯】・呪殺【迅速】・コイン再使用。他より一段強い想定 |
@@ -32,9 +35,9 @@
 | リウ協会南部4課部長（core_12、card_54〜61） | data.js、js/liu.js | LCB リウ協会南部4課部長ロージャのスキル＋LoR リウ協会南部1課のページ。火傷で威力・与ダメージが伸びる。パッシブ熱き情熱・天を裂く烈火 |
 | 火傷（burn） | effects.js `STATUS_DEFINITIONS.burn`、teth_egos.js `processBurnTurnEnd` | 幕終了時に威力分の固定ダメージ、回数-1。威力/回数の自動補完あり |
 | 破損せず的中（`requireUncracked`） | effects.js `triggerOnHit` | 破壊不能コインのマッチ敗北後の攻撃（`slot._coinCracked`）では発動しない |
-| コアページのパッシブ | data.js `passiveList: [{ name, desc }]`、`getCorePassiveList()` | 1行に1つずつ表示。「A & B」形式は廃止 |
+| 人格のパッシブ | data.js `passiveList: [{ name, desc }]`、`getCorePassiveList()` | 1行に1つずつ表示。「A & B」形式は廃止 |
 | キーワードのツールチップ | js/keywords.js `kw()` | 説明文中の状態名に説明を付ける（PCは title、スマホはタップで展開）。STATUS_DEFINITIONS に日本語の desc を書けば自動対象 |
-| デッキ非表示のページ | `hidden: true` | 骨断（追撃専用） |
+| デッキ非表示のスキル | `hidden: true` | 骨断（追撃専用） |
 | マッチ可能反撃の待機 | battle.js `executeFullTurn` | 待機中のスロットを攻撃で指定するとマッチ |
 
 ## 2. 1対1向けの簡略化（原作と異なる箇所）
@@ -75,7 +78,7 @@
 
 - P2のAIによるE.G.Oの使用。
 - 複数の混乱閾値。
-- コアページのパニックタイプは仮の割り当て（資料10.1）。
+- 人格のパニックタイプは仮の割り当て（資料10.1）。
 - マッチ可能反撃「身構える」の「勝ち続ける限り同じマッチ内で再使用」は未実装（1回判定のみ）。
 
 ## 4. 仕様の判断待ち

@@ -7,7 +7,7 @@
 //   - 怨嗟の鞘・積もる怨嗟・本国流剣術-真髄（味方の剣契が前提の効果）は省略。
 //
 // 状態:
-//   drink_fallen 追慕酒: 幕開始時に呼吸威力+1/スタック（キムサッガのページなら+2）。クリティカルダメージ+3%/スタック（最大15%）。
+//   drink_fallen 追慕酒: 幕開始時に呼吸威力+1/スタック（人格がキムサッガなら+2）。クリティカルダメージ+3%/スタック（最大15%）。
 //                呼吸を得る効果を持つ通常スキルのマッチ威力+1。幕終了時に1減少。
 //                HPが0になる致死ダメージを受けたとき、全て消費して1スタックにつき最大HPの25%で復帰。
 //   resentment   怨恨: パッシブ「剣先にしたたる酒滴」で、幕開始時に追慕酒があれば得る。その幕、速度+2、与えたダメージの10%回復。
@@ -62,7 +62,7 @@ function applyResentmentHeal(attacker, hpDamage) {
 }
 
 // 着影揮刀の攻撃前（prepareSkillExecution から）。呼吸威力4ごとにマッチ威力+1・与ダメージ+10%（最大5）。
-// 追慕酒があれば主対象への与ダメージ+100%（キムサッガのページなら+200%）。
+// 追慕酒があれば主対象への与ダメージ+100%（人格がキムサッガなら+200%）。
 function prepareBladesinger(player, skill, bonus) {
   if (!skill?.bladesinger) return;
   const potency = getStatus(player, 'breath')?.power || 0;
@@ -87,7 +87,7 @@ function bladesingerAttackEnd(player, skill) {
   s.count = Math.min(STATUS_DEFINITIONS.drink_fallen.maxCount, (s.count || 0) + 4);
   log(`[着影揮刀] ${playerLabel(player)}は追慕酒4を得る（${s.count}）`);
 }
-// E.G.Oの資源コスト（キムサッガのページでの初回使用は傲慢3のみ）
+// E.G.Oの資源コスト（人格がキムサッガのときの初回使用は傲慢3のみ）
 function getEgoResourceCost(player, ego) {
   const p = gameState[player];
   const id = ego.egoId || ego.id;
@@ -96,7 +96,7 @@ function getEgoResourceCost(player, ego) {
 }
 
 // ===== 恨の宿った鞘・結ばれゆくしこり（キムサッガ＝剣契頭目ムルソー相当）=====
-// 恨の宿った鞘: 怨恨状態になるとき、キムサッガのページなら追加で得る（その幕のみ。追慕酒があれば毎幕得る）。
+// 恨の宿った鞘: 怨恨状態になるとき、人格がキムサッガなら追加で得る（その幕のみ。追慕酒があれば毎幕得る）。
 //   - 自分が体力ダメージを受けると、ダメージ量だけ結ばれゆくしこりを得る（1対1のため「味方」は自分のみ）。
 //   - 追慕パッシブが最大効果で発動 → 自分のスキル・コインで得る/与える状態の威力・回数+2。
 //   - 傲慢共鳴時の「本国剣 - 真詮伝授」付与は、自分を除く剣契の味方が対象のため1対1では発動しない（省略）。

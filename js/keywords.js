@@ -36,13 +36,13 @@ const KEYWORD_DESCS = {
   '敵味方識別不可': '対象がランダムに決まる（自分のダイスを狙うこともある）。'
 };
 
-// 他のページの説明から参照されるページ（追撃専用の「骨断」など）も、ページ性能をツールチップで出す。
-// 対象: デッキに入らないページ（hidden）、追撃元（onClashLoseFollowUp を持つページ）、tooltipRef: true のページ
+// 他のスキルの説明から参照されるスキル（追撃専用の「骨断」など）も、スキル性能をツールチップで出す。
+// 対象: デッキに入らないスキル（hidden）、追撃元（onClashLoseFollowUp を持つスキル）、tooltipRef: true のスキル
 function getCardTooltipText(card) {
   const type = { attack: '攻撃', defense: '防御', evade: '回避', counter: '反撃', counter_clash: 'マッチ可能反撃' }[card.skillType] || card.skillType;
   const atk = { slash: '斬撃', pierce: '貫通', blunt: '打撃' }[card.attackType] || '';
   const cp = card.coinCount ? `基礎${card.basePower} / コイン${card.coinPower >= 0 ? '+' : ''}${card.coinPower} ×${card.coinCount}` : '';
-  return `【ページ】${card.name}（コスト${card.cost}・${type}${atk ? `（${atk}）` : ''}${cp ? `・${cp}` : ''}）: ${card.effect || '効果なし'}`;
+  return `【スキル】${card.name}（コスト${card.cost}・${type}${atk ? `（${atk}）` : ''}${cp ? `・${cp}` : ''}）: ${card.effect || '効果なし'}`;
 }
 function getReferencedCards() {
   const ids = new Set();

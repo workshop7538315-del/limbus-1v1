@@ -1,4 +1,4 @@
-// liu.js — リウ協会（火傷）のコアページ core_12 と、そのページ（card_54〜61）の処理
+// liu.js — リウ協会（火傷）の人格 core_12 と、そのスキル（card_54〜61）の処理
 //
 // 参考:
 //   LCB「リウ協会南部4課 部長 ロージャ」（Liu Assoc. South Section 4 Director Rodion、limbuscompany.wiki.gg）のスキル・パッシブ
@@ -13,14 +13,14 @@
 //   burnCoinPowerPer: { per, max }          対象の火傷威力 per ごとにコイン威力+1（最大max）
 //   burnCoinPowerAt: { min, bonus }         対象の火傷威力が min 以上ならコイン威力+bonus
 //   burnCountDamageAt: { min, bonus }       対象の火傷回数が min 以上なら与ダメージ+bonus
-//   onUse.special: 'liu_draw_copies'        次の幕の開始時、デッキにある同名ページを全て引く（LoR 一点刺突）
+//   onUse.special: 'liu_draw_copies'        次の幕の開始時、デッキにある同名スキルを全て引く（LoR 一点刺突）
 //   onUse.special: 'liu_violent_flame'      この幕、バトルページで与える火傷+1（LoR 猛炎）
 //   コインの onHit.special:
 //     'liu_combust'      対象の火傷回数が6以上なら、追加で火傷3を与える
 //     'liu_blitz_finish' 対象の火傷威力分（最大10）の憤怒の固定ダメージを与え、対象の火傷回数-2
-// コアページ:
+// 人格:
 //   burnPassion: true    与ダメージ+対象の火傷威力6ごとに10%（最大30%）。戦闘開始時、相手の火傷が6以上なら憤怒ダメージ増加1・攻撃威力増加1
-//   furiousFire: 2       幕開始時、手札のページをランダムに2枚選び、その幕のあいだ与える火傷を2倍にする（LoR 天を裂く烈火）
+//   furiousFire: 2       幕開始時、手札のスキルをランダムに2枚選び、その幕のあいだ与える火傷を2倍にする（LoR 天を裂く烈火）
 
 function getLiuSkillPrepare(player, skill, bonus) {
   if (!skill) return;
@@ -35,7 +35,7 @@ function getLiuSkillPrepare(player, skill, bonus) {
   if (skill.burnCoinPowerAt && pot >= skill.burnCoinPowerAt.min) { bonus.coinPower += skill.burnCoinPowerAt.bonus; parts.push(`コイン威力+${skill.burnCoinPowerAt.bonus}`); }
   if (skill.burnCountDamageAt && cnt >= skill.burnCountDamageAt.min) { bonus.damageBonus = (bonus.damageBonus || 0) + skill.burnCountDamageAt.bonus; parts.push(`与ダメージ+${Math.round(skill.burnCountDamageAt.bonus * 100)}%`); }
   if (parts.length) log(`[火傷] 「${skill.name}」: 相手の火傷（威力${pot}・回数${cnt}）で${parts.join('、')}`);
-  // 天を裂く烈火で選ばれたページ（同名が複数あれば1枚分）
+  // 天を裂く烈火で選ばれたスキル（同名が複数あれば1枚分）
   const p = gameState[player];
   if (p.furiousFire?.[skill.id] > 0 && !skill.isEgo) {
     p.furiousFire[skill.id]--;
@@ -92,7 +92,7 @@ function applyLiuOnUse(player, card) {
   }
   if (sp === 'liu_violent_flame') {
     addCombatStatus(player, 'violent_flame', 1, 1);
-    log(`[使用時] 「${card.name}」: この幕、バトルページで与える火傷+1`);
+    log(`[使用時] 「${card.name}」: この幕、スキルで与える火傷+1`);
   }
 }
 

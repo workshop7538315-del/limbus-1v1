@@ -35,7 +35,7 @@ function setupCharacter(p, core, egoIds = {}) {
   state.usedEgosThisTurn = [];
   state.pendingStatuses = {};
   state.activeEgoPassives = []; state.pendingEgoPassives = []; state.egoUsedOnce = {};
-  // 装備しているだけで有効なE.G.Oパッシブ（着影揮刀「剣先にしたたる酒滴」はキムサッガのページで常時有効）
+  // 装備しているだけで有効なE.G.Oパッシブ（着影揮刀「剣先にしたたる酒滴」は人格がキムサッガのとき常時有効）
   state.equippedEgos.forEach(e => { if (e.egoPassiveAlwaysFor && e.egoPassiveAlwaysFor === core.id) state.activeEgoPassives.push(e.egoPassiveId); });
   const initialZayin = state.equippedEgos.find(e => e.risk === 'ZAYIN');
   state.sinRes = { ...(initialZayin?.sinRes || { wrath:1, lust:1, sloth:1, gluttony:1, gloom:1, pride:1, envy:1 }) };
@@ -498,7 +498,7 @@ async function withStaggerImmunity(player, skill, fn) {
   p.staggerImmune = true;
   try { return await fn(); } finally { p.staggerImmune = before; if (!before) checkStaggerThresholds(player); }
 }
-// コアページの「マッチ勝利時」パッシブ（core.clashWinBreath: 呼吸威力+X）
+// 人格の「マッチ勝利時」パッシブ（core.clashWinBreath: 呼吸威力+X）
 function applyCoreClashWinPassive(player) {
   const core = gameState[player]?.core;
   const p = gameState[player];
@@ -514,7 +514,7 @@ function applyCoreClashWinPassive(player) {
     log(`[パッシブ] 呼吸を整える: ${playerLabel(player)}の呼吸威力 ${r.before}→${r.after}`);
   }
 }
-// コアページ「本国流剣術」: 1試合に1回、致死ダメージを受けたその幕はHP1未満にならない。
+// 人格「本国流剣術」: 1試合に1回、致死ダメージを受けたその幕はHP1未満にならない。
 function applyLethalGuard(player, hpDamage) {
   const p = gameState[player];
   hpDamage = applyYieldHpFloor(player, hpDamage); // 恨の宿った鞘「肉斬」（blade_lineage.js）
