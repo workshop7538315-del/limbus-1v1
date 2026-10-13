@@ -1,5 +1,8 @@
 // battle.js — Limbus風のSkill/Coin戦闘エンジン
 
+const DEFAULT_STAGGER_RATIOS = [0.7, 0.4, 0.2];
+function getStaggerRatios(core) { return core?.staggerRatios || DEFAULT_STAGGER_RATIOS; }
+
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -22,8 +25,8 @@ function setupCharacter(p, core, egoIds = {}) {
   const state = gameState[p];
   state.core = core;
   state.hp = core.hp; state.maxHp = core.hp;
-  const oldStaggerRatio = core.hp > 0 ? Math.min(1, (core.stagger ?? core.hp) / core.hp) : 0.5;
-  state.staggerThresholds = [Math.floor(core.hp * oldStaggerRatio)];
+  // 混乱閾値（LCB方式）: 最大HPに対する割合の配列。人格ごとの core.staggerRatios、なければ LCBで多い 70%/40%/20%。
+  state.staggerThresholds = getStaggerRatios(core).map(r => Math.floor(core.hp * r)).filter(v => v > 0);
   state.triggeredStaggerThresholds = 0; state.staggerLevel = 0; state.staggerThresholdBonus = 0;
   state.isStaggered = false; state.staggerSkipDone = false;
   state.sanity = 0; state.minSanity = -45; state.maxSanity = 45;

@@ -86,7 +86,7 @@ function getResText(val) {
 const CORE_PAGES = [
   {
     id: 'core_1', name: '見習い司書',
-    level: 1, hp: 80, stagger: 40, maxLight: 4, speedDiceCount: 2, speedMin: 2, speedMax: 6,
+    level: 1, hp: 80, maxLight: 4, speedDiceCount: 2, speedMin: 2, speedMax: 6,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.0 },
     passiveList: [
       { name: '二刀流', desc: '速度ダイス数:2。' },
@@ -96,7 +96,7 @@ const CORE_PAGES = [
   },
   {
     id: 'core_2', name: '裏路地の暗殺者',
-    level: 1, hp: 70, stagger: 35, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
+    level: 1, hp: 70, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
     passiveList: [
       { name: '疾風', desc: '速度ダイス数:2。' },
@@ -107,7 +107,7 @@ const CORE_PAGES = [
   },
   {
     id: 'core_3', name: '盾持ち兵士',
-    level: 1, hp: 100, stagger: 50, maxLight: 3, speedDiceCount: 1, speedMin: 1, speedMax: 3,
+    level: 1, hp: 100, maxLight: 3, speedDiceCount: 1, speedMin: 1, speedMax: 3,
     res: { slash: 1.0, pierce: 0.5, blunt: 0.5 },
     passiveList: [
       { name: '重装', desc: '速度ダイス数:1。' },
@@ -122,7 +122,7 @@ const CORE_PAGES = [
   },
   {
     id: 'core_4', name: '黒雲会の組員',
-    level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 2, speedMax: 6,
+    level: 1, hp: 75, maxLight: 3, speedDiceCount: 2, speedMin: 2, speedMax: 6,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.5 },
     passiveList: [{ name: '血の掟', desc: '自分がスキルによって出血を付与するとき出血威力+1。幕の最初のスキルは的中時、最初の1回に出血回数2、以降は1。' }],
     panicType: '狂人',
@@ -138,7 +138,7 @@ const CORE_PAGES = [
   },
   {
     id: 'core_5', name: 'サンドバッグ',
-    level: 1, hp: 999, stagger: 999, maxLight: 3, speedDiceCount: 1, speedMin: 1, speedMax: 3,
+    level: 1, hp: 999, maxLight: 3, speedDiceCount: 1, speedMin: 1, speedMax: 3,
     res: { slash: 0.0, pierce: 0.0, blunt: 0.0 },
     passiveList: [{ name: 'サンドバッグ', desc: '自身のすべてのコインの威力が常に0になる。' }],
     panicType: 'パニック',
@@ -146,7 +146,7 @@ const CORE_PAGES = [
   },
   {
     id: 'core_6', name: '雨天事務所フィクサー',
-    level: 1, hp: 75, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
+    level: 1, hp: 75, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 1.0, pierce: 1.0, blunt: 1.5 },
     passiveList: [{ name: '沈む思考', desc: 'その幕の最初のスキルのみ、最初の的中時に沈潜回数2、2回目以降の的中時は1。' }],
     panicType: '徘徊',
@@ -171,7 +171,7 @@ const CORE_PAGES = [
   // 呼吸 = LCBの Poise（クリティカル率 威力×5%、クリティカル1.2倍）。数値はこのゲームのHP規模に合わせて縮小。
   {
     id: 'core_7', name: '剣契の殺手',
-    level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
+    level: 1, hp: 75, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 0.5, pierce: 1.5, blunt: 1.0 },
     passiveList: [
       { name: '呼吸を整える', desc: 'マッチ勝利時、呼吸威力1を得る。自分の呼吸威力5ごとに、全スキルのコイン威力+1（最大+3）。' },
@@ -190,7 +190,7 @@ const CORE_PAGES = [
   },
   {
     id: 'core_8', name: 'キムサッガ',
-    level: 1, hp: 100, stagger: 50, maxLight: 4, speedDiceCount: 2, speedMin: 3, speedMax: 6,
+    level: 1, hp: 100, staggerRatios: [0.8, 0.5, 0.2], maxLight: 4, speedDiceCount: 2, speedMin: 3, speedMax: 6,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
     // 2026-10-12: LCB 剣契師範ムルソー（HP259）に合わせて上方修正。黒獣-卯と同格の想定。
     passiveList: [
@@ -219,7 +219,7 @@ const CORE_PAGES = [
   // 1対1では「敵撃破時」の効果が決着と同時になるため、マッチ勝利時などに置き換えている。サポートパッシブは採用しない。
   {
     id: 'core_9', name: 'W社3級整理要員(刀)',
-    level: 1, hp: 75, stagger: 38, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
+    level: 1, hp: 75, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
     passiveList: [
       { name: 'W社のスーツ', desc: '充電の上限が20になる（通常10）。' },
@@ -232,7 +232,7 @@ const CORE_PAGES = [
   },
   {
     id: 'core_10', name: 'W社3級整理要員(双剣)',
-    level: 1, hp: 80, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
+    level: 1, hp: 80, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 6,
     res: { slash: 1.0, pierce: 0.5, blunt: 1.5 },
     passiveList: [
       { name: 'W社のスーツ', desc: '充電の上限が20になる（通常10）。' },
@@ -249,7 +249,7 @@ const CORE_PAGES = [
   // サポートパッシブは採用しない。処理: js/rupture.js
   {
     id: 'core_11', name: '黒獣-卯',
-    level: 1, hp: 95, stagger: 47, maxLight: 4, speedDiceCount: 2, speedMin: 4, speedMax: 7,
+    level: 1, hp: 95, maxLight: 4, speedDiceCount: 2, speedMin: 4, speedMax: 7,
     res: { slash: 0.5, pierce: 1.0, blunt: 1.5 },
     passiveList: [
       { name: '黒獣化[卯]', desc: '脚力【卯】1につき与ダメージ+5%（最大15%）。脚力【卯】は幕終了時に次の幕の迅速5を得て1減少する。' }
@@ -262,7 +262,7 @@ const CORE_PAGES = [
   // HPはLCB（257）をこのゲームの規模に縮小。処理: js/liu.js
   {
     id: 'core_12', name: 'リウ協会南部4課部長',
-    level: 1, hp: 80, stagger: 40, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
+    level: 1, hp: 80, staggerRatios: [0.65, 0.35, 0.15], maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 1.5, pierce: 0.5, blunt: 1.0 },
     passiveList: [
       { name: '熱き情熱', desc: '相手の火傷威力6ごとに与ダメージ+10%（最大30%）。戦闘開始時、相手の火傷威力が6以上なら憤怒ダメージ増加1・攻撃威力増加1を得る。' },
@@ -277,10 +277,10 @@ const CORE_PAGES = [
   },
   // ===== 20区ユロージヴィ（振動）=====
   // 参考: LCB「20区ユロージヴィ ホンル」（District 20 Yurodivy Hong Lu、limbuscompany.wiki.gg、同期4）。
-  // HPはLCB（214）をこのゲームの規模に縮小。混乱閾値はLCBの最初の閾値（70%）。サポートパッシブは採用しない。処理: js/tremor.js
+  // HPはLCB（214）をこのゲームの規模に縮小。混乱閾値はLCBと同じ70%/40%/20%（既定値）。サポートパッシブは採用しない。処理: js/tremor.js
   {
     id: 'core_13', name: '20区ユロージヴィ',
-    level: 1, hp: 75, stagger: 52, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
+    level: 1, hp: 75, maxLight: 3, speedDiceCount: 2, speedMin: 3, speedMax: 7,
     res: { slash: 1.0, pierce: 0.5, blunt: 1.5 },
     passiveList: [
       { name: '振動溶接変形杖（無許可発明品）', desc: '幕終了時、この幕に自分が起こした振動爆発の回数だけ、次の幕に与ダメージ増加を得る（最大10＝+100%）。自分が振動爆発を起こすと、さらに相手の次の混乱閾値を振動威力分上げる（1幕3回）。' }
@@ -570,27 +570,48 @@ const CARD_DATABASE = [
     { onHit: { status: { id: 'burn', power: 2, target: 'opponent' } } }
   ]),
   // ===== 20区ユロージヴィ（振動）: LCB 20区ユロージヴィ ホンルのスキル（同期4。基礎・コイン威力はLCBのまま）=====
-  // 自分に貯める「振動」は回数で数える（tremor.js の冒頭を参照）
+  // 「振動N」は振動威力、「振動回数」は回数（LCBの表記どおり）。ホンルは自分の振動回数、良秀のスキル（card_66〜69）は自分の振動威力を貯める
   // [S1: Deduction Start]
-  skill('card_62', '推理開始', 1, 'attack', 'blunt', 'gloom', 3, 4, 2, '使用時: 自分と相手の振動回数+2（相手への付与は1対1向けの追加）。自分の振動回数が6以上ならコイン威力+1。1枚目的中時: 振動2を与える。2枚目的中時: 自分と相手の振動回数+2。', [
+  skill('card_62', '推理開始', 1, 'attack', 'blunt', 'gloom', 3, 4, 2, '使用時: 自分の振動回数+2。自分の振動回数が6以上ならコイン威力+1。1枚目的中時: 振動2を与える。2枚目的中時: 自分の振動回数+2。', [
     { onHit: { status: { id: 'tremor', power: 2, target: 'opponent' } } },
-    { onHit: { statuses: [{ id: 'tremor', count: 2 }, { id: 'tremor', count: 2, target: 'opponent' }] } }
-  ], { onUse: { statuses: [{ id: 'tremor', count: 2 }, { id: 'tremor', count: 2, target: 'opponent' }] }, selfTremorCoinPowerAt: { min: 6, bonus: 1 } }),
+    { onHit: { status: { id: 'tremor', count: 2 } } }
+  ], { onUse: { statuses: [{ id: 'tremor', count: 2 }] }, selfTremorCoinPowerAt: { min: 6, bonus: 1, by: 'count' } }),
   // [S2: Morph Cane Technique]
-  skill('card_63', '変形杖術', 2, 'attack', 'pierce', 'sloth', 4, 4, 3, '使用時: 自分と相手の振動回数+3（相手への付与は1対1向けの追加）。相手の振動が6以上ならマッチ威力+1。自分の振動回数が5以上ならコイン威力+1。1枚目的中時: 自分と相手の振動回数+3。2枚目的中時: 振動3を与える。3枚目的中時: 相手の振動が6以上なら振動爆発。', [
-    { onHit: { statuses: [{ id: 'tremor', count: 3 }, { id: 'tremor', count: 3, target: 'opponent' }] } },
+  skill('card_63', '変形杖術', 2, 'attack', 'pierce', 'sloth', 4, 4, 3, '使用時: 自分の振動回数+3。相手の振動が6以上ならマッチ威力+1。自分の振動回数が5以上ならコイン威力+1。1枚目的中時: 自分の振動回数+3。2枚目的中時: 振動3を与える。3枚目的中時: 相手の振動が6以上なら振動爆発。', [
+    { onHit: { status: { id: 'tremor', count: 3 } } },
     { onHit: { status: { id: 'tremor', power: 3, target: 'opponent' } } },
     { onHit: { special: 'yuro_burst_if6' } }
-  ], { onUse: { statuses: [{ id: 'tremor', count: 3 }, { id: 'tremor', count: 3, target: 'opponent' }] }, targetTremorClashAt: { min: 6, bonus: 1 }, selfTremorCoinPowerAt: { min: 5, bonus: 1 } }),
+  ], { onUse: { statuses: [{ id: 'tremor', count: 3 }] }, targetTremorClashAt: { min: 6, bonus: 1 }, selfTremorCoinPowerAt: { min: 5, bonus: 1, by: 'count' } }),
   // [S3: You're the Culprit!]
-  skill('card_64', 'お前が犯人だ！', 3, 'attack', 'pierce', 'gluttony', 3, 3, 4, '相手の振動が6以上ならマッチ威力+1。相手の振動6ごとにマッチ威力+1（最大+2）。攻撃開始時: 自分の振動回数が15未満なら10消費してコイン威力+2、15以上なら15消費してコイン威力+3。1枚目的中時: 振動を消費していれば、相手の振動を振動 - 残響にする（振幅もつれ）。2枚目的中時: 振動爆発。3枚目的中時: 振動を10以上消費していれば振動爆発。4枚目的中時: 振動爆発。消費した振動が15未満なら自分にも振動爆発。', [
+  skill('card_64', 'お前が犯人だ！', 3, 'attack', 'pierce', 'gluttony', 3, 3, 4, '相手の振動が6以上ならマッチ威力+1。相手の振動6ごとにマッチ威力+1（最大+2）。攻撃開始時: 自分の振動回数が15未満なら振動回数10を消費してコイン威力+2、15以上なら振動回数15を消費してコイン威力+3。1枚目的中時: 振動を消費していれば、相手の振動を振動 - 残響にする（振幅もつれ）。2枚目的中時: 振動爆発。3枚目的中時: 振動を10以上消費していれば振動爆発。4枚目的中時: 振動爆発。消費した振動が15未満なら自分にも振動爆発。', [
     { onHit: { special: 'yuro_entangle' } },
     { onHit: { special: 'yuro_burst' } },
     { onHit: { special: 'yuro_burst_if_consumed10' } },
     { onHit: { special: 'yuro_burst_then_self' } }
   ], { targetTremorClashAt: { min: 6, bonus: 1 }, targetTremorClashPer: { per: 6, max: 2 }, culpritConsume: true }),
   // [防御: Wait?!]（バリア上限 13 → 5）
-  skill('card_65', '待って?!', 1, 'defense', null, 'sloth', 10, 4, 1, '使用時: 相手の振動回数×2のバリアを得る（最大5）。', [{}], { onUse: { special: 'yuro_wait_shield' } })
+  skill('card_65', '待って?!', 1, 'defense', null, 'sloth', 10, 4, 1, '使用時: 相手の振動回数×2のバリアを得る（最大5）。', [{}], { onUse: { special: 'yuro_wait_shield' } }),
+  // ===== 20区ユロージヴィ良秀のスキル（リソース用。人格は作らない）: LCB District 20 Yurodivy Ryōshū（同期4）=====
+  // 自分の振動威力を貯め、相手に移す。ホンルの「振動を消費」系スキルの燃料になる。処理: js/tremor.js
+  // [S1: Got a Screw Loose?]
+  skill('card_66', 'ネジが緩んだか？', 1, 'attack', 'blunt', 'lust', 3, 4, 2, '使用時: 自分の振動+2。自分の振動回数が4以上ならマッチ威力+2。1枚目的中時: 相手の振動÷2の振動を得る（最大4）。2枚目的中時: 振動2を与える。', [
+    { onHit: { special: 'ryo_gain_half_target' } },
+    { onHit: { status: { id: 'tremor', power: 2, target: 'opponent' } } }
+  ], { onUse: { statuses: [{ id: 'tremor', power: 2 }] }, selfTremorClashAt: { min: 4, bonus: 2, by: 'count' } }),
+  // [S2: Compression Wind-up Spanner]
+  skill('card_67', '圧縮ゼンマイスパナ', 2, 'attack', 'pierce', 'sloth', 4, 3, 3, '使用時: 自分の振動+2。自分の振動回数が4以上ならマッチ威力+1・コイン威力+1。1枚目的中時: 振動1を与える。2枚目的中時: 自分の振動を消費し、同じ量の振動を与える（最大5）。', [
+    { onHit: { status: { id: 'tremor', power: 1, target: 'opponent' } } },
+    { onHit: { special: 'ryo_transfer' } },
+    {}
+  ], { onUse: { statuses: [{ id: 'tremor', power: 2 }] }, selfTremorClashAt: { min: 4, bonus: 1, by: 'count' }, selfTremorCoinPowerAt: { min: 4, bonus: 1, by: 'count' } }),
+  // [S3: Percussive Maintenance]
+  skill('card_68', '叩いて直す', 3, 'attack', 'pierce', 'gluttony', 4, 3, 3, '使用時: 自分の振動+2。攻撃開始時: 自分の振動8を消費してコイン威力+1。相手の振動が6以上ならコイン威力+1。1・2枚目的中時: 振動2を与える。3枚目的中時: 振動爆発。', [
+    { onHit: { status: { id: 'tremor', power: 2, target: 'opponent' } } },
+    { onHit: { status: { id: 'tremor', power: 2, target: 'opponent' } } },
+    { onHit: { special: 'yuro_burst' } }
+  ], { onUse: { statuses: [{ id: 'tremor', power: 2 }] }, selfTremorConsumeCoin: { amount: 8, bonus: 1 }, targetTremorCoinPowerAt: { min: 6, bonus: 1 } }),
+  // [防御: Guard]（バリア上限 10 → 4）
+  skill('card_69', '受け止め', 1, 'defense', null, 'sloth', 7, 6, 1, '使用時: 自分の振動回数×2のバリアを得る（最大4）。', [{}], { onUse: { special: 'ryo_guard_shield' } })
 ];
 
 const EGO_DATABASE = [

@@ -33,7 +33,7 @@ function renderCoreSelectionList(elementId, selectedArray, toggleSelectFunc, own
       <div class="core-card-header"><div><strong style="color:#f39c12;">${core.name}</strong> (${core.speedDiceCount}速度ダイス)</div>
       <span onclick="toggleCoreAccordion('${owner}','${core.id}',event)" style="color:#2980b9;font-weight:bold;padding:2px 6px;">${isOpen?'▲ 詳細閉じる':'▼ 詳細開く'}</span></div>
       <div class="core-card-detail ${isOpen?'open':''}">
-        <div>HP: ${core.hp} / 混乱耐性: ${core.stagger} / 最大光: ${core.maxLight} / 速度: ${core.speedMin}～${core.speedMax}</div>
+        <div>HP: ${core.hp} / 混乱閾値: ${getStaggerRatios(core).map(r=>Math.round(r*100)+'%').join('/')} / 最大光: ${core.maxLight} / 速度: ${core.speedMin}～${core.speedMax}</div>
         <div style="margin-top:2px;">パニックタイプ: <strong>${core.panicType || 'パニック'}</strong></div>
         <div style="margin-top:2px;">パニック効果: ${kw(getPanicTypeEffect(core.panicType || 'パニック'))}</div>
         <div style="margin-top:2px;">パッシブ:</div><div class="passive-list">${getCorePassiveList(core).map(ps=>`<div class="passive-line"><strong>${ps.name}</strong><span>${kw(ps.desc)}</span></div>`).join('')}</div>
