@@ -414,7 +414,7 @@ const CARD_DATABASE = [
     { onHit: { status: { id: 'breath', power: 3 }, draw: 1 } }
   ], { onUse: { statuses: [{ id: 'breath', power: 2 }] } }),
   // [Heel Turn] 剣契殺手イサン S2
-  skill('card_29', 'ひんねじる', 1, 'attack', 'slash', 'wrath', 5, 1, 2, 'マッチ勝利時: 呼吸威力2・呼吸回数1を得る。', [{}, {}], {
+  skill('card_29', 'ひんねじる', 1, 'attack', 'slash', 'wrath', 5, 2, 2, 'マッチ勝利時: 呼吸威力2・呼吸回数1を得る。', [{}, {}], {
     onClashWin: { status: { id: 'breath', power: 2, count: 1 } }
   }),
   // [Flank Thrust] 剣契殺手イサン S3
@@ -428,12 +428,12 @@ const CARD_DATABASE = [
     { onHit: { critDamageBonus: 0.6 } }
   ], { onUse: { statuses: [{ id: 'breath', power: 3 }] }, onClashWin: { special: 'slash_power_up_2turns', light: 1 }, breathCoinBonus: { min: 7, bonus: 1 } }), // 光回復はLoR版のマッチ勝利効果
   // [Blade Arc] 剣契殺手ドンキホーテ S2
-  skill('card_32', '剣軌', 1, 'attack', 'slash', 'envy', 4, 2, 2, '使用時: 呼吸威力2を得る。1枚目的中時: 呼吸威力2を得る。2枚目的中時: 呼吸回数2を得る。自分の呼吸威力7以上でコイン威力+1。', [
+  skill('card_32', '剣軌', 1, 'attack', 'slash', 'envy', 4, 3, 2, '使用時: 呼吸威力2を得る。1枚目的中時: 呼吸威力2を得る。2枚目的中時: 呼吸回数2を得る。自分の呼吸威力7以上でコイン威力+1。', [
     { onHit: { status: { id: 'breath', power: 2 } } },
     { onHit: { status: { id: 'breath', count: 2 } } }
   ], { onUse: { statuses: [{ id: 'breath', power: 2 }] }, breathCoinBonus: { min: 7, bonus: 1 } }),
   // [Fare Thee Well!] 剣契殺手ドンキホーテ S3（味方への付与は自分に置き換え）
-  skill('card_33', 'さらば！', 3, 'attack', 'slash', 'sloth', 4, 2, 3, '使用時: 呼吸威力5を得る。1・2枚目が表で的中するたび、最後のコインの与ダメージ+10%。3枚目: クリティカル時ダメージ+30%、的中時に呼吸回数2を得る。自分の呼吸威力10以上でコイン威力+1。', [
+  skill('card_33', 'さらば！', 3, 'attack', 'slash', 'sloth', 4, 3, 3, '使用時: 呼吸威力5を得る。1・2枚目が表で的中するたび、最後のコインの与ダメージ+10%。3枚目: クリティカル時ダメージ+30%、的中時に呼吸回数2を得る。自分の呼吸威力10以上でコイン威力+1。', [
     { onHit: { finalCoinBonusOnHeads: 0.1 } },
     { onHit: { finalCoinBonusOnHeads: 0.1 } },
     { onHit: { status: { id: 'breath', count: 2 }, critDamageBonus: 0.3 } }
