@@ -539,6 +539,13 @@ function applyOnUseEffects(player, card) {
       log(`[使用時] ${playerLabel(player)}の「${card.name}」: ${card.onUse.draw}枚引く`);
     }
   }
+  // LoR 杖事務所「エネルギー転換」: 充電を消費して光を回復
+  if (card.onUse.special === 'consume_charge_light') {
+    if (getCharge(player) >= card.onUse.chargeCost) {
+      consumeCharge(player, card.onUse.chargeCost, `「${card.name}」`);
+      restoreLight(player, card.onUse.light, `「${card.name}」`);
+    } else log(`[使用時] ${playerLabel(player)}の「${card.name}」: 充電が${card.onUse.chargeCost}未満のため光は回復しない`);
+  }
   if (card.onUse.special === 'overcharge') {
     gainCharge(player, getChargeCap(player), `「${card.name}」`);
     gameState[player].skipNextTurn = true;

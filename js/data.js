@@ -322,6 +322,7 @@ function skill(id, name, cost, type, attackType, sin, basePower, coinPower, coin
   if (extra?.onUse?.special === 'bloodletting_light') tags.add('bleed');
   if (extra?.onUse?.special === 'consume_charge_draw') { tags.add('charge'); tags.add('draw'); }
   if (extra?.onUse?.special === 'overcharge') tags.add('charge');
+  if (extra?.onUse?.special === 'consume_charge_light') { tags.add('charge'); tags.add('light'); }
   if (extra?.onClashWin?.status?.id) tags.add(extra.onClashWin.status.id);
   if (extra?.onClashWin?.special === 'rain_consume_sinking_if_3' || extra?.sinkingPowerPer4) tags.add('sinking');
   if (extra?.counterDice?.length) tags.add('counter');
@@ -613,6 +614,15 @@ const CARD_DATABASE = [
     { onHit: { special: 'yuro_burst' } }
   ], { onUse: { statuses: [{ id: 'tremor', power: 2 }] }, selfTremorConsumeCoin: { amount: 8, bonus: 1 }, targetTremorCoinPowerAt: { min: 6, bonus: 1 } }),
   // [防御: Guard]（バリア上限 10 → 4）
+  // ===== LoR「杖事務所」の充電ページ（効果はLoR、ダイスはこのゲーム向けに設定）=====
+  // 参考: NamuWiki「Library of Ruina/接待/杖事務所」。光回復の手段が少ない充電人格（W社）向け。
+  // [LoR: エネルギー転換(1)] 打撃3-7（的中で1枚引く）・斬撃2-5。使用時: 充電4を消費して光3回復
+  skill('card_70', 'エネルギー転換', 1, 'attack', 'blunt', 'gluttony', 3, 3, 2, '使用時: 充電4を消費して光3回復。1枚目的中時: 1枚引く。', [
+    { onHit: { draw: 1 } },
+    {}
+  ], { onUse: { special: 'consume_charge_light', chargeCost: 4, light: 3 } }),
+  // [LoR: エネルギーシールド(1)] 防御3-4・防御3-7・斬撃3-5。使用時: 充電+3（斬撃ダイスは省略）
+  skill('card_71', 'エネルギーシールド', 1, 'defense', null, 'sloth', 3, 3, 2, '使用時: 充電+3。', [{}, {}], { onUse: { statuses: [{ id: 'charge', count: 3 }] } }),
   skill('card_69', '受け止め', 1, 'defense', null, 'sloth', 7, 6, 1, '使用時: 自分の振動回数×2のバリアを得る（最大4）。', [{}], { onUse: { special: 'ryo_guard_shield' } })
 ];
 

@@ -20,8 +20,8 @@ ARCH = {
   'bleed':   {'name': '黒雲会(出血)',       'core': 'core_4',  'deck': ['card_12','card_12','card_13','card_14','card_14','card_15','card_16','card_16','card_6']},
   'sinking': {'name': '雨天事務所(沈潜)',   'core': 'core_6',  'deck': ['card_19','card_20','card_21','card_23','card_24','card_26','card_18','card_18','card_6']},
   'salsu':   {'name': '剣契の殺手(呼吸)',   'core': 'core_7',  'deck': ['card_27','card_27','card_28','card_28','card_32','card_29','card_30','card_33','card_37']},
-  'wblade':  {'name': 'W社(刀)(充電)',      'core': 'core_9',  'deck': ['card_38','card_38','card_38','card_39','card_40','card_41','card_47','card_49','card_49']},
-  'wdual':   {'name': 'W社(双剣)(充電)',    'core': 'core_10', 'deck': ['card_42','card_42','card_42','card_43','card_43','card_44','card_47','card_49','card_49']},
+  'wblade':  {'name': 'W社(刀)(充電)',      'core': 'core_9',  'deck': ['card_38','card_38','card_39','card_40','card_41','card_47','card_49','card_70','card_71']},
+  'wdual':   {'name': 'W社(双剣)(充電)',    'core': 'core_10', 'deck': ['card_42','card_42','card_43','card_43','card_44','card_47','card_49','card_70','card_71']},
   'liu':     {'name': 'リウ協会(火傷)',     'core': 'core_12', 'deck': ['card_54','card_55','card_55','card_56','card_57','card_58','card_59','card_59','card_59']},
   'yuro':    {'name': 'ユロージヴィ(振動)', 'core': 'core_13', 'deck': ['card_62','card_62','card_63','card_63','card_64','card_65','card_66','card_66','card_67']},
 }
