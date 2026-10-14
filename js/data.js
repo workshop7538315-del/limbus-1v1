@@ -458,6 +458,7 @@ const CARD_DATABASE = [
     { onHit: { light: 1 } }
   ], { onClashWin: { status: { id: 'attack_power_up', count: 1 } } }),
   // ===== W社（WARP整理班）=====
+  // 2026-10-14: LCBのスキル（card_38〜44）は同期4の基礎/コイン威力・充電量に合わせた（limbuscompany.wiki.gg）。
   // [LCB 良秀 S1: エネルギー循環（E.C.）] ＋ LoR「エネルギー循環」（充電3回復、的中で光1回復）
   skill('card_38', 'エネルギー循環', 1, 'attack', 'slash', 'lust', 3, 2, 3, '使用時: 充電+3。1枚目的中時: 光1回復・充電+2。2枚目的中時: 充電+2。充電10以上で与ダメージ+10%、15以上でさらに+10%。', [
     { onHit: { light: 1, status: { id: 'charge', count: 2 } } },
@@ -465,37 +466,37 @@ const CARD_DATABASE = [
     {}
   ], { onUse: { statuses: [{ id: 'charge', count: 3 }] }, chargeDamageTiers: [{ min: 10, bonus: 0.1 }, { min: 15, bonus: 0.1 }] }),
   // [LCB 良秀 S2: 跳躍（Leap）] ＋ LoR「跳躍」（充電3を消費して2枚ドロー）。敵撃破時の迅速は1対1では省略
-  skill('card_39', '跳躍', 2, 'attack', 'slash', 'pride', 4, 2, 2, '使用時: 充電3を消費して2枚引く。攻撃開始時: 充電+7。充電10以上でコイン威力+1、15以上でさらに+1。1枚目的中時: 充電10以上なら斬撃脆弱2を与える。2枚目: 相手のHPが30%未満なら与ダメージ+30%。', [
+  skill('card_39', '跳躍', 2, 'attack', 'slash', 'pride', 2, 5, 2, '使用時: 充電3を消費して2枚引く。攻撃開始時: 充電+7。充電10以上でコイン威力+1、15以上でさらに+1。1枚目的中時: 充電10以上なら斬撃脆弱2を与える。2枚目: 相手のHPが30%未満なら与ダメージ+30%。', [
     { onHit: { status: { id: 'slash_fragility', count: 2, target: 'opponent', requireCharge: 10 } } },
     { onHit: { lowHpDamageBonus: { below: 0.3, bonus: 0.3 } } }
   ], { onUse: { special: 'consume_charge_draw', chargeCost: 3, draw: 2 }, onExecute: { charge: 7 }, chargeCoinPowerTiers: [{ min: 10, bonus: 1 }, { min: 15, bonus: 1 }] }),
   // [LCB 良秀 S3: 次元空切（D.D.E.D.R.）]（敵撃破時の充電障壁は1対1では省略）
-  skill('card_40', '次元空切', 3, 'attack', 'slash', 'envy', 3, 1, 4, '攻撃開始時: 充電15を消費してコイン威力+3。充電7～14なら全て消費し、不足1につき最大HPの3%を失って同じ効果。1～3枚目が表で的中するたび、最後のコインの与ダメージ+10%。', [
+  skill('card_40', '次元空切', 3, 'attack', 'slash', 'envy', 3, 2, 4, '攻撃開始時: 充電15を消費してコイン威力+5。充電7～14なら全て消費し、不足1につき最大HPの3%を失って同じ効果。1～3枚目が表で的中するたび、最後のコインの与ダメージ+10%。', [
     { onHit: { finalCoinBonusOnHeads: 0.1 } },
     { onHit: { finalCoinBonusOnHeads: 0.1 } },
     { onHit: { finalCoinBonusOnHeads: 0.1 } },
     {}
-  ], { chargeConsume: { amount: 15, coinPower: 3, partialMin: 7, partialHpPer: 0.03 } }),
+  ], { chargeConsume: { amount: 15, coinPower: 5, partialMin: 7, partialHpPer: 0.03 } }),
   // [LCB 良秀 防御: 充電回避]
-  skill('card_41', '充電回避', 1, 'evade', null, 'lust', 4, 3, 1, '充電5ごとに基礎威力+1（最大+3）。', [{}], { chargeBasePowerPer5: 3 }),
+  skill('card_41', '充電回避', 1, 'evade', null, 'lust', 4, 10, 1, '充電5ごとに基礎威力+1（最大+3）。', [{}], { chargeBasePowerPer5: 3 }),
   // [LCB ドンキホーテ S1: 切断（Rip）]（破裂は不採用）
-  skill('card_42', '切断', 1, 'attack', 'slash', 'sloth', 4, 3, 1, '表で的中時: 充電+4。充電5以上でコイン威力+2。', [
+  skill('card_42', '切断', 1, 'attack', 'slash', 'sloth', 5, 6, 1, '表で的中時: 充電+4。充電5以上でコイン威力+2。', [
     { onHit: { status: { id: 'charge', count: 4, requireHeads: true } } }
   ], { chargeCoinPowerTiers: [{ min: 5, bonus: 2 }] }),
   // [LCB ドンキホーテ S2: 跳躍裂き（Leap）]
-  skill('card_43', '跳躍裂き', 2, 'attack', 'pierce', 'gloom', 3, 2, 3, '1・2枚目的中時: 充電+3。3枚目が表で的中時: 脆弱2を与える。充電7以上でコイン威力+1。', [
-    { onHit: { status: { id: 'charge', count: 3 } } },
-    { onHit: { status: { id: 'charge', count: 3 } } },
+  skill('card_43', '跳躍裂き', 2, 'attack', 'pierce', 'gloom', 4, 4, 3, '1・2枚目的中時: 充電+4。3枚目が表で的中時: 脆弱2を与える。充電7以上でコイン威力+1。', [
+    { onHit: { status: { id: 'charge', count: 4 } } },
+    { onHit: { status: { id: 'charge', count: 4 } } },
     { onHit: { status: { id: 'fragile', count: 2, target: 'opponent', requireHeads: true } } }
   ], { chargeCoinPowerTiers: [{ min: 7, bonus: 1 }] }),
   // [LCB ドンキホーテ S3: 空間切断（Rip Space）]（破裂は脆弱に置き換え）
-  skill('card_44', '空間切断', 3, 'attack', 'slash', 'envy', 2, 2, 5, '攻撃開始時: 充電10を消費してコイン威力+2。足りなければ最大HPの20%を失う。表で的中するたび脆弱1を与える。', [
+  skill('card_44', '空間切断', 3, 'attack', 'slash', 'envy', 1, 2, 5, '攻撃開始時: 充電10を消費してコイン威力+4。足りなければ最大HPの20%を失う。表で的中するたび脆弱1を与える。', [
     { onHit: { status: { id: 'fragile', count: 1, target: 'opponent', requireHeads: true } } },
     { onHit: { status: { id: 'fragile', count: 1, target: 'opponent', requireHeads: true } } },
     { onHit: { status: { id: 'fragile', count: 1, target: 'opponent', requireHeads: true } } },
     { onHit: { status: { id: 'fragile', count: 1, target: 'opponent', requireHeads: true } } },
     { onHit: { status: { id: 'fragile', count: 1, target: 'opponent', requireHeads: true } } }
-  ], { chargeConsume: { amount: 10, coinPower: 2, lackHpLoss: 0.2 } }),
+  ], { chargeConsume: { amount: 10, coinPower: 4, lackHpLoss: 0.2 } }),
   // ----- LoR「WARP整理班」のページ（効果はLoR、ダイスはこのゲーム向けに設定）-----
   // [LoR: 過充電(3)] 強力なページ。充電を最大まで獲得するかわりに次の幕は行動不能
   skill('card_46', '過充電', 3, 'attack', 'slash', 'wrath', 6, 3, 2, '使用時: 充電を上限まで獲得する。次の幕、行動できない。', [{}, {}], { onUse: { special: 'overcharge' } }),
