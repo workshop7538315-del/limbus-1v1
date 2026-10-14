@@ -1,6 +1,7 @@
 # tools/roundrobin.py — 自動戦闘の総当たりテスト（Playwright）
 # 使い方: python3 tools/roundrobin.py <リポジトリの絶対パス> <各組み合わせの試合数> [出力JSON]
-# 万全な状態（window.TEST_FULL_POWER = true、js/state.js 参照）で行う。各デッキにはリソース回復スキルを最低3枚入れる。
+# 既定は万全な状態（window.TEST_FULL_POWER = true、js/state.js 参照）。--normal を付けると通常の状態でテストする。
+# W社のデッキはコスト3のスキルを1枚にしている。各デッキにはリソース回復スキルを最低3枚入れる。
 # 操作は両者共通: 出せる中で最もコストの高いスキルを出し、自分を狙う相手のダイスを優先して指定。E.G.Oは使わない。
 
 import sys, json, itertools, time
@@ -8,6 +9,8 @@ from playwright.sync_api import sync_playwright
 
 root = sys.argv[1]
 N = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+NORMAL = '--normal' in sys.argv  # 通常テスト（万全な状態にしない）
+sys.argv = [a for a in sys.argv if a != '--normal']
 
 ARCH = {
   # 各デッキにリソース回復スキル（光回復・充電・呼吸・振動を得るスキル）を最低3枚
@@ -18,7 +21,7 @@ ARCH = {
   'sinking': {'name': '雨天事務所(沈潜)',   'core': 'core_6',  'deck': ['card_19','card_20','card_21','card_23','card_24','card_26','card_18','card_18','card_6']},
   'salsu':   {'name': '剣契の殺手(呼吸)',   'core': 'core_7',  'deck': ['card_27','card_27','card_28','card_28','card_32','card_29','card_30','card_33','card_37']},
   'wblade':  {'name': 'W社(刀)(充電)',      'core': 'core_9',  'deck': ['card_38','card_38','card_38','card_39','card_40','card_41','card_47','card_49','card_49']},
-  'wdual':   {'name': 'W社(双剣)(充電)',    'core': 'core_10', 'deck': ['card_42','card_42','card_43','card_43','card_44','card_47','card_48','card_49','card_49']},
+  'wdual':   {'name': 'W社(双剣)(充電)',    'core': 'core_10', 'deck': ['card_42','card_42','card_42','card_43','card_43','card_44','card_47','card_49','card_49']},
   'liu':     {'name': 'リウ協会(火傷)',     'core': 'core_12', 'deck': ['card_54','card_55','card_55','card_56','card_57','card_58','card_59','card_59','card_59']},
   'yuro':    {'name': 'ユロージヴィ(振動)', 'core': 'core_13', 'deck': ['card_62','card_62','card_63','card_63','card_64','card_65','card_66','card_66','card_67']},
 }
@@ -49,7 +52,7 @@ async ([a, b]) => {
     if (attacker && attacker !== target) stats[attacker].direct += Math.max(0, before - gameState[target].hp);
     return r;
   };
-  window.TEST_FULL_POWER = true;
+  window.TEST_FULL_POWER = FULL_POWER;
   selectedP1CoreIds = [a.core]; selectedP2CoreIds = [b.core];
   EGO_RISK_LEVELS.forEach(r => { selectedP1EgoIds[r] = null; selectedP2EgoIds[r] = null; });
   decks.p1 = [...a.deck]; decks.p2 = [...b.deck];
@@ -101,7 +104,7 @@ with sync_playwright() as p:
     for x, y in itertools.permutations(keys, 2):
         for i in range(N):
             pg.goto(f'file://{root}/index.html')
-            r = pg.evaluate(GAME_JS, [ARCH[x], ARCH[y]])
+            r = pg.evaluate(GAME_JS.replace('FULL_POWER', 'false' if NORMAL else 'true'), [ARCH[x], ARCH[y]])
             r['a'], r['b'] = x, y
             results.append(r)
     b.close()
