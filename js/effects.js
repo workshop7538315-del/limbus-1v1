@@ -543,7 +543,7 @@ function applyOnUseEffects(player, card) {
   if (card.onUse.special === 'consume_charge_light') {
     if (getCharge(player) >= card.onUse.chargeCost) {
       consumeCharge(player, card.onUse.chargeCost, `「${card.name}」`);
-      restoreLight(player, card.onUse.light, `「${card.name}」`);
+      restoreLight(player, card.onUse.lightGain, `「${card.name}」`);
     } else log(`[使用時] ${playerLabel(player)}の「${card.name}」: 充電が${card.onUse.chargeCost}未満のため光は回復しない`);
   }
   if (card.onUse.special === 'overcharge') {

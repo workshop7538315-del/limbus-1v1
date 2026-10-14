@@ -388,12 +388,18 @@ async function executeFullTurn() {
     //    （攻撃側が防御スロットを指定しただけでは成立しない。資料 4.3 の仕様）
     //  - マッチ可能反撃: 待機中のマッチ可能反撃を攻撃スキルで指定した場合に成立。
     const targetAvailable = target && target.card && !target.resolved && !gameState[target.owner].isStaggered;
-    const hitsWaitingCounter = targetAvailable && hasClashableCounter(target.card) && slot.card.skillType === 'attack';
+    const hitsWaitingCounter = targetAvailable && (hasClashableCounter(target.card) || target.card.clashableGuard) && slot.card.skillType === 'attack';
     const canClash = targetAvailable &&
       (target.targetSlot === slot || isDefenseSkill(slot.card) || hitsWaitingCounter);
+    // マッチ可能ガード: 自分を指定している未解決の攻撃があれば、それを待ってマッチする
+    const awaitedBy = slot.card.clashableGuard && !canClash
+      ? allSlots.find(s => s.owner !== slot.owner && !s.resolved && s.card?.skillType === 'attack' && s.targetSlot === slot && !gameState[s.owner].isStaggered)
+      : null;
     if (canClash) {
       await resolveClash(slot, target);
       slot.resolved = true; target.resolved = true;
+    } else if (awaitedBy) {
+      if (!slot._guardWaitLogged) { log(`[マッチ可能ガード] ${playerLabel(slot.owner)}の「${slot.card.name}」は指定してきた攻撃を待機中。`); slot._guardWaitLogged = true; }
     } else if (hasClashableCounter(slot.card)) {
       // マッチ可能反撃は自分の手番では何もせず、後から攻撃されるのを待つ。
       // resolved にしないことで、より遅い攻撃からもマッチを受けられる。
@@ -564,9 +570,11 @@ async function resolveClashInner(slotA, slotB) {
     await animateClashRoll({ round: clashCount, left: animSideFromSkill(pA, skillA, rollA.power, rollA.coins, remA), right: animSideFromSkill(pB, skillB, rollB.power, rollB.coins, remB) });
     if (rollA.power > rollB.power) {
       remB--; clashWinner = pA; clashLoser = pB;
+      if (skillB.onClashLoseCharge) gainCharge(pB, skillB.onClashLoseCharge, `「${skillB.name}」マッチ敗北`);
       log(`[マッチ勝利] ${playerLabel(pA)}が勝利。${playerLabel(pB)}のコインを1枚失う。残り ${remA} vs ${remB}`);
     } else if (rollB.power > rollA.power) {
       remA--; clashWinner = pB; clashLoser = pA;
+      if (skillA.onClashLoseCharge) gainCharge(pA, skillA.onClashLoseCharge, `「${skillA.name}」マッチ敗北`);
       log(`[マッチ勝利] ${playerLabel(pB)}が勝利。${playerLabel(pA)}のコインを1枚失う。残り ${remA} vs ${remB}`);
     } else {
       remA--; remB--;
@@ -701,6 +709,7 @@ function resolveDefenseAgainstAttack(attacker, attackSkill, defender, defense, i
     return;
   }
   defense.active = false;
+  if (dSkill.onClashLoseCharge) gainCharge(defender, dSkill.onClashLoseCharge, `「${dSkill.name}」マッチ敗北`);
   const damage = Math.max(0, rA - rD);
   executeAttackDamage(attacker, attackSkill, defender, damage, index, attackerSlot, null, true);
 }
