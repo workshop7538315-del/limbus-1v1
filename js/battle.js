@@ -288,7 +288,8 @@ function getCoinPowerBonus(player, skill) {
   if (skill.attackType === 'slash' && gameState[player].core.slashBonus) bonus += gameState[player].core.slashBonus;
   if (skill.sinkingPowerPer4) {
     const target = opponentOf(player), sinking = getStatus(target, 'sinking');
-    if (sinking?.power > 0) bonus += Math.floor(sinking.power / 4) * skill.sinkingPowerPer4;
+    const sp = fullPowerValue(sinking?.power);
+    if (sp > 0) bonus += Math.floor(sp / 4) * skill.sinkingPowerPer4;
   }
   if (skill.coinPowerBonus) bonus += skill.coinPowerBonus;
   return bonus;

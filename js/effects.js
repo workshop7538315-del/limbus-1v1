@@ -271,7 +271,7 @@ function getEffectiveCoinPower(player, skill, coinPower) {
 //   core.breathCoinPowerPer5 = N               … 呼吸威力5ごとにコイン威力+1（最大N）
 function getBreathCoinPowerBonus(player, skill) {
   const breath = getStatus(player, 'breath');
-  const potency = (breath && breath.count > 0) ? (breath.power || 0) : 0;
+  const potency = fullPowerValue((breath && breath.count > 0) ? (breath.power || 0) : 0);
   if (potency <= 0) return 0;
   let bonus = 0;
   const sb = skill?.breathCoinBonus;
@@ -617,7 +617,7 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
     if (!effect) return;
     if (effect.requireHeads && !coin?.heads) return; // 「表で的中時」の効果
     if (effect.requireUncracked && slot?._coinCracked) return; // 「破損せず的中時」（破壊不能コインのマッチ敗北後の攻撃では発動しない）
-    if (effect.requireCharge && getCharge(player) < effect.requireCharge) return; // 充電N以上のときだけ
+    if (effect.requireCharge && getCharge(player) < effect.requireCharge && !isFullPowerTest()) return; // 充電N以上のときだけ
     if (effect.maxCharge != null && getCharge(player) > effect.maxCharge) return; // 充電N以下のときだけ
     effect = adjustLiuBurnEffect(player, effect, card); // 猛炎・天を裂く烈火（liu.js）
     const gb = getOwnStatusGainBonus(player); // 恨の宿った鞘（追慕パッシブ最大効果）
@@ -712,7 +712,7 @@ function triggerOnHit(player, card, target = null, coin = null, slot = null, ext
   }
   if (effectSource?.special === 'blood_feast') {
     const bleed = getStatus(resolvedTarget, 'bleed');
-    if (bleed?.power >= 3) {
+    if (fullPowerValue(bleed?.power) >= 3) {
       const s = ensureStatus(player, 'blood_feast');
       s.power = 5; s.count = 1; normalizeStatus('blood_feast', s);
       log(`[的中] ${playerLabel(player)}の「${card.name}」: この幕のダメージ+5`);

@@ -26,7 +26,7 @@ function getLiuSkillPrepare(player, skill, bonus) {
   if (!skill) return;
   const target = opponentOf(player);
   const burn = getStatus(target, 'burn');
-  const pot = burn?.power || 0, cnt = burn?.count || 0;
+  const pot = fullPowerValue(burn?.power), cnt = fullPowerValue(burn?.count);
   const parts = [];
   if (skill.burnCoinPowerPer) {
     const b = Math.min(skill.burnCoinPowerPer.max, Math.floor(pot / skill.burnCoinPowerPer.per));
@@ -125,7 +125,7 @@ function processLiuCombatStart(player) {
   const core = gameState[player]?.core;
   if (!core?.burnPassion) return;
   const enemy = opponentOf(player);
-  if ((getStatus(enemy, 'burn')?.power || 0) >= 6) {
+  if (fullPowerValue(getStatus(enemy, 'burn')?.power) >= 6) {
     addCombatStatus(player, 'wrath_damage_up', 1, 1);
     addCombatStatus(player, 'attack_power_up', 1, 1);
     log(`[熱き情熱] ${playerLabel(player)}: 相手の火傷6以上 → 憤怒ダメージ増加1・攻撃威力増加1`);
@@ -135,7 +135,7 @@ function processLiuCombatStart(player) {
 // 与ダメージ補正（battle.js applyDamage から）
 function getLiuDamageBonus(attacker, target) {
   if (!gameState[attacker]?.core?.burnPassion) return 0;
-  return Math.min(0.3, Math.floor((getStatus(target, 'burn')?.power || 0) / 6) * 0.1);
+  return Math.min(0.3, Math.floor(fullPowerValue(getStatus(target, 'burn')?.power) / 6) * 0.1);
 }
 
 // 手札の表示用（ui.js）: 天を裂く烈火で選ばれているか

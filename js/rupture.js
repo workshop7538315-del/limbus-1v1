@@ -36,9 +36,10 @@ function getExecSpeed(player) { return gameState[player]?.execBonus?.speedInfo?.
 // prepareSkillExecution（charge.js）から呼ばれる。速度差・破裂に応じたコイン威力など。
 function prepareSpeedRuptureExecution(player, skill, bonus, slot, targetSlot, unopposed) {
   const info = getSlotSpeedInfo(slot, targetSlot);
+  if (isFullPowerTest()) { info.faster = true; info.diff = Math.max(info.diff || 0, 10); } // テストの万全モード
   bonus.speedInfo = info;
   const target = targetSlot?.owner || opponentOf(player);
-  const rup = getStatus(target, 'rupture')?.power || 0;
+  const rup = fullPowerValue(getStatus(target, 'rupture')?.power);
   const parts = [];
   if (skill.speedFasterCoinPower && info.diff >= skill.speedFasterCoinPower.diff) { bonus.coinPower += skill.speedFasterCoinPower.bonus; parts.push(`速度差${info.diff}`); }
   if (skill.speedDiffCoinPowerPer2 && info.faster) { const b = Math.min(skill.speedDiffCoinPowerPer2, Math.floor(info.diff / 2)); if (b > 0) { bonus.coinPower += b; parts.push(`速度差${info.diff}: +${b}`); } }
@@ -68,14 +69,14 @@ function processStriderTurnEnd(player, status) {
 function getStriderDamageBonus(player) {
   const core = gameState[player]?.core;
   if (!core?.striderDamagePer) return 0;
-  return Math.min(core.striderDamageMax || 0.15, (getStatus(player, 'strider_mao')?.count || 0) * core.striderDamagePer);
+  return Math.min(core.striderDamageMax || 0.15, fullPowerValue(getStatus(player, 'strider_mao')?.count) * core.striderDamagePer);
 }
 // 速度差×破裂威力（%）の与ダメージ補正
 function getSpeedRuptureDamageBonus(attacker, target, skill) {
   if (!skill?.speedRuptureDamage) return 0;
   const info = gameState[attacker]?.execBonus?.speedInfo;
   if (!info?.faster) return 0;
-  const rup = getStatus(target, 'rupture')?.power || 0;
+  const rup = fullPowerValue(getStatus(target, 'rupture')?.power);
   return Math.min(skill.speedRuptureDamage.max, info.diff * rup / 100);
 }
 

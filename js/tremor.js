@@ -79,7 +79,7 @@ function tremorBurstBy(source, target, multiplier = 1, skill = null) {
 function prepareTremorSkill(player, skill, bonus) {
   if (!skill) return;
   const enemy = opponentOf(player);
-  const selfCount = getTremorCount(player), selfPot = getTremorPotency(player), pot = getTremorPotency(enemy);
+  const selfCount = fullPowerValue(getTremorCount(player)), selfPot = fullPowerValue(getTremorPotency(player)), pot = fullPowerValue(getTremorPotency(enemy));
   const selfVal = by => by === 'count' ? selfCount : selfPot;
   const selfLabel = by => by === 'count' ? '自分の振動回数' : '自分の振動';
   const parts = [];
@@ -90,7 +90,7 @@ function prepareTremorSkill(player, skill, bonus) {
   const t4 = skill.targetTremorCoinPowerAt;
   if (t4 && pot >= t4.min) { bonus.coinPower += t4.bonus; parts.push(`相手の振動${pot}でコイン威力+${t4.bonus}`); }
   const sc = skill.selfTremorConsumeCoin;
-  if (sc && getTremorPotency(player) >= sc.amount) {
+  if (sc && fullPowerValue(getTremorPotency(player)) >= sc.amount) {
     consumeSelfTremorPotency(player, sc.amount);
     bonus.coinPower += sc.bonus; parts.push(`自分の振動${sc.amount}を消費してコイン威力+${sc.bonus}`);
   }
@@ -102,8 +102,7 @@ function prepareTremorSkill(player, skill, bonus) {
     const use = selfCount >= 15 ? 15 : (selfCount >= 10 ? 10 : 0);
     if (use > 0) {
       const st = getTremor(player);
-      st.count -= use;
-      if (st.count <= 0) delete gameState[player].statuses.tremor;
+      if (st) { st.count -= use; if (st.count <= 0) delete gameState[player].statuses.tremor; }
       bonus.tremorConsumed = use;
       bonus.coinPower += use >= 15 ? 3 : 2;
       parts.push(`自分の振動回数${use}を消費してコイン威力+${use >= 15 ? 3 : 2}`);
@@ -112,8 +111,8 @@ function prepareTremorSkill(player, skill, bonus) {
   const td = skill.tremorDamage;
   if (td) {
     const s = getTremor(enemy);
-    if (s && s.count > 0) {
-      const sum = (s.power || 0) + (s.count || 0);
+    if ((s && s.count > 0) || isFullPowerTest()) {
+      const sum = fullPowerValue(s?.power) + fullPowerValue(s?.count);
       const res = SIN_TYPES.some(sin => hasResonance(player, sin));
       const dmg = res ? Math.min(td.resMax, (td.resBase + sum / td.resDiv) / 100) : Math.min(td.max, (td.base + sum / td.div) / 100);
       bonus.damageBonus = (bonus.damageBonus || 0) + dmg;

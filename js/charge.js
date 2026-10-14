@@ -42,19 +42,21 @@ function consumeCharge(player, amount, reason = '') {
   log(`[充電消費] ${playerLabel(player)} ${before}→${before - used}${reason ? `（${reason}）` : ''}`);
   return used;
 }
+// 条件判定用の充電量（テストの万全モードでは上限）
+function getChargeForBonus(player) { return isFullPowerTest() ? getChargeCap(player) : getCharge(player); }
 function getChargeCoinPowerBonus(player, skill) {
   if (!skill?.chargeCoinPowerTiers) return 0;
-  const c = getCharge(player);
+  const c = getChargeForBonus(player);
   return skill.chargeCoinPowerTiers.reduce((sum, t) => sum + (c >= t.min ? t.bonus : 0), 0);
 }
 function getChargeDamageBonus(player, skill) {
   if (!skill?.chargeDamageTiers) return 0;
-  const c = getCharge(player);
+  const c = getChargeForBonus(player);
   return skill.chargeDamageTiers.reduce((sum, t) => sum + (c >= t.min ? t.bonus : 0), 0);
 }
 function getChargeBasePowerBonus(player, skill) {
   if (!skill?.chargeBasePowerPer5) return 0;
-  return Math.min(skill.chargeBasePowerPer5, Math.floor(getCharge(player) / 5));
+  return Math.min(skill.chargeBasePowerPer5, Math.floor(getChargeForBonus(player) / 5));
 }
 function loseHpFromSkill(player, ratio, reason) {
   const p = gameState[player];
@@ -82,7 +84,7 @@ function prepareSkillExecution(player, skill, slot = null, targetSlot = null, un
   const cc = skill.chargeConsume;
   if (cc) {
     const c = getCharge(player);
-    if (c >= cc.amount) {
+    if (c >= cc.amount || isFullPowerTest()) {
       consumeCharge(player, cc.amount, `「${skill.name}」`);
       bonus.coinPower += cc.coinPower || 0;
       bonus.finalPower += cc.finalPower || 0;
@@ -97,7 +99,7 @@ function prepareSkillExecution(player, skill, slot = null, targetSlot = null, un
     }
   }
   const cp = skill.chargePowerUp;
-  if (cp && getCharge(player) >= cp.amount) {
+  if (cp && (getCharge(player) >= cp.amount || isFullPowerTest())) {
     consumeCharge(player, cp.amount, `「${skill.name}」`);
     addCombatStatus(player, 'power_up', cp.powerUp, 1);
     log(`[充電] 「${skill.name}」: この幕、威力増加${cp.powerUp}を得る`);
