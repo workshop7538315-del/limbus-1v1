@@ -341,6 +341,7 @@ function skill(id, name, cost, type, attackType, sin, basePower, coinPower, coin
   };
 }
 
+// 2026-10-14: 初期スキル（card_11〜26: ルミーズ・出血・沈潜）の基礎/コイン威力を、LCBの人格スキル（リウ協会・ユロージヴィ等）の水準に合わせて引き上げ。
 const CARD_DATABASE = [
   skill('card_1', '迅速な斬撃', 1, 'attack', 'slash', 'wrath', 4, 2, 2, '', [{}, {}]),
   skill('card_2', '防御体勢', 1, 'defense', null, 'sloth', 4, 2, 2, '防御スキルとして使用する。', [{}, {}]),
@@ -355,48 +356,48 @@ const CARD_DATABASE = [
     legacyDice: [{ type: 'counter_clash', attackType: 'blunt', min: 6, max: 10 }]
   }),
   skill('card_10', '堅牢な盾', 3, 'defense', null, 'sloth', 4, 2, 3, '防御コインは使用されなければ幕終了までストック。', [{}, {}, {}]),
-  skill('card_11', 'ルミーズ', 1, 'attack', 'pierce', 'gluttony', 4, 2, 2, '使用時: 呼吸回数を3増加。的中時: 呼吸威力2。', [{ onHit: { status: { id: 'breath', power: 2 } } }, { onHit: { status: { id: 'breath', power: 2 } } }], { onUse: { status: { id: 'breath', count: 3 } } }),
-  skill('card_12', '切り裂く', 1, 'attack', 'slash', 'lust', 2, 3, 2, '的中時: 出血威力2。', [{ onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } }, { onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } }]),
-  skill('card_13', '血に濡れた刃', 1, 'attack', 'slash', 'lust', 3, 2, 2, '的中時: 出血威力2。', [{ onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } }, { onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } }]),
-  skill('card_14', '裂傷', 2, 'attack', 'pierce', 'wrath', 4, 2, 3, '的中時: 1枚目と2枚目は出血威力2、3枚目は出血回数2。', [
+  skill('card_11', 'ルミーズ', 1, 'attack', 'pierce', 'gluttony', 3, 4, 2, '使用時: 呼吸回数を3増加。的中時: 呼吸威力2。', [{ onHit: { status: { id: 'breath', power: 2 } } }, { onHit: { status: { id: 'breath', power: 2 } } }], { onUse: { status: { id: 'breath', count: 3 } } }),
+  skill('card_12', '切り裂く', 1, 'attack', 'slash', 'lust', 3, 4, 2, '的中時: 出血威力2。', [{ onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } }, { onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } }]),
+  skill('card_13', '血に濡れた刃', 1, 'attack', 'slash', 'lust', 4, 3, 2, '的中時: 出血威力2。', [{ onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } }, { onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } }]),
+  skill('card_14', '裂傷', 2, 'attack', 'pierce', 'wrath', 4, 4, 3, '的中時: 1枚目と2枚目は出血威力2、3枚目は出血回数2。', [
     { onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } },
     { onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } },
     { onHit: { status: { id: 'bleed', count: 2, target: 'opponent' } } }
   ]),
-  skill('card_15', '血祭り', 2, 'attack', 'slash', 'wrath', 3, 2, 2, '1枚目: 的中時、出血回数2。出血威力3以上なら1枚ドロー。2枚目: 出血威力1。', [
+  skill('card_15', '血祭り', 2, 'attack', 'slash', 'wrath', 5, 4, 2, '1枚目: 的中時、出血回数2。出血威力3以上なら1枚ドロー。2枚目: 出血威力1。', [
     { onHit: { status: { id: 'bleed', count: 2, target: 'opponent' }, special: 'blood_festival' } },
     { onHit: { status: { id: 'bleed', power: 1, target: 'opponent' } } }
   ]),
-  skill('card_16', '流血', 3, 'attack', 'pierce', 'lust', 4, 2, 2, '使用時: 相手の出血威力が3以上なら光2回復。', [
+  skill('card_16', '流血', 3, 'attack', 'pierce', 'lust', 6, 5, 2, '使用時: 相手の出血威力が3以上なら光2回復。', [
     { onHit: { status: { id: 'bleed', power: 3, target: 'opponent' } } },
     { onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } }
   ], { onUse: { special: 'bloodletting_light' } }),
-  skill('card_17', '血の宴', 3, 'attack', 'slash', 'pride', 3, 2, 2, '的中時: 相手の出血威力が3以上なら、この幕のダメージ+5。', [
+  skill('card_17', '血の宴', 3, 'attack', 'slash', 'pride', 6, 5, 2, '的中時: 相手の出血威力が3以上なら、この幕のダメージ+5。', [
     { onHit: { status: { id: 'bleed', power: 2, target: 'opponent' }, special: 'blood_feast' } },
     { onHit: { status: { id: 'bleed', power: 2, target: 'opponent' } } }
   ]),
-  skill('card_18', '昏がり', 0, 'evade', null, 'gloom', 3, 2, 1, '使用時: 光1回復。マッチ勝利時: 沈潜回数2。相手のHPが半分以下なら1枚引く。', [{}], { onUse: { light: 1 }, onClashWin: { status: { id: 'sinking', count: 2, target: 'opponent' }, special: 'dusk_draw_if_stagger_half' } }),
-  skill('card_19', '水底へ', 1, 'attack', 'pierce', 'gloom', 3, 2, 1, '的中時: 沈潜威力2。', [{ onHit: { status: { id: 'sinking', power: 2, target: 'opponent' } } }]),
-  skill('card_20', '濡れた手紙', 1, 'attack', 'pierce', 'gloom', 2, 2, 2, '的中時: 沈潜威力2。', [{ onHit: { status: { id: 'sinking', power: 2, target: 'opponent' } } }, { onHit: { status: { id: 'sinking', power: 2, target: 'opponent' } } }]),
-  skill('card_21', '深く沈める', 2, 'attack', 'pierce', 'pride', 4, 2, 2, '的中時: 1枚目は沈潜威力3/回数2、2枚目は威力2/回数1。', [
+  skill('card_18', '昏がり', 0, 'evade', null, 'gloom', 4, 3, 1, '使用時: 光1回復。マッチ勝利時: 沈潜回数2。相手のHPが半分以下なら1枚引く。', [{}], { onUse: { light: 1 }, onClashWin: { status: { id: 'sinking', count: 2, target: 'opponent' }, special: 'dusk_draw_if_stagger_half' } }),
+  skill('card_19', '水底へ', 1, 'attack', 'pierce', 'gloom', 5, 5, 1, '的中時: 沈潜威力2。', [{ onHit: { status: { id: 'sinking', power: 2, target: 'opponent' } } }]),
+  skill('card_20', '濡れた手紙', 1, 'attack', 'pierce', 'gloom', 3, 4, 2, '的中時: 沈潜威力2。', [{ onHit: { status: { id: 'sinking', power: 2, target: 'opponent' } } }, { onHit: { status: { id: 'sinking', power: 2, target: 'opponent' } } }]),
+  skill('card_21', '深く沈める', 2, 'attack', 'pierce', 'pride', 5, 5, 2, '的中時: 1枚目は沈潜威力3/回数2、2枚目は威力2/回数1。', [
     { onHit: { status: { id: 'sinking', power: 3, count: 2, target: 'opponent' } } },
     { onHit: { status: { id: 'sinking', power: 2, count: 1, target: 'opponent' } } }
   ]),
-  skill('card_22', '憂鬱な雨', 2, 'evade', null, 'gloom', 5, 3, 1, 'マッチ勝利時: 相手の沈潜回数が3以上なら1消費。相手の沈潜威力4につき威力+1。', [{}], { sinkingPowerPer4: 1, onClashWin: { special: 'rain_consume_sinking_if_3' } }),
-  skill('card_23', '沈む記憶', 2, 'attack', 'pierce', 'sloth', 4, 3, 2, '1枚目: 的中時、沈潜威力2。2枚目: 相手の沈潜威力4以上なら最大3回まで再使用。', [
+  skill('card_22', '憂鬱な雨', 2, 'evade', null, 'gloom', 6, 5, 1, 'マッチ勝利時: 相手の沈潜回数が3以上なら1消費。相手の沈潜威力4につき威力+1。', [{}], { sinkingPowerPer4: 1, onClashWin: { special: 'rain_consume_sinking_if_3' } }),
+  skill('card_23', '沈む記憶', 2, 'attack', 'pierce', 'sloth', 4, 5, 2, '1枚目: 的中時、沈潜威力2。2枚目: 相手の沈潜威力4以上なら最大3回まで再使用。', [
     { onHit: { status: { id: 'sinking', power: 2, target: 'opponent' } } },
     { onHit: { special: 'sunken_memory_reuse' } }
   ]),
-  skill('card_24', '沈潜', 3, 'attack', 'pierce', 'gloom', 5, 2, 2, '的中時: 沈潜威力4 / 3。', [
+  skill('card_24', '沈潜', 3, 'attack', 'pierce', 'gloom', 6, 5, 2, '的中時: 沈潜威力4 / 3。', [
     { onHit: { status: { id: 'sinking', power: 4, target: 'opponent' } } },
     { onHit: { status: { id: 'sinking', power: 3, target: 'opponent' } } }
   ]),
-  skill('card_25', '底なしの憂鬱', 3, 'attack', 'pierce', 'sloth', 5, 2, 3, '1枚目: 沈潜威力3/回数2。2枚目: 相手の沈潜威力5以上なら3枚ドロー。', [
+  skill('card_25', '底なしの憂鬱', 3, 'attack', 'pierce', 'sloth', 4, 4, 3, '1枚目: 沈潜威力3/回数2。2枚目: 相手の沈潜威力5以上なら3枚ドロー。', [
     { onHit: { status: { id: 'sinking', power: 3, count: 2, target: 'opponent' } } },
     { onHit: { special: 'abyss_draw_if_5' } },
     {}
   ]),
-  skill('card_26', '水面下', 2, 'attack', 'pierce', 'pride', 10, 5, 1, '的中時: 相手の沈潜回数を最大3消費し、解除した沈潜威力×回数だけこのコインの威力を増加。', [
+  skill('card_26', '水面下', 2, 'attack', 'pierce', 'pride', 10, 6, 1, '的中時: 相手の沈潜回数を最大3消費し、解除した沈潜威力×回数だけこのコインの威力を増加。', [
     { onHit: { special: 'underwater_consume_sinking' } }
   ]),
   // ===== 剣契（Blade Lineage）=====
